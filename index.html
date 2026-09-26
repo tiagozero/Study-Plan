@@ -1,0 +1,1980 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Study Plan — Checklist</title>
+<style>
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0;padding:0}
+button,input,select{font:inherit;color:inherit;background:none;border:0}
+button{cursor:pointer}
+
+:root{
+  --bg:#faf9f6;--surface:#ffffff;--surface-2:#f5f4f0;
+  --line:#ecebe5;--line-strong:#dcd8ce;
+  --text:#1a1a19;--text-2:#6b6a64;--text-3:#9c9a92;
+  --accent:#4f46e5;--accent-soft:#eef2ff;
+  --green:#10b981;--green-soft:#ecfdf5;
+  --radius-lg:16px;
+  --shadow-sm:0 1px 2px rgba(20,20,19,.04);
+  --font:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",sans-serif;
+  --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  --sec-morning:#f59e0b;--sec-afternoon:#0ea5e9;--sec-evening:#8b5cf6;
+}
+body{min-height:100vh;background:var(--bg);color:var(--text);
+  font-family:var(--font);-webkit-font-smoothing:antialiased;
+  padding:0 20px 80px}
+.app{max-width:820px;margin:0 auto}
+
+.app-header{padding:34px 0 22px}
+.app-header-top{display:flex;align-items:flex-start;justify-content:space-between;
+  gap:16px;margin-bottom:18px}
+.app-header h1{margin:0 0 6px;font-size:1.75rem;font-weight:800;
+  letter-spacing:-.035em;line-height:1.1}
+.app-meta{margin:0;font-size:.82rem;color:var(--text-2);
+  display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.app-meta .dot{width:3px;height:3px;border-radius:50%;
+  background:var(--text-3);display:inline-block}
+
+.icon-btn{width:38px;height:38px;flex:none;border-radius:10px;
+  border:1px solid var(--line);background:var(--surface);
+  color:var(--text-2);display:grid;place-items:center;
+  transition:all .15s;box-shadow:var(--shadow-sm)}
+.icon-btn:hover{border-color:var(--line-strong);color:var(--text);
+  transform:translateY(-1px)}
+.icon-btn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+
+.app-progress{display:flex;align-items:center;gap:12px}
+.app-progress-bar{flex:1 1 auto;height:6px;border-radius:99px;
+  background:var(--surface-2);overflow:hidden}
+.app-progress-fill{height:100%;width:0%;border-radius:99px;
+  background:linear-gradient(90deg,#6366f1,#8b5cf6);
+  transition:width .35s cubic-bezier(.4,0,.2,1),background .3s}
+.app-progress-fill.complete{background:linear-gradient(90deg,#10b981,#22c55e)}
+.app-progress-label{font-family:var(--mono);font-size:.72rem;font-weight:700;
+  color:var(--text-2);font-variant-numeric:tabular-nums;
+  min-width:42px;text-align:right}
+
+.templates{margin:14px 0 6px}
+.templates-head{display:flex;align-items:baseline;justify-content:space-between;
+  gap:12px;margin-bottom:10px}
+.templates-label{font-size:.62rem;font-weight:800;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--text-3)}
+.templates-hint{font-size:.68rem;color:var(--text-3);font-weight:600}
+.template-row{display:flex;gap:10px;overflow-x:auto;padding:2px 2px 12px;
+  scrollbar-width:thin;scrollbar-color:var(--line-strong) transparent}
+.template-row::-webkit-scrollbar{height:6px}
+.template-row::-webkit-scrollbar-thumb{background:var(--line-strong);
+  border-radius:99px}
+.tpl-card{flex:0 0 auto;width:172px;padding:12px 13px 13px;border-radius:12px;
+  background:var(--surface);border:1px solid var(--line);
+  box-shadow:var(--shadow-sm);text-align:left;display:flex;flex-direction:column;
+  gap:6px;transition:transform .15s ease,box-shadow .15s ease;
+  position:relative;overflow:hidden}
+.tpl-card:hover{border-color:var(--line-strong);transform:translateY(-2px);
+  box-shadow:0 8px 22px -12px rgba(20,20,19,.22)}
+.tpl-card::after{content:'';position:absolute;left:0;right:0;bottom:0;height:3px;
+  background:var(--tpl-accent,var(--accent));opacity:0;transition:opacity .2s}
+.tpl-card.is-active::after{opacity:1}
+.tpl-card.is-active{border-color:var(--tpl-accent,var(--accent))}
+.tpl-card-top{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.tpl-icon{font-size:1.15rem;line-height:1;filter:saturate(.75)}
+.tpl-badge{font-size:.55rem;font-weight:900;letter-spacing:.06em;
+  padding:2px 6px;border-radius:99px;background:var(--surface-2);
+  color:var(--text-3);border:1px solid var(--line)}
+.tpl-card.is-active .tpl-badge{background:var(--tpl-accent,var(--accent));
+  color:#fff;border-color:transparent}
+.tpl-name{font-size:.82rem;font-weight:800;letter-spacing:-.01em;line-height:1.15}
+.tpl-desc{font-size:.66rem;color:var(--text-3);font-weight:600;line-height:1.35}
+
+.settings{background:var(--surface);border:1px solid var(--line);
+  border-radius:var(--radius-lg);padding:22px;margin:16px 0 20px;
+  box-shadow:var(--shadow-sm);animation:slideDown .22s ease}
+@keyframes slideDown{from{opacity:0;transform:translateY(-6px)}
+  to{opacity:1;transform:translateY(0)}}
+.settings-grid{display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px}
+.sfield{display:flex;flex-direction:column;gap:7px;min-width:0}
+.sfield.wide{grid-column:span 2}
+@media(max-width:620px){.sfield.wide{grid-column:span 1}}
+.sfield > label{font-size:.62rem;font-weight:800;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--text-3)}
+.seg{display:flex;gap:3px;padding:3px;background:var(--surface-2);
+  border:1px solid var(--line);border-radius:9px}
+.seg button{flex:1 1 0;min-width:0;padding:8px 4px;border-radius:6px;
+  color:var(--text-2);font-size:.78rem;font-weight:700;
+  transition:background .15s,color .15s;white-space:nowrap}
+.seg button:hover{color:var(--text)}
+.seg button.active{background:var(--surface);color:var(--text);
+  box-shadow:0 1px 3px rgba(20,20,19,.08)}
+
+input[type=time],select,input[type=text]{width:100%;padding:9px 12px;
+  font-size:.86rem;color:var(--text);background:var(--surface-2);
+  border:1px solid var(--line);border-radius:8px;outline:none;
+  transition:border-color .15s,box-shadow .15s}
+input:focus,select:focus{border-color:var(--accent);
+  box-shadow:0 0 0 3px rgba(79,70,229,.12)}
+select{appearance:none;cursor:pointer;padding-right:28px;
+  background-image:
+    linear-gradient(45deg,transparent 50%,var(--text-3) 50%),
+    linear-gradient(135deg,var(--text-3) 50%,transparent 50%);
+  background-position:calc(100% - 14px) 50%,calc(100% - 9px) 50%;
+  background-size:5px 5px,5px 5px;background-repeat:no-repeat}
+input[type=time]::-webkit-calendar-picker-indicator{filter:opacity(.55)}
+
+.meal-row{display:flex;gap:6px;align-items:stretch}
+.meal-row input[type=time]{flex:1 1 auto;min-width:0}
+.meal-row select{flex:0 0 auto;width:auto;min-width:78px;text-align:left}
+
+.uploader{display:flex;align-items:center;gap:10px;padding:10px 13px;
+  background:var(--surface-2);border:1px dashed var(--line-strong);
+  border-radius:8px;cursor:pointer;font-size:.8rem;color:var(--text-2);
+  transition:border-color .15s,background .15s,color .15s}
+.uploader:hover,.uploader.drag{border-color:var(--accent);
+  background:var(--accent-soft);color:var(--accent)}
+.uploader svg{flex:none;opacity:.7}
+.uploader b{color:var(--text);font-weight:700}
+.uploader .fname{color:var(--accent);font-weight:700;word-break:break-all}
+
+.subj-pills{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px;min-height:20px}
+.subj-pill{display:inline-flex;align-items:baseline;gap:6px;padding:3px 9px;
+  border-radius:99px;background:var(--surface-2);border:1px solid var(--line);
+  font-size:.7rem}
+.subj-pill b{color:var(--text);font-weight:700}
+.subj-pill em{font-style:normal;color:var(--text-3);font-size:.66rem}
+.subj-pill[data-sec="morning"]{border-color:rgba(245,158,11,.35)}
+.subj-pill[data-sec="afternoon"]{border-color:rgba(14,165,233,.35)}
+.subj-pill[data-sec="evening"]{border-color:rgba(139,92,246,.35)}
+
+.file-err{margin-top:8px;padding:8px 11px;border-radius:8px;
+  font-size:.72rem;line-height:1.4;color:#b91c1c;background:#fef2f2;
+  border:1px solid #fecaca;display:flex;gap:7px;align-items:flex-start}
+.sfield-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:4px}
+.mini{padding:5px 10px;border-radius:6px;font-size:.7rem;font-weight:700;
+  background:transparent;border:1px solid var(--line);color:var(--text-2);
+  transition:border-color .15s,color .15s,background .15s}
+.mini:hover{border-color:var(--accent);color:var(--accent);
+  background:var(--accent-soft)}
+
+.toolbar{display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+  justify-content:space-between;margin:6px 0 20px}
+.filter-tabs{display:flex;gap:2px;padding:3px;background:var(--surface);
+  border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow-sm)}
+.filter-tabs button{padding:7px 14px;border-radius:7px;font-size:.76rem;
+  font-weight:700;color:var(--text-2);transition:background .15s,color .15s}
+.filter-tabs button:hover{color:var(--text)}
+.filter-tabs button.active{background:var(--text);color:var(--bg)}
+.toolbar-right{display:flex;gap:8px;align-items:center}
+.toolbar-btn{padding:7px 12px;border-radius:8px;font-size:.72rem;font-weight:700;
+  background:var(--surface);border:1px solid var(--line);color:var(--text-2);
+  box-shadow:var(--shadow-sm);transition:border-color .15s,color .15s,transform .15s}
+.toolbar-btn:hover{border-color:var(--line-strong);color:var(--text);
+  transform:translateY(-1px)}
+.toolbar-btn.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+.toolbar-btn.primary:hover{background:#4338ca;border-color:#4338ca}
+
+.checklist{display:flex;flex-direction:column;gap:26px}
+.cl-section{display:flex;flex-direction:column}
+.cl-section-head{display:flex;align-items:baseline;justify-content:space-between;
+  gap:12px;padding:0 4px 10px}
+.cl-section-title{display:flex;align-items:center;gap:9px;font-size:.7rem;
+  font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--text-3)}
+.cl-section-title .icon{font-size:.95rem;line-height:1;filter:saturate(.6)}
+.cl-section-count{font-size:.68rem;font-weight:700;color:var(--text-3);
+  font-variant-numeric:tabular-nums}
+.cl-section-count .done{color:var(--green)}
+.cl-section.is-complete .cl-section-title{color:var(--green)}
+
+.cl-list{list-style:none;padding:0;margin:0;background:var(--surface);
+  border:1px solid var(--line);border-radius:var(--radius-lg);
+  box-shadow:var(--shadow-sm);overflow:hidden}
+
+/* ============ Row — heavily isolated for perf ============ */
+.cl-item{
+  display:grid;
+  grid-template-columns:18px 34px 84px 1fr auto;
+  align-items:center;gap:10px;
+  padding:11px 16px 11px 8px;
+  border-bottom:1px solid var(--line);
+  position:relative;overflow:hidden;
+  transition:background .15s;
+  /* Perf: browser skips layout/paint for off-screen rows entirely */
+  content-visibility:auto;
+  contain-intrinsic-size:auto 62px;
+}
+.cl-item:last-child{border-bottom:0}
+.cl-item:hover{background:var(--surface-2)}
+
+/* left type accent — uses background-color only */
+.cl-item::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;
+  background:var(--tc);opacity:.9}
+
+/* progressive fill — transform-based, GPU composited, no layout thrash */
+.cl-item::after{
+  content:'';position:absolute;left:0;top:0;bottom:0;right:0;
+  background:var(--tc);opacity:.045;pointer-events:none;
+  transform:scaleX(var(--fill-scale,0));
+  transform-origin:left center;
+}
+.cl-item > *{position:relative;z-index:1}
+
+.cl-drag{width:18px;height:24px;flex:none;display:grid;place-items:center;
+  color:var(--text-3);opacity:0;transition:opacity .15s,color .15s;
+  cursor:grab;padding:0}
+.cl-drag:active{cursor:grabbing}
+.cl-item[data-draggable="true"]:hover .cl-drag{opacity:.6}
+.cl-item[data-draggable="true"] .cl-drag:hover{opacity:1;color:var(--text-2)}
+.cl-drag svg{width:9px;height:13px;pointer-events:none}
+.cl-item.is-dragging{opacity:.35}
+.cl-item.is-drag-target{background:var(--accent-soft)!important;
+  box-shadow:inset 0 0 0 2px var(--accent)}
+.cl-item.is-drag-target::before{background:var(--accent);opacity:1}
+
+.cl-check{width:24px;height:24px;flex:none;border-radius:7px;
+  border:1.5px solid var(--line-strong);background:var(--surface);
+  display:grid;place-items:center;transition:background .15s,border-color .15s;
+  padding:0}
+.cl-check:hover{border-color:var(--tc)}
+.cl-check svg{width:14px;height:14px;stroke:currentColor;stroke-width:3;
+  fill:none;stroke-linecap:round;stroke-linejoin:round}
+.cl-check svg path{stroke-dasharray:24;stroke-dashoffset:24;
+  transition:stroke-dashoffset .3s ease}
+.cl-item.is-done .cl-check{background:var(--tc);border-color:var(--tc);color:#fff}
+.cl-item.is-done .cl-check svg path{stroke-dashoffset:0}
+
+.cl-time{font-family:var(--mono);font-size:.76rem;font-weight:700;
+  color:var(--text-2);font-variant-numeric:tabular-nums;
+  white-space:nowrap;letter-spacing:-.01em}
+.cl-time .ap{font-size:.66rem;color:var(--text-3);margin-left:1px}
+.cl-time .end{display:block;font-size:.64rem;font-weight:600;
+  color:var(--text-3);margin-top:2px}
+
+.cl-body{min-width:0}
+.cl-name{font-size:.9rem;font-weight:700;letter-spacing:-.01em;color:var(--text);
+  display:flex;align-items:center;gap:8px;min-width:0}
+.cl-name > span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cl-tag{font-size:.6rem;font-weight:800;letter-spacing:.05em;
+  text-transform:uppercase;padding:2px 7px;border-radius:99px;
+  background:var(--surface-2);color:var(--text-3);border:1px solid var(--line);
+  flex:none}
+.cl-item.is-done .cl-tag{background:var(--green-soft);color:var(--green);
+  border-color:transparent}
+.cl-sub{font-size:.72rem;color:var(--text-3);margin-top:3px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+.cl-now-pill{font-size:.58rem;font-weight:900;letter-spacing:.08em;
+  padding:2px 7px;border-radius:99px;background:var(--accent);color:#fff;
+  flex:none;animation:nowPulse 2s ease-in-out infinite}
+@keyframes nowPulse{
+  0%,100%{box-shadow:0 0 0 0 rgba(79,70,229,.5)}
+  50%{box-shadow:0 0 0 4px rgba(79,70,229,0)}}
+
+.cl-item.is-done .cl-name > span{text-decoration:line-through;
+  text-decoration-thickness:1.5px;color:var(--text-3)}
+.cl-item.is-done .cl-sub{opacity:.5}
+.cl-item.is-done{background:linear-gradient(90deg,var(--green-soft) 0%,transparent 60%)}
+
+.cl-timer{display:flex;align-items:center;gap:9px;flex:none}
+.cl-timer-play{width:30px;height:30px;flex:none;border-radius:50%;padding:0;
+  background:var(--surface-2);border:1px solid var(--line);color:var(--text-2);
+  display:grid;place-items:center;transition:background .15s,border-color .15s,color .15s;
+  position:relative}
+.cl-timer-play:hover{background:var(--tc);color:#fff;border-color:var(--tc)}
+.cl-timer-play svg{width:11px;height:11px;fill:currentColor;
+  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%)}
+.cl-timer-play .icon-play{margin-left:1px}
+.cl-timer-readout{display:flex;flex-direction:column;min-width:76px;
+  text-align:right;gap:0}
+.cl-timer-digits{font-family:var(--mono);font-size:.78rem;font-weight:800;
+  color:var(--text-2);font-variant-numeric:tabular-nums;letter-spacing:.01em;
+  line-height:1.1;text-align:right;transition:color .2s}
+.cl-timer-started{font-family:var(--mono);font-size:.56rem;font-weight:700;
+  color:var(--text-3);letter-spacing:.02em;line-height:1.25;text-align:right;
+  white-space:nowrap;visibility:hidden;transition:color .2s;min-height:.7rem}
+.cl-item.has-started .cl-timer-started{visibility:visible}
+
+/* timer bar — transform based, only one per timer */
+.cl-timer-bar{width:44px;height:3px;border-radius:99px;
+  background:var(--surface-2);overflow:hidden;flex:none}
+.cl-timer-bar-fill{height:100%;width:100%;border-radius:99px;
+  background:var(--tc);
+  transform:scaleX(var(--bar-scale,0));
+  transform-origin:left center;
+  transition:transform .25s linear}
+
+.cl-item.is-running{background:var(--accent-soft)}
+.cl-item.is-running .cl-timer-digits{color:var(--accent)}
+.cl-item.is-running .cl-timer-started{color:var(--accent)}
+.cl-item.is-running .cl-timer-play{background:var(--tc);color:#fff;
+  border-color:var(--tc)}
+.cl-item.is-done .cl-timer-bar-fill{background:var(--green)}
+.cl-item.is-done .cl-timer-digits{color:var(--green)}
+.cl-item.is-done .cl-timer-started{color:var(--green)}
+
+.app.compact .cl-item{padding:6px 16px 6px 8px;
+  contain-intrinsic-size:auto 44px}
+.app.compact .cl-sub{display:none}
+.app.compact .cl-time .end{display:none}
+.app.compact .cl-check{width:20px;height:20px;border-radius:6px}
+.app.compact .cl-check svg{width:12px;height:12px}
+.app.compact .cl-timer-play{width:26px;height:26px}
+.app.compact .cl-timer-digits{font-size:.74rem}
+.app.compact .cl-timer-started{font-size:.54rem}
+.app.compact .cl-timer-readout{min-width:70px}
+
+.cl-empty{padding:60px 20px;text-align:center;color:var(--text-3);
+  font-size:.85rem;background:var(--surface);border:1px solid var(--line);
+  border-radius:var(--radius-lg)}
+.cl-hint{margin-top:22px;text-align:center;font-size:.7rem;color:var(--text-3)}
+.cl-hint kbd{font-family:var(--mono);font-size:.65rem;padding:2px 5px;
+  background:var(--surface-2);border:1px solid var(--line);
+  border-radius:4px;color:var(--text-2)}
+
+.plan-modal{position:fixed;inset:0;z-index:200;display:grid;
+  place-items:center;padding:16px}
+.plan-modal-backdrop{position:absolute;inset:0;background:rgba(20,20,19,.45);
+  backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);
+  animation:fadeIn .2s ease}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.plan-modal-card{position:relative;width:min(980px,100%);
+  max-height:calc(100vh - 32px);background:var(--surface);border-radius:20px;
+  box-shadow:0 28px 70px -22px rgba(20,20,19,.45);display:flex;
+  flex-direction:column;overflow:hidden;
+  animation:modalIn .28s cubic-bezier(.2,.9,.3,1.15)}
+@keyframes modalIn{from{opacity:0;transform:scale(.95) translateY(10px)}
+  to{opacity:1;transform:scale(1) translateY(0)}}
+.plan-modal-head{display:flex;align-items:flex-start;justify-content:space-between;
+  gap:16px;padding:22px 24px 16px;border-bottom:1px solid var(--line)}
+.plan-modal-head h2{margin:0 0 4px;font-size:1.2rem;font-weight:800;
+  letter-spacing:-.03em;color:var(--text)}
+.plan-modal-sub{margin:0;font-size:.78rem;color:var(--text-3);font-weight:600}
+.plan-modal-close{width:34px;height:34px;flex:none;border-radius:9px;padding:0;
+  display:grid;place-items:center;font-size:1.35rem;line-height:1;
+  color:var(--text-2);background:var(--surface-2);border:1px solid var(--line);
+  transition:background .15s,color .15s}
+.plan-modal-close:hover{background:#fee2e2;color:#b91c1c;border-color:#fecaca}
+.plan-name-field{display:flex;flex-direction:column;gap:6px;padding:16px 24px 4px}
+.plan-name-field span{font-size:.62rem;font-weight:800;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--text-3)}
+.plan-columns{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;
+  padding:14px 24px 16px;overflow-y:auto;flex:1 1 auto}
+@media(max-width:720px){.plan-columns{grid-template-columns:1fr}
+  .plan-modal{padding:0}.plan-modal-card{max-height:100vh;border-radius:0;
+  width:100%}}
+.plan-col{background:var(--surface-2);border:1px solid var(--line);
+  border-radius:12px;padding:12px;display:flex;flex-direction:column;
+  gap:8px;min-height:180px}
+.plan-col-head{display:flex;align-items:center;gap:7px;padding:0 2px 4px}
+.plan-col-icon{font-size:1rem;line-height:1;filter:saturate(.75)}
+.plan-col-name{font-size:.72rem;font-weight:800;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--text);flex:1 1 auto}
+.plan-col-total{font-family:var(--mono);font-size:.66rem;font-weight:800;
+  color:var(--text-3);font-variant-numeric:tabular-nums}
+.plan-col[data-section="morning"] .plan-col-name{color:var(--sec-morning)}
+.plan-col[data-section="afternoon"] .plan-col-name{color:var(--sec-afternoon)}
+.plan-col[data-section="evening"] .plan-col-name{color:var(--sec-evening)}
+.plan-col-list{list-style:none;padding:0;margin:0;display:flex;
+  flex-direction:column;gap:6px}
+.plan-row{display:grid;grid-template-columns:1fr 58px 12px 22px;
+  align-items:center;gap:5px;background:var(--surface);border:1px solid var(--line);
+  border-radius:8px;padding:5px 6px 5px 8px;transition:border-color .15s}
+.plan-row:focus-within{border-color:var(--accent);
+  box-shadow:0 0 0 3px rgba(79,70,229,.1)}
+.plan-row input{border:0;background:transparent;padding:4px 2px;font-size:.82rem;
+  min-width:0;outline:none}
+.plan-row input.plan-row-hours{font-family:var(--mono);font-weight:800;
+  font-size:.82rem;text-align:right;font-variant-numeric:tabular-nums;
+  -moz-appearance:textfield}
+.plan-row input.plan-row-hours::-webkit-outer-spin-button,
+.plan-row input.plan-row-hours::-webkit-inner-spin-button{
+  -webkit-appearance:none;margin:0}
+.plan-row-unit{font-size:.7rem;font-weight:800;color:var(--text-3)}
+.plan-row-remove{width:22px;height:22px;padding:0;border-radius:6px;
+  display:grid;place-items:center;font-size:1.05rem;line-height:1;
+  color:var(--text-3);background:transparent;transition:background .15s,color .15s}
+.plan-row-remove:hover{background:#fee2e2;color:#b91c1c}
+.plan-col-empty{padding:16px 8px;text-align:center;font-size:.72rem;
+  color:var(--text-3);font-style:italic}
+.plan-col-add{padding:7px 10px;border:1px dashed var(--line-strong);
+  border-radius:8px;background:transparent;color:var(--text-2);
+  font-size:.72rem;font-weight:700;transition:border-color .15s,color .15s,background .15s;
+  margin-top:auto}
+.plan-col-add:hover{border-color:var(--accent);color:var(--accent);
+  background:var(--accent-soft);border-style:solid}
+.plan-modal-foot{display:flex;align-items:center;justify-content:space-between;
+  gap:14px;flex-wrap:wrap;padding:14px 24px 18px;border-top:1px solid var(--line);
+  background:var(--surface-2)}
+.plan-total{font-size:.72rem;font-weight:700;color:var(--text-3);
+  text-transform:uppercase;letter-spacing:.1em}
+.plan-total b{font-family:var(--mono);font-size:.9rem;font-weight:900;
+  color:var(--text);margin-left:6px;letter-spacing:-.01em;
+  font-variant-numeric:tabular-nums}
+.plan-actions{display:flex;gap:8px;flex-wrap:wrap}
+.plan-apply{padding:9px 18px;border-radius:8px;font-size:.78rem;font-weight:800;
+  background:var(--accent);color:#fff;border:1px solid var(--accent);
+  transition:background .15s,border-color .15s}
+.plan-apply:hover{background:#4338ca;border-color:#4338ca}
+.plan-apply:disabled{opacity:.4;cursor:not-allowed}
+
+@media (max-width:600px){
+  .cl-item{grid-template-columns:16px 30px 1fr auto;
+    grid-template-areas:"drag check body timer" ".    time  time .";
+    row-gap:4px;padding:12px 14px 12px 8px;gap:8px;
+    contain-intrinsic-size:auto 76px}
+  .cl-drag{grid-area:drag}.cl-check{grid-area:check}.cl-body{grid-area:body}
+  .cl-time{grid-area:time;font-size:.7rem}
+  .cl-time .end{display:inline;margin:0 0 0 6px}
+  .cl-timer{grid-area:timer}.cl-timer-bar{display:none}
+  .cl-timer-readout{min-width:70px}.cl-timer-started{font-size:.54rem}
+  .seg button{font-size:.72rem;padding:8px 2px}.tpl-card{width:156px}
+}
+@media print{
+  body{background:#fff}
+  .settings,.toolbar,.icon-btn,.cl-timer,.cl-hint,.templates,.cl-drag,.plan-modal{
+    display:none!important}
+  .cl-item::after{display:none}.cl-item{box-shadow:none;content-visibility:visible}
+}
+</style>
+</head>
+<body>
+
+<div class="app" id="app">
+  <header class="app-header">
+    <div class="app-header-top">
+      <div>
+        <h1 id="planTitle">Today's plan</h1>
+        <p class="app-meta" id="appMeta">—</p>
+      </div>
+      <button class="icon-btn" id="settingsBtn" type="button" aria-label="Settings">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2" stroke-linecap="round"
+             stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+        </svg>
+      </button>
+    </div>
+    <div class="app-progress">
+      <div class="app-progress-bar">
+        <div class="app-progress-fill" id="progressFill"></div>
+      </div>
+      <span class="app-progress-label" id="progressLabel">0 / 0</span>
+    </div>
+  </header>
+
+  <section class="templates">
+    <div class="templates-head">
+      <span class="templates-label">Quick start</span>
+      <span class="templates-hint">Tap a template to apply</span>
+    </div>
+    <div class="template-row" id="templateRow"></div>
+  </section>
+
+  <section class="settings" id="settings" hidden>
+    <div class="settings-grid">
+      <div class="sfield">
+        <label>Daily study target</label>
+        <div class="seg" id="hoursSeg">
+          <button data-hours="4">4 hrs</button>
+          <button data-hours="6">6 hrs</button>
+          <button data-hours="8">8 hrs</button>
+          <button data-hours="10">10 hrs</button>
+        </div>
+      </div>
+      <div class="sfield">
+        <label for="wake">Wake up</label>
+        <input type="time" id="wake" value="06:00">
+      </div>
+      <div class="sfield">
+        <label for="lunch">Lunch</label>
+        <div class="meal-row">
+          <input type="time" id="lunch" value="12:30">
+          <select id="lunchDur" aria-label="Lunch duration">
+            <option value="15">15 min</option><option value="20">20 min</option>
+            <option value="30">30 min</option><option value="45" selected>45 min</option>
+            <option value="60">1 hr</option><option value="90">1 hr 30</option>
+          </select>
+        </div>
+      </div>
+      <div class="sfield">
+        <label for="dinner">Dinner</label>
+        <div class="meal-row">
+          <input type="time" id="dinner" value="18:30">
+          <select id="dinnerDur" aria-label="Dinner duration">
+            <option value="15">15 min</option><option value="20">20 min</option>
+            <option value="30">30 min</option><option value="45" selected>45 min</option>
+            <option value="60">1 hr</option><option value="90">1 hr 30</option>
+          </select>
+        </div>
+      </div>
+      <div class="sfield">
+        <label for="session">Session rhythm</label>
+        <select id="session">
+          <option value="25,5,20">25 / 5 · Pomodoro</option>
+          <option value="50,10,25" selected>50 / 10 · Classic</option>
+          <option value="90,15,30">90 / 15 · Deep work</option>
+        </select>
+      </div>
+      <div class="sfield wide">
+        <label>Study plan — JSON file</label>
+        <div class="uploader" id="dropzone" role="button" tabindex="0">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="2" stroke-linecap="round"
+               stroke-linejoin="round" aria-hidden="true">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="17 8 12 3 7 8"/>
+            <line x1="12" y1="3" x2="12" y2="15"/>
+          </svg>
+          <span id="dropText">Drop a <b>.json</b> plan, or <b>browse</b></span>
+          <input type="file" id="file" accept=".json,application/json" hidden>
+        </div>
+        <div class="subj-pills" id="subjPills"></div>
+        <div class="file-err" id="fileErr" hidden></div>
+        <div class="sfield-actions">
+          <button class="mini" id="openBuilderBtn" type="button">Create plan…</button>
+          <button class="mini" id="templateBtn" type="button">Download current</button>
+          <button class="mini" id="resetBtn" type="button">Reset</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="toolbar">
+    <div class="filter-tabs" id="filterTabs">
+      <button data-filter="all" class="active">All</button>
+      <button data-filter="study">Study</button>
+      <button data-filter="breaks">Breaks</button>
+      <button data-filter="meals">Meals</button>
+    </div>
+    <div class="toolbar-right">
+      <button class="toolbar-btn primary" id="buildBtnTop" type="button">+ New plan</button>
+      <button class="toolbar-btn" id="densityBtn" type="button">Compact</button>
+      <button class="toolbar-btn" id="clearBtn" type="button">Clear done</button>
+    </div>
+  </div>
+
+  <div class="checklist" id="checklist"></div>
+
+  <p class="cl-hint">Drag study blocks to move subjects between sections · <kbd>Space</kbd> toggles the focused item</p>
+</div>
+
+<div class="plan-modal" id="planModal" hidden>
+  <div class="plan-modal-backdrop" data-plan-close></div>
+  <div class="plan-modal-card" role="dialog" aria-labelledby="planModalTitle">
+    <header class="plan-modal-head">
+      <div>
+        <h2 id="planModalTitle">Study plan builder</h2>
+        <p class="plan-modal-sub">Assign subjects to Morning, Afternoon and Evening. Drag blocks in the checklist to move them between sections.</p>
+      </div>
+      <button class="plan-modal-close" type="button" data-plan-close aria-label="Close">×</button>
+    </header>
+    <label class="plan-name-field">
+      <span>Plan name</span>
+      <input type="text" id="planName" placeholder="e.g. Finals week" autocomplete="off">
+    </label>
+    <div class="plan-columns" id="planColumns"></div>
+    <footer class="plan-modal-foot">
+      <div class="plan-total">Total <b id="planTotal">0h</b></div>
+      <div class="plan-actions">
+        <button class="mini" type="button" data-plan-action="download">Download JSON</button>
+        <button class="mini" type="button" data-plan-action="cancel">Cancel</button>
+        <button class="plan-apply" type="button" data-plan-action="apply" id="planApply">Apply plan</button>
+      </div>
+    </footer>
+  </div>
+</div>
+
+<script>
+(() => {
+"use strict";
+
+/* ============================================================
+   CONSTANTS
+   ============================================================ */
+const ALLOWED_HOURS = [4, 6, 8, 10];
+const MEAL_DURATIONS = [15, 20, 30, 45, 60, 90];
+const DEFAULT_MEAL_DUR = 45;
+const SECTIONS = ['morning','afternoon','evening'];
+const SECTION_META = {
+  morning:   { label:'Morning',   icon:'☀', order:0 },
+  afternoon: { label:'Afternoon', icon:'◐', order:1 },
+  evening:   { label:'Evening',   icon:'☾', order:2 }
+};
+const DEFAULT_PLAN_NAME = "Today's plan";
+
+const DEFAULT_SUBJECTS = {
+  morning:   [{ name:'Math',      weight:2 }, { name:'Physics', weight:1 }],
+  afternoon: [{ name:'Chemistry', weight:1.5 }],
+  evening:   [{ name:'Biology',   weight:1.5 }]
+};
+
+const TEMPLATES = {
+  balanced:{name:'Balanced Day',desc:'6h · 50/10 · spread across day',icon:'⚖️',accent:'#6366f1',
+    config:{hours:6,wake:'06:00',lunch:'12:30',lunchDur:45,dinner:'18:30',dinnerDur:45,session:'50,10,25',
+      subjects:{morning:[{name:'Math',weight:2},{name:'Physics',weight:1}],
+        afternoon:[{name:'Chemistry',weight:1.5}],evening:[{name:'Biology',weight:1.5}]}}},
+  examCram:{name:'Exam Cram',desc:'10h · 25/5 · high intensity',icon:'🔥',accent:'#ef4444',
+    config:{hours:10,wake:'05:30',lunch:'12:00',lunchDur:30,dinner:'18:00',dinnerDur:30,session:'25,5,20',
+      subjects:{morning:[{name:'Math',weight:3},{name:'Physics',weight:1.5}],
+        afternoon:[{name:'Physics',weight:1.5},{name:'Chemistry',weight:2}],
+        evening:[{name:'Chemistry',weight:1},{name:'Revision',weight:1}]}}},
+  deepFocus:{name:'Deep Focus',desc:'8h · 90/15 · fewer topics',icon:'🎯',accent:'#0ea5e9',
+    config:{hours:8,wake:'06:30',lunch:'12:30',lunchDur:45,dinner:'18:30',dinnerDur:45,session:'90,15,30',
+      subjects:{morning:[{name:'Thesis',weight:3}],afternoon:[{name:'Research',weight:2.5}],
+        evening:[{name:'Reading',weight:2.5}]}}},
+  earlyBird:{name:'Early Bird',desc:'6h · 50/10 · done by noon',icon:'🌅',accent:'#f59e0b',
+    config:{hours:6,wake:'04:30',lunch:'11:30',lunchDur:30,dinner:'17:30',dinnerDur:45,session:'50,10,25',
+      subjects:{morning:[{name:'Writing',weight:2.5},{name:'Reading',weight:1.5}],
+        afternoon:[{name:'Revision',weight:2}],evening:[]}}},
+  lightReview:{name:'Light Review',desc:'4h · 25/5 · easy pace',icon:'🌱',accent:'#10b981',
+    config:{hours:4,wake:'07:00',lunch:'12:30',lunchDur:60,dinner:'19:00',dinnerDur:60,session:'25,5,20',
+      subjects:{morning:[{name:'Review',weight:1.5}],afternoon:[{name:'Flashcards',weight:1.5}],
+        evening:[{name:'Practice',weight:1}]}}},
+  weekendBlitz:{name:'Weekend Blitz',desc:'10h · 50/10 · single project',icon:'⚡',accent:'#8b5cf6',
+    config:{hours:10,wake:'08:00',lunch:'12:30',lunchDur:60,dinner:'19:00',dinnerDur:60,session:'50,10,25',
+      subjects:{morning:[{name:'Project',weight:4}],afternoon:[{name:'Project',weight:3.5}],
+        evening:[{name:'Project',weight:2.5}]}}}
+};
+
+const TIMED = new Set(['study','break','longbreak']);
+const TYPE_COLOR = {
+  study:'#6366f1', break:'#10b981', longbreak:'#14b8a6',
+  meal:'#f59e0b', routine:'#a855f7', winddown:'#64748b', sleep:'#0ea5e9'
+};
+const TYPE_LABEL = {
+  study:'Focus', break:'Break', longbreak:'Long break',
+  meal:'Meal', routine:'Routine', winddown:'Wind down', sleep:'Sleep'
+};
+const ICON = {
+  play:'<svg class="icon-play" viewBox="0 0 24 24"><path d="M8 5.14v13.72a1 1 0 0 0 1.5.87l11-6.86a1 1 0 0 0 0-1.74l-11-6.86A1 1 0 0 0 8 5.14z"/></svg>',
+  pause:'<svg viewBox="0 0 24 24"><rect x="6" y="4" width="4" height="16" rx="1.2"/><rect x="14" y="4" width="4" height="16" rx="1.2"/></svg>',
+  replay:'<svg class="icon-reset" viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>',
+  grip:'<svg viewBox="0 0 9 13" fill="currentColor" aria-hidden="true"><circle cx="2" cy="2" r="1.1"/><circle cx="7" cy="2" r="1.1"/><circle cx="2" cy="6.5" r="1.1"/><circle cx="7" cy="6.5" r="1.1"/><circle cx="2" cy="11" r="1.1"/><circle cx="7" cy="11" r="1.1"/></svg>'
+};
+
+/* ============================================================
+   STATE
+   ============================================================ */
+let planName       = DEFAULT_PLAN_NAME;
+let filter         = 'all';
+let density        = 'comfortable';
+let settingsOpen   = false;
+let subjects       = cloneSubjects(DEFAULT_SUBJECTS);
+let loadedFileName = '';
+let checked        = new Set();
+let timers         = new Map();
+let dragState      = null;
+let planDraft      = null;
+let _sid           = 0;
+
+/* Render caches — avoid rebuilding DOM when nothing structural changed */
+let _lastStructureKey = '';
+let _lastTemplateKey  = '';
+let _lastHoursKey     = '';
+
+/* Timer loop lifecycle */
+let timerIntervalId = null;
+let lastTickTime = 0;
+
+/* Persistence debounce */
+let persistTimerId = null;
+
+const els = {
+  app:        document.getElementById('app'),
+  planTitle:  document.getElementById('planTitle'),
+  appMeta:    document.getElementById('appMeta'),
+  progressFill:  document.getElementById('progressFill'),
+  progressLabel: document.getElementById('progressLabel'),
+  templateRow:document.getElementById('templateRow'),
+  settings:   document.getElementById('settings'),
+  settingsBtn:document.getElementById('settingsBtn'),
+  hoursSeg:   document.getElementById('hoursSeg'),
+  wake:       document.getElementById('wake'),
+  lunch:      document.getElementById('lunch'),
+  lunchDur:   document.getElementById('lunchDur'),
+  dinner:     document.getElementById('dinner'),
+  dinnerDur:  document.getElementById('dinnerDur'),
+  session:    document.getElementById('session'),
+  dropzone:   document.getElementById('dropzone'),
+  dropText:   document.getElementById('dropText'),
+  file:       document.getElementById('file'),
+  subjPills:  document.getElementById('subjPills'),
+  fileErr:    document.getElementById('fileErr'),
+  openBuilderBtn: document.getElementById('openBuilderBtn'),
+  templateBtn:document.getElementById('templateBtn'),
+  resetBtn:   document.getElementById('resetBtn'),
+  filterTabs: document.getElementById('filterTabs'),
+  densityBtn: document.getElementById('densityBtn'),
+  clearBtn:   document.getElementById('clearBtn'),
+  buildBtnTop:document.getElementById('buildBtnTop'),
+  checklist:  document.getElementById('checklist'),
+  planModal:  document.getElementById('planModal'),
+  planName:   document.getElementById('planName'),
+  planColumns:document.getElementById('planColumns'),
+  planTotal:  document.getElementById('planTotal'),
+  planApply:  document.getElementById('planApply')
+};
+
+/* ============================================================
+   HELPERS
+   ============================================================ */
+const parseTime = s => { const [h,m] = s.split(':').map(Number); return h*60+m; };
+
+function splitTime(min){
+  const d = ((Math.round(min)%1440)+1440)%1440;
+  const h = Math.floor(d/60), m = d%60;
+  return { h: h%12||12, m: String(m).padStart(2,'0'), ap: h<12?'am':'pm' };
+}
+function fmtTime(min){ const t = splitTime(min); return `${t.h}:${t.m}${t.ap}`; }
+function fmtDur(min){
+  min = Math.round(min);
+  const h = Math.floor(min/60), m = min%60;
+  if (h && m) return `${h}h ${m}m`;
+  if (h) return `${h}h`;
+  return `${m}m`;
+}
+function fmtHours(h){
+  h = Math.round(h*10)/10;
+  if (Number.isInteger(h)) return `${h}h`;
+  return `${Math.floor(h)}h ${Math.round((h-Math.floor(h))*60)}m`;
+}
+function fmtClock(ts){
+  const d = new Date(ts);
+  let h = d.getHours(); const m = d.getMinutes();
+  const ap = h < 12 ? 'am' : 'pm'; h = h % 12 || 12;
+  return `${h}:${String(m).padStart(2,'0')}${ap}`;
+}
+const esc = s => String(s).replace(/[&<>"']/g, c =>
+  ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+function currentMinutes(){
+  const d = new Date();
+  return d.getHours()*60 + d.getMinutes();
+}
+function newSubject(name='', weight=1){ return { id: ++_sid, name, weight }; }
+function cloneSubjects(src){
+  const out = { morning:[], afternoon:[], evening:[] };
+  for (const sec of SECTIONS){
+    for (const s of (src[sec] || [])){
+      out[sec].push({ name: String(s.name||'').trim(), weight: Number(s.weight) || 1 });
+    }
+  }
+  return out;
+}
+function allSubjects(){
+  return [...subjects.morning, ...subjects.afternoon, ...subjects.evening];
+}
+function totalSubjectCount(){ return allSubjects().length; }
+function totalHoursFromSubjects(){
+  let t = 0;
+  for (const s of allSubjects()) t += Number(s.weight) || 0;
+  return t;
+}
+function findSubjectLocation(name){
+  for (const sec of SECTIONS){
+    const idx = subjects[sec].findIndex(s => s.name === name);
+    if (idx >= 0) return { sec, idx };
+  }
+  return null;
+}
+function sectionOf(startMin){
+  const h = Math.floor((startMin % 1440) / 60);
+  if (h >= 5 && h < 12) return 'morning';
+  if (h >= 12 && h < 18) return 'afternoon';
+  return 'evening';
+}
+
+/* ============================================================
+   AUDIO
+   ============================================================ */
+let audioCtx = null;
+function ensureAudio(){
+  try{
+    if (!audioCtx){
+      const C = window.AudioContext || window.webkitAudioContext;
+      if (!C) return;
+      audioCtx = new C();
+    }
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+  }catch(e){}
+}
+function beep(){
+  try{
+    ensureAudio();
+    if (!audioCtx) return;
+    const now = audioCtx.currentTime;
+    [880,1174.66].forEach((f,i) => {
+      const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+      o.type = 'sine'; o.frequency.value = f;
+      o.connect(g); g.connect(audioCtx.destination);
+      const t0 = now + i*0.18;
+      g.gain.setValueAtTime(0.0001, t0);
+      g.gain.exponentialRampToValueAtTime(0.18, t0+0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, t0+0.5);
+      o.start(t0); o.stop(t0+0.55);
+    });
+  }catch(e){}
+}
+
+/* ============================================================
+   JSON
+   ============================================================ */
+function parseOneSubject(item, i){
+  if (typeof item === 'string'){
+    const name = item.trim();
+    if (!name) throw new Error(`Entry ${i+1} is empty.`);
+    return { name, weight:1 };
+  }
+  if (item && typeof item === 'object'){
+    const name = String(item.name ?? item.subject ?? item.title ?? '').trim();
+    if (!name) throw new Error(`Entry ${i+1} is missing a "name" field.`);
+    const w = Number(item.hours ?? item.weight ?? item.minutes ?? 1);
+    if (!Number.isFinite(w) || w <= 0) throw new Error(`"${name}" has an invalid weight.`);
+    return { name, weight: Math.min(18, w) };
+  }
+  throw new Error(`Entry ${i+1} must be a string or object.`);
+}
+function dedupe(list){
+  const seen = new Set();
+  const out = [];
+  for (const s of list){
+    const k = s.name.toLowerCase();
+    if (seen.has(k)) continue;
+    seen.add(k); out.push(s);
+  }
+  return out;
+}
+function parsePlanJSON(raw){
+  let data;
+  try { data = JSON.parse(raw); }
+  catch(err){ throw new Error('Invalid JSON — ' + err.message); }
+
+  if (data && typeof data === 'object' && !Array.isArray(data)
+      && (Array.isArray(data.morning) || Array.isArray(data.afternoon) || Array.isArray(data.evening))) {
+    const out = { morning:[], afternoon:[], evening:[] };
+    let any = false;
+    for (const sec of SECTIONS){
+      (data[sec] || []).forEach((it, i) => {
+        out[sec].push(parseOneSubject(it, i)); any = true;
+      });
+      out[sec] = dedupe(out[sec]);
+    }
+    if (!any) throw new Error('The plan contains no subjects.');
+    return { name: String(data.name || data.title || 'Imported plan').trim() || 'Imported plan', subjects: out };
+  }
+
+  let arr;
+  if (Array.isArray(data)) arr = data;
+  else if (data && Array.isArray(data.subjects)) arr = data.subjects;
+  else if (data && typeof data === 'object' && (data.name || data.subject)) arr = [data];
+  else throw new Error('Expected a plan with morning/afternoon/evening sections, or a flat subjects array.');
+  if (!arr.length) throw new Error('The file contains no subjects.');
+
+  const parsed = dedupe(arr.map((it, i) => parseOneSubject(it, i)));
+  const out = { morning:[], afternoon:[], evening:[] };
+  const per = Math.ceil(parsed.length / 3);
+  parsed.forEach((s, i) => {
+    if (i < per) out.morning.push(s);
+    else if (i < per * 2) out.afternoon.push(s);
+    else out.evening.push(s);
+  });
+  return { name: String((data && data.name) || 'Imported plan').trim() || 'Imported plan', subjects: out };
+}
+function planToJSON(plan){
+  return JSON.stringify({
+    name: plan.name,
+    morning:   plan.subjects.morning.map(s => ({ name: s.name, hours: s.weight })),
+    afternoon: plan.subjects.afternoon.map(s => ({ name: s.name, hours: s.weight })),
+    evening:   plan.subjects.evening.map(s => ({ name: s.name, hours: s.weight }))
+  }, null, 2);
+}
+
+/* ============================================================
+   APPLY PLAN
+   ============================================================ */
+function applyPlan(plan){
+  planName = plan.name || DEFAULT_PLAN_NAME;
+  subjects = cloneSubjects(plan.subjects);
+  loadedFileName = '';
+  checked.clear();
+  timers.clear();
+  stopTimerLoop();
+  showError('');
+  renderAll(true);      /* force structural rebuild */
+}
+function showError(msg){
+  if (!msg){ els.fileErr.hidden = true; els.fileErr.textContent = ''; return; }
+  els.fileErr.hidden = false;
+  els.fileErr.innerHTML = `<span>⚠</span><span>${esc(msg)}</span>`;
+}
+function readFile(file){
+  if (!file) return;
+  const isJson = /\.json$/i.test(file.name) || file.type === 'application/json';
+  if (!isJson){ showError(`"${file.name}" is not a .json file.`); return; }
+  const r = new FileReader();
+  r.onload = () => {
+    try {
+      const plan = parsePlanJSON(String(r.result));
+      applyPlan(plan);
+      loadedFileName = file.name;
+      renderAll(true);
+    } catch(err){ showError(err.message); }
+  };
+  r.onerror = () => showError('Could not read that file.');
+  r.readAsText(file);
+}
+
+/* ============================================================
+   SCHEDULE ENGINE
+   ============================================================ */
+function buildSchedule(){
+  const [studyLen, shortB, longB] = els.session.value.split(',').map(Number);
+  /* Cap at 18h/day: the builder's hour inputs (and imported JSON) have no
+     upper bound, and without this cap a large value forces buildSchedule's
+     loop toward its 4000-iteration guard, producing thousands of blocks that
+     then all get rendered, wired for timers, and diffed on every keystroke —
+     this was the source of the "Study plan builder" slowdown. */
+  const MAX_STUDY_HOURS = 18;
+  const totalStudy = Math.min(totalHoursFromSubjects(), MAX_STUDY_HOURS) * 60;
+  const wake = parseTime(els.wake.value || '06:00');
+  const morningEnd = wake + 45;
+  const lunchStart  = Math.max(parseTime(els.lunch.value  || '12:30'), morningEnd);
+  const dinnerStart = Math.max(parseTime(els.dinner.value || '18:30'), morningEnd);
+  const lunchDur  = Number(els.lunchDur.value)  || DEFAULT_MEAL_DUR;
+  const dinnerDur = Number(els.dinnerDur.value) || DEFAULT_MEAL_DUR;
+
+  const pools = { morning:[], afternoon:[], evening:[] };
+  const grandW = Math.max(1, totalHoursFromSubjects());
+  for (const sec of SECTIONS){
+    pools[sec] = subjects[sec].map(s => {
+      const target = totalStudy * (s.weight / grandW);
+      return { name:s.name, target, remaining:target, scheduled:0 };
+    });
+  }
+
+  const blocks = [];
+  let t = wake;
+  blocks.push({ type:'routine', label:'Morning routine',
+    sub:'Wake · hydrate · breakfast', start:t, dur:45 });
+  t += 45;
+
+  const meals = [
+    { label:'Lunch',  start:lunchStart,  dur:lunchDur,  done:false },
+    { label:'Dinner', start:dinnerStart, dur:dinnerDur, done:false }
+  ].sort((a,b) => a.start - b.start);
+
+  let studyDone = 0, sessionNo = 0, guard = 0;
+
+  while (studyDone < totalStudy && guard++ < 4000){
+    /* next pending meal */
+    let nm = null;
+    for (const m of meals){ if (!m.done){ nm = m; break; } }
+
+    /* due meal? */
+    let due = null;
+    for (const m of meals){
+      if (!m.done && t >= m.start){ due = m; break; }
+    }
+    if (due){
+      blocks.push({ type:'meal', label:due.label,
+        sub:'Eat · rest · step away', start:t, dur:due.dur });
+      t += due.dur; due.done = true; continue;
+    }
+
+    const sec = sectionOf(t);
+    let pool = [];
+    for (const p of pools[sec]) if (p.remaining > 1) pool.push(p);
+    if (!pool.length){
+      for (const s of SECTIONS){
+        for (const p of pools[s]) if (p.remaining > 1) pool.push(p);
+      }
+    }
+    if (!pool.length) break;
+    let subj = pool[0];
+    for (const p of pool) if (p.remaining > subj.remaining) subj = p;
+
+    const remTotal = totalStudy - studyDone;
+    let len = Math.min(studyLen, remTotal);
+    if (remTotal - len > 0 && remTotal - len < 15) len = remTotal;
+    if (subj.remaining >= 15 && subj.remaining < len) len = subj.remaining;
+    if (nm && t < nm.start && t + len > nm.start) len = nm.start - t;
+
+    if (nm && len < 5){
+      const gap = Math.max(0, nm.start - t);
+      const last = blocks[blocks.length-1];
+      if (gap > 0){
+        if (last && (last.type === 'break' || last.type === 'longbreak')) last.dur += gap;
+        else blocks.push({ type:'break', label:'Short break',
+          sub:'Stand · water', start:t, dur:gap });
+        t += gap;
+      }
+      continue;
+    }
+
+    blocks.push({ type:'study', label:subj.name, subject:subj.name,
+      sub:`Focus block ${sessionNo+1}`, start:t, dur:len });
+    t += len; studyDone += len;
+    subj.remaining -= len; subj.scheduled += len; sessionNo++;
+
+    if (studyDone < totalStudy){
+      const isLong = sessionNo % 4 === 0;
+      let dur = isLong ? longB : shortB;
+      /* next pending meal after this one */
+      let nm2 = null;
+      for (const m of meals){ if (!m.done){ nm2 = m; break; } }
+      if (nm2 && t + dur > nm2.start) dur = Math.max(0, nm2.start - t);
+      if (dur > 0){
+        blocks.push({
+          type: isLong ? 'longbreak' : 'break',
+          label: isLong ? 'Long break' : 'Short break',
+          sub: isLong ? 'Walk · stretch · sunlight' : 'Stand · water',
+          start:t, dur
+        });
+        t += dur;
+      }
+    }
+  }
+
+  for (const m of meals){
+    if (m.done) continue;
+    const s = Math.max(t, m.start);
+    blocks.push({ type:'meal', label:m.label,
+      sub:'Eat · rest · step away', start:s, dur:m.dur });
+    t = s + m.dur; m.done = true;
+  }
+
+  blocks.push({ type:'winddown', label:'Wind down',
+    sub:'Screens off · plan tomorrow', start:t, dur:30 });
+  t += 30;
+
+  const lightsOut = t;
+  const sleepMin = Math.max(0, 1440 - (lightsOut - wake));
+  blocks.push({ type:'sleep', label:'Lights out',
+    sub:`Sleep until ${fmtTime(wake)}`, start:lightsOut, dur:sleepMin });
+
+  return { blocks, wake, lightsOut, sleepMin };
+}
+
+function assignSigs(blocks){
+  const counters = new Map();
+  for (let i = 0; i < blocks.length; i++){
+    const b = blocks[i];
+    const base = `${b.type}|${b.label}|${b.dur}`;
+    const n = (counters.get(base) || 0) + 1;
+    counters.set(base, n);
+    b.sig = `${base}#${n}`;
+  }
+  return blocks;
+}
+
+/* ============================================================
+   TIMER ENGINE
+   ============================================================ */
+function syncTimers(blocks){
+  const next = new Map();
+  for (const b of blocks){
+    if (!TIMED.has(b.type)) continue;
+    const ex = timers.get(b.sig);
+    next.set(b.sig, ex || {
+      total: b.dur * 60, remaining: b.dur * 60,
+      running:false, done:false, startedAt:null,
+      refs:null, _state:null,
+      _lastSec:null, _lastPct:null,
+      _lastHasStarted:null, _lastStartedText:null
+    });
+  }
+  timers = next;
+}
+
+function stopTimerLoop(){
+  if (timerIntervalId !== null){
+    clearInterval(timerIntervalId);
+    timerIntervalId = null;
+  }
+}
+function ensureTimerLoop(){
+  if (timerIntervalId !== null) return;
+  lastTickTime = performance.now();
+  timerIntervalId = setInterval(tick, 250);
+}
+
+function tick(){
+  const now = performance.now();
+  const dt = (now - lastTickTime) / 1000;
+  lastTickTime = now;
+  if (dt <= 0) return;
+
+  let anyRunning = false;
+  timers.forEach(t => {
+    if (!t.running || t.done) return;
+    anyRunning = true;
+    t.remaining = Math.max(0, t.remaining - dt);
+    if (t.remaining === 0){
+      t.running = false; t.done = true; beep();
+      if (t.refs && t.refs.root){
+        const sig = t.refs.root.dataset.sig;
+        if (sig) markChecked(sig, true);
+      }
+      /* repaint once with final state */
+      if (t.refs) repaintTimerState(t);
+    } else {
+      /* only repaint if the second changed */
+      const sec = Math.floor(t.remaining);
+      if (t._lastSec !== sec){
+        if (t.refs) paintDigits(t);
+      }
+      /* bar updates every tick but only writes when value actually changed */
+      if (t.refs) paintBar(t);
+    }
+  });
+
+  if (!anyRunning) stopTimerLoop();
+}
+
+/* ---- smallest possible DOM writes ---- */
+function paintDigits(t){
+  const sec = Math.floor(t.remaining);
+  t._lastSec = sec;
+  const m = Math.floor(sec/60), s = sec % 60;
+  t.refs.digits.textContent = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+}
+function paintBar(t){
+  const total = t.total || 1;
+  const pct = 1 - t.remaining/total;
+  const pctR = Math.round(pct * 1000) / 1000;
+  if (t._lastPct === pctR) return;
+  t._lastPct = pctR;
+  if (t.refs.bar) t.refs.bar.style.setProperty('--bar-scale', pctR);
+  if (t.refs.root) t.refs.root.style.setProperty('--fill-scale', pctR);
+}
+function repaintTimerState(t){
+  if (!t.refs) return;
+  const st = t.done ? 'done' : (t.running ? 'run' : 'idle');
+  if (t._state !== st){
+    t._state = st;
+    if (st === 'done') t.refs.btn.innerHTML = ICON.replay;
+    else if (st === 'run') t.refs.btn.innerHTML = ICON.pause;
+    else t.refs.btn.innerHTML = ICON.play;
+  }
+  if (t.refs.root){
+    t.refs.root.classList.toggle('is-running', t.running && !t.done);
+    t.refs.root.classList.toggle('is-done', t.done);
+  }
+}
+function paintStarted(t){
+  const hasStarted = !!t.startedAt;
+  if (t._lastHasStarted === hasStarted) return;
+  t._lastHasStarted = hasStarted;
+  if (t.refs.root) t.refs.root.classList.toggle('has-started', hasStarted);
+  if (t.refs.started){
+    const startedText = t.startedAt ? `Started ${fmtClock(t.startedAt)}` : '';
+    t.refs.started.textContent = startedText;
+    t.refs.started.title = t.startedAt ? `Started at ${fmtClock(t.startedAt)}` : '';
+  }
+}
+function paintTimerFull(t){
+  if (!t.refs) return;
+  paintDigits(t);
+  paintBar(t);
+  paintStarted(t);
+  repaintTimerState(t);
+}
+
+/* ============================================================
+   CHECK STATE
+   ============================================================ */
+function markChecked(sig, value){
+  const had = checked.has(sig);
+  if (value && !had) checked.add(sig);
+  else if (!value && had) checked.delete(sig);
+  else return;
+  const row = els.checklist.querySelector(`.cl-item[data-sig="${CSS.escape(sig)}"]`);
+  if (row) row.classList.toggle('is-done', value);
+  updateProgress();
+  schedulePersist();
+}
+
+function updateProgress(){
+  const rows = els.checklist.querySelectorAll('.cl-item');
+  let total = 0, done = 0;
+  for (const r of rows){
+    total++;
+    if (r.classList.contains('is-done')) done++;
+  }
+  const pct = total ? (done/total)*100 : 0;
+  els.progressFill.style.width = pct.toFixed(1) + '%';
+  els.progressFill.classList.toggle('complete', pct >= 100 && total > 0);
+  els.progressLabel.textContent = `${done} / ${total}`;
+
+  els.checklist.querySelectorAll('.cl-section').forEach(sec => {
+    const items = sec.querySelectorAll('.cl-item');
+    let d = 0;
+    for (const r of items) if (r.classList.contains('is-done')) d++;
+    const countEl = sec.querySelector('.cl-section-count');
+    if (countEl) countEl.innerHTML =
+      `<span class="${d===items.length&&items.length?'done':''}">${d}</span> / ${items.length} done`;
+    sec.classList.toggle('is-complete', items.length > 0 && d === items.length);
+  });
+}
+
+/* ============================================================
+   TEMPLATES (cached)
+   ============================================================ */
+function buildTemplateDOM(){
+  let html = '';
+  for (const key of Object.keys(TEMPLATES)){
+    const t = TEMPLATES[key];
+    html += `<button class="tpl-card" type="button" data-template="${key}" style="--tpl-accent:${t.accent}">
+      <div class="tpl-card-top">
+        <span class="tpl-icon">${t.icon}</span>
+        <span class="tpl-badge">APPLY</span>
+      </div>
+      <span class="tpl-name">${esc(t.name)}</span>
+      <span class="tpl-desc">${esc(t.desc)}</span>
+    </button>`;
+  }
+  els.templateRow.innerHTML = html;
+}
+function updateTemplateActiveState(){
+  const key = JSON.stringify({
+    s: subjects,
+    w: els.wake.value, l: els.lunch.value, ld: els.lunchDur.value,
+    d: els.dinner.value, dd: els.dinnerDur.value, se: els.session.value
+  });
+  if (key === _lastTemplateKey) return;
+  _lastTemplateKey = key;
+  let i = 0;
+  for (const k of Object.keys(TEMPLATES)){
+    const card = els.templateRow.children[i++];
+    if (!card) continue;
+    const active = currentMatchesTemplate(k);
+    if (card.classList.contains('is-active') !== active){
+      card.classList.toggle('is-active', active);
+      const badge = card.querySelector('.tpl-badge');
+      if (badge) badge.textContent = active ? 'ACTIVE' : 'APPLY';
+    }
+  }
+}
+function normalizeForCompare(subj){
+  const out = {};
+  for (const sec of SECTIONS){
+    out[sec] = (subj[sec] || [])
+      .map(s => `${s.name.toLowerCase()}:${Number(s.weight)}`).sort();
+  }
+  return out;
+}
+function plansMatch(a, b){
+  const na = normalizeForCompare(a), nb = normalizeForCompare(b);
+  for (const sec of SECTIONS){
+    if (JSON.stringify(na[sec]) !== JSON.stringify(nb[sec])) return false;
+  }
+  return true;
+}
+function currentMatchesTemplate(key){
+  const t = TEMPLATES[key];
+  if (!t) return false;
+  const c = t.config;
+  if (!plansMatch(subjects, c.subjects)) return false;
+  return els.wake.value === c.wake
+    && els.lunch.value === c.lunch
+    && Number(els.lunchDur.value) === c.lunchDur
+    && els.dinner.value === c.dinner
+    && Number(els.dinnerDur.value) === c.dinnerDur
+    && els.session.value === c.session;
+}
+function applyTemplate(key){
+  const t = TEMPLATES[key]; if (!t) return;
+  const c = t.config;
+  els.wake.value = c.wake;
+  els.lunch.value = c.lunch;
+  els.lunchDur.value = String(c.lunchDur);
+  els.dinner.value = c.dinner;
+  els.dinnerDur.value = String(c.dinnerDur);
+  els.session.value = c.session;
+  checked.clear(); timers.clear(); stopTimerLoop(); loadedFileName = '';
+  applyPlan({ name: t.name, subjects: c.subjects });
+}
+
+/* ============================================================
+   RENDER — CHECKLIST
+   ============================================================ */
+function passesFilter(b){
+  if (filter === 'all') return true;
+  if (filter === 'study') return b.type === 'study';
+  if (filter === 'breaks') return b.type === 'break' || b.type === 'longbreak';
+  if (filter === 'meals') return b.type === 'meal';
+  return true;
+}
+function renderRowHTML(b){
+  const tc = TYPE_COLOR[b.type] || '#6366f1';
+  const isTimed = TIMED.has(b.type);
+  const isDraggable = b.type === 'study' && totalSubjectCount() > 1;
+  const isDone = checked.has(b.sig);
+  const startT = splitTime(b.start);
+  const endT = splitTime(b.start + b.dur);
+  const isNow = isTimed && currentMinutes() >= b.start
+    && currentMinutes() < b.start + b.dur;
+
+  const timerObj = timers.get(b.sig);
+  const startedAt = timerObj && timerObj.startedAt;
+  const startedText = startedAt ? `Started ${fmtClock(startedAt)}` : '';
+  const hasStarted = !!startedAt;
+
+  let tag = TYPE_LABEL[b.type] || b.type;
+  const m = b.sub && b.sub.match(/Focus block (\d+)/);
+  if (m) tag = `Focus ${m[1]}`;
+  else if (b.type === 'break' || b.type === 'longbreak') tag = 'Break';
+  else if (b.type === 'meal') tag = 'Meal';
+
+  const subText = isTimed
+    ? `${fmtDur(b.dur)} · ends ${fmtTime(b.start + b.dur)}`
+    : `${fmtDur(b.dur)}`;
+
+  const handleHTML = `<span class="cl-drag" ${isDraggable ? 'title="Drag to move between sections"' : 'aria-hidden="true"'}>
+      ${isDraggable ? ICON.grip : ''}
+    </span>`;
+
+  const timerHTML = isTimed ? `
+    <div class="cl-timer">
+      <button class="cl-timer-play" data-timer="toggle" type="button" aria-label="Toggle timer">${ICON.play}</button>
+      <span class="cl-timer-readout">
+        <span class="cl-timer-digits">${String(Math.floor(b.dur)).padStart(2,'0')}:00</span>
+        <span class="cl-timer-started" data-started title="${startedAt ? `Started at ${fmtClock(startedAt)}` : ''}">${startedText}</span>
+      </span>
+      <span class="cl-timer-bar"><span class="cl-timer-bar-fill"></span></span>
+    </div>` : `<div class="cl-timer"></div>`;
+
+  return `<li class="cl-item ${isDone ? 'is-done' : ''} ${isNow ? 'is-now' : ''} ${hasStarted ? 'has-started' : ''}"
+      data-sig="${esc(b.sig)}"
+      data-type="${b.type}"
+      ${isDraggable ? `data-draggable="true" draggable="true" data-subject="${esc(b.label)}"` : ''}
+      data-timer-root
+      style="--tc:${tc}">
+    ${handleHTML}
+    <button class="cl-check" data-action="check" type="button"
+            aria-label="Mark ${isDone ? 'not done' : 'done'}">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M4 12.5l5 5 11-11" fill="none"/>
+      </svg>
+    </button>
+    <div class="cl-time">
+      ${startT.h}:${startT.m}<span class="ap">${startT.ap}</span>
+      <span class="end">– ${endT.h}:${endT.m}${endT.ap}</span>
+    </div>
+    <div class="cl-body">
+      <div class="cl-name">
+        <span>${esc(b.label)}</span>
+        <span class="cl-tag">${esc(tag)}</span>
+        ${isNow ? '<span class="cl-now-pill">NOW</span>' : ''}
+      </div>
+      <div class="cl-sub">${esc(subText)}</div>
+    </div>
+    ${timerHTML}
+  </li>`;
+}
+
+function renderChecklistStructure(blocks){
+  const groups = { morning:[], afternoon:[], evening:[] };
+  let visible = 0;
+  for (const b of blocks){
+    if (!passesFilter(b)) continue;
+    groups[sectionOf(b.start)].push(b);
+    visible++;
+  }
+  if (!visible){
+    els.checklist.innerHTML = `<div class="cl-empty">No blocks match this filter.</div>`;
+    return;
+  }
+  let html = '';
+  for (const key of SECTIONS){
+    const list = groups[key];
+    if (!list.length) continue;
+    const meta = SECTION_META[key];
+    html += `<section class="cl-section">
+      <div class="cl-section-head">
+        <span class="cl-section-title">
+          <span class="icon">${meta.icon}</span>${meta.label}
+        </span>
+        <span class="cl-section-count"></span>
+      </div>
+      <ul class="cl-list">`;
+    for (const b of list) html += renderRowHTML(b);
+    html += `</ul></section>`;
+  }
+  els.checklist.innerHTML = html;
+}
+
+/* Re-attach refs after structural render (only needed for timers) */
+function wireTimerRefs(){
+  for (const t of timers.values()){
+    t.refs = null;
+    t._state = null;
+    t._lastSec = null;
+    t._lastPct = null;
+    t._lastHasStarted = null;
+    t._lastStartedText = null;
+  }
+  els.checklist.querySelectorAll('[data-timer-root]').forEach(root => {
+    const sig = root.dataset.sig;
+    const t = timers.get(sig);
+    if (!t) return;
+    const timerEl = root.querySelector('.cl-timer');
+    if (!timerEl) return;
+    const btn = timerEl.querySelector('[data-timer="toggle"]');
+    if (!btn) return;
+    t.refs = {
+      digits: timerEl.querySelector('.cl-timer-digits'),
+      started: timerEl.querySelector('[data-started]'),
+      bar: timerEl.querySelector('.cl-timer-bar-fill'),
+      btn, root
+    };
+    timerEl.__timer = t;
+    paintTimerFull(t);
+  });
+}
+
+/* ============================================================
+   MASTER RENDER
+   ============================================================ */
+function computeStructureKey(blocks){
+  let k = planName + '|' + filter + '|' + density
+    + '|' + els.wake.value + '|' + els.lunch.value + '|' + els.lunchDur.value
+    + '|' + els.dinner.value + '|' + els.dinnerDur.value + '|' + els.session.value
+    + '|' + JSON.stringify(subjects) + '|';
+  for (const b of blocks) k += b.type + ':' + b.label + ':' + b.sub + ':' + b.start + ':' + b.dur + ';';
+  return k;
+}
+
+function renderAll(forceStructure){
+  const built = buildSchedule();
+  const blocks = assignSigs(built.blocks);
+  syncTimers(blocks);
+
+  const totalH = totalHoursFromSubjects();
+  let doneCount = 0;
+  for (const b of blocks) if (checked.has(b.sig)) doneCount++;
+
+  els.planTitle.textContent = planName || DEFAULT_PLAN_NAME;
+  els.appMeta.innerHTML =
+    `<span>${fmtHours(totalH)}</span>
+     <span class="dot"></span>
+     <span>${blocks.length} blocks</span>
+     <span class="dot"></span>
+     <span>${doneCount} done</span>`;
+
+  /* Subject pills — cheap to rebuild, only when needed */
+  const subjKey = JSON.stringify(subjects);
+  if (els.subjPills._key !== subjKey){
+    els.subjPills._key = subjKey;
+    const n = totalSubjectCount();
+    let idx = 0;
+    let html = '';
+    for (const sec of SECTIONS){
+      for (const s of subjects[sec]){
+        const hue = (idx++ * 360 / Math.max(n,1) + 235) % 360;
+        html += `<span class="subj-pill" data-sec="${sec}">
+          <b><i style="display:inline-block;width:6px;height:6px;border-radius:50%;
+                       background:hsl(${hue} 70% 62%);margin-right:5px"></i>${esc(s.name)}</b>
+          <em>${fmtHours(s.weight)}</em>
+        </span>`;
+      }
+    }
+    els.subjPills.innerHTML = html ||
+      '<span style="font-size:.7rem;color:var(--text-3)">No subjects yet — create a plan</span>';
+  }
+
+  els.dropText.innerHTML = loadedFileName
+    ? `<span class="fname">${esc(loadedFileName)}</span> · ${totalSubjectCount()} subject${totalSubjectCount()===1?'':'s'}`
+    : `Drop a <b>.json</b> plan, or <b>browse</b>`;
+
+  if (els.app.classList.contains('compact') !== (density === 'compact')){
+    els.app.classList.toggle('compact', density === 'compact');
+  }
+  els.densityBtn.textContent = density === 'compact' ? 'Comfortable' : 'Compact';
+
+  /* hours seg active — only when it changes */
+  const hoursKey = String(totalH);
+  if (_lastHoursKey !== hoursKey){
+    _lastHoursKey = hoursKey;
+    for (const b of els.hoursSeg.children){
+      const h = Number(b.dataset.hours);
+      b.classList.toggle('active', Math.abs(h - totalH) < 0.05);
+    }
+  }
+
+  /* Template cards: DOM once + active class only */
+  if (!els.templateRow.children.length) buildTemplateDOM();
+  updateTemplateActiveState();
+
+  /* Checklist structure: only when it actually changes */
+  const key = computeStructureKey(blocks);
+  const needsStructure = forceStructure || key !== _lastStructureKey;
+  if (needsStructure){
+    _lastStructureKey = key;
+    renderChecklistStructure(blocks);
+    wireTimerRefs();
+  }
+
+  updateProgress();
+
+  if (els.settings.hidden === settingsOpen){
+    els.settings.hidden = !settingsOpen;
+    els.settingsBtn.classList.toggle('active', settingsOpen);
+  }
+
+  schedulePersist();
+}
+
+/* ============================================================
+   PERSIST (debounced, non-blocking)
+   ============================================================ */
+function schedulePersist(){
+  if (persistTimerId !== null) return;
+  persistTimerId = setTimeout(() => {
+    persistTimerId = null;
+    try {
+      localStorage.setItem('studyChecklist5', JSON.stringify({
+        planName, filter, density, settingsOpen,
+        wake:    els.wake.value,
+        lunch:   els.lunch.value,
+        lunchDur: els.lunchDur.value,
+        dinner:  els.dinner.value,
+        dinnerDur: els.dinnerDur.value,
+        session: els.session.value,
+        subjects,
+        checked: [...checked]
+      }));
+    } catch(e){}
+  }, 700);
+}
+
+/* ============================================================
+   DRAG & DROP
+   ============================================================ */
+function clearDragUI(){
+  els.checklist
+    .querySelectorAll('.cl-item.is-dragging, .cl-item.is-drag-target')
+    .forEach(r => r.classList.remove('is-dragging','is-drag-target'));
+}
+
+els.checklist.addEventListener('dragstart', e => {
+  const row = e.target.closest('.cl-item[data-draggable="true"]');
+  if (!row) return;
+  dragState = { sig: row.dataset.sig, subject: row.dataset.subject };
+  row.classList.add('is-dragging');
+  try {
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', dragState.subject);
+  } catch(err){}
+});
+els.checklist.addEventListener('dragover', e => {
+  if (!dragState) return;
+  const row = e.target.closest('.cl-item[data-draggable="true"]');
+  if (!row || row.dataset.sig === dragState.sig) return;
+  e.preventDefault();
+  try { e.dataTransfer.dropEffect = 'move'; } catch(err){}
+  if (!row.classList.contains('is-drag-target')){
+    els.checklist.querySelectorAll('.cl-item.is-drag-target')
+      .forEach(r => r.classList.remove('is-drag-target'));
+    row.classList.add('is-drag-target');
+  }
+});
+els.checklist.addEventListener('dragleave', e => {
+  const row = e.target.closest('.cl-item.is-drag-target');
+  if (row && !row.contains(e.relatedTarget)) row.classList.remove('is-drag-target');
+});
+els.checklist.addEventListener('drop', e => {
+  e.preventDefault();
+  const row = e.target.closest('.cl-item[data-draggable="true"]');
+  if (!row || !dragState){ clearDragUI(); dragState = null; return; }
+  const fromName = dragState.subject;
+  const toName   = row.dataset.subject;
+  if (fromName && toName && fromName !== toName){
+    const a = findSubjectLocation(fromName);
+    const b = findSubjectLocation(toName);
+    if (a && b && !(a.sec === b.sec && a.idx === b.idx)){
+      const tmp = subjects[a.sec][a.idx];
+      subjects[a.sec][a.idx] = subjects[b.sec][b.idx];
+      subjects[b.sec][b.idx] = tmp;
+      timers.clear(); stopTimerLoop();
+      clearDragUI(); dragState = null;
+      renderAll(true);
+      return;
+    }
+  }
+  clearDragUI(); dragState = null;
+});
+els.checklist.addEventListener('dragend', () => { clearDragUI(); dragState = null; });
+
+/* ============================================================
+   PLAN BUILDER MODAL
+   ============================================================ */
+function openPlanModal(){
+  const draftSubj = { morning:[], afternoon:[], evening:[] };
+  for (const sec of SECTIONS){
+    for (const s of subjects[sec]) draftSubj[sec].push(newSubject(s.name, s.weight));
+  }
+  planDraft = { name: planName === DEFAULT_PLAN_NAME ? '' : planName, subjects: draftSubj };
+  els.planName.value = planDraft.name;
+  renderPlanColumns();
+  els.planModal.hidden = false;
+  requestAnimationFrame(() => els.planName.focus());
+  document.body.style.overflow = 'hidden';
+}
+function closePlanModal(){
+  els.planModal.hidden = true;
+  planDraft = null;
+  document.body.style.overflow = '';
+}
+
+function planRowHTML(s){
+  return `<input class="plan-row-name" type="text" value="${esc(s.name)}"
+                placeholder="Subject name" autocomplete="off">
+          <input class="plan-row-hours" type="number" min="0" max="18" step="0.5"
+                value="${Number(s.weight) || 0}">
+          <span class="plan-row-unit">h</span>
+          <button class="plan-row-remove" type="button"
+                  data-plan-row-action="remove" aria-label="Remove">×</button>`;
+}
+function renderPlanColumns(){
+  if (!planDraft) return;
+  let html = '';
+  for (const sec of SECTIONS){
+    const meta = SECTION_META[sec];
+    const list = planDraft.subjects[sec];
+    const total = list.reduce((a,s) => a + (Number(s.weight) || 0), 0);
+    let rowsHTML = '';
+    if (list.length){
+      for (const s of list){
+        rowsHTML += `<li class="plan-row" data-id="${s.id}">${planRowHTML(s)}</li>`;
+      }
+    } else {
+      rowsHTML = `<li class="plan-col-empty">No subjects yet</li>`;
+    }
+    html += `<section class="plan-col" data-section="${sec}">
+      <header class="plan-col-head">
+        <span class="plan-col-icon">${meta.icon}</span>
+        <span class="plan-col-name">${meta.label}</span>
+        <span class="plan-col-total">${fmtHours(total)}</span>
+      </header>
+      <ul class="plan-col-list">${rowsHTML}</ul>
+      <button class="plan-col-add" type="button"
+              data-plan-col-action="add">+ Add subject</button>
+    </section>`;
+  }
+  els.planColumns.innerHTML = html;
+  updatePlanTotal();
+}
+function updateSectionTotal(col, sec){
+  const total = planDraft.subjects[sec].reduce((a,s) => a + (Number(s.weight) || 0), 0);
+  const el = col.querySelector('.plan-col-total');
+  if (el) el.textContent = fmtHours(total);
+}
+function updatePlanTotal(){
+  if (!planDraft) return;
+  let total = 0, any = false;
+  for (const sec of SECTIONS){
+    for (const s of planDraft.subjects[sec]){
+      total += Number(s.weight) || 0;
+      if (String(s.name).trim()) any = true;
+    }
+  }
+  els.planTotal.textContent = fmtHours(total);
+  els.planApply.disabled = !any;
+}
+
+els.planModal.addEventListener('click', e => {
+  if (e.target.closest('[data-plan-close]')){ closePlanModal(); return; }
+  const act = e.target.closest('[data-plan-action]');
+  if (act){
+    const action = act.dataset.planAction;
+    if (action === 'apply'){
+      const cleaned = cleanDraft(planDraft);
+      if (!cleaned) return;
+      const finalName = (els.planName.value.trim() || 'Custom plan');
+      closePlanModal();
+      applyPlan({ name: finalName, subjects: cleaned });
+    } else if (action === 'download'){
+      const cleaned = cleanDraft(planDraft);
+      if (!cleaned) return;
+      const finalName = (els.planName.value.trim() || 'Custom plan');
+      downloadPlan({ name: finalName, subjects: cleaned });
+    } else if (action === 'cancel'){
+      closePlanModal();
+    }
+    return;
+  }
+  const rowBtn = e.target.closest('[data-plan-row-action="remove"]');
+  if (rowBtn){
+    const li = rowBtn.closest('.plan-row');
+    const col = rowBtn.closest('.plan-col');
+    if (!li || !col || !planDraft) return;
+    const sec = col.dataset.section;
+    const id = Number(li.dataset.id);
+    const idx = planDraft.subjects[sec].findIndex(s => s.id === id);
+    if (idx < 0) return;
+    planDraft.subjects[sec].splice(idx, 1);
+    li.remove();
+    const ul = col.querySelector('.plan-col-list');
+    if (!ul.querySelector('.plan-row')){
+      ul.innerHTML = `<li class="plan-col-empty">No subjects yet</li>`;
+    }
+    updateSectionTotal(col, sec);
+    updatePlanTotal();
+    return;
+  }
+  const addBtn = e.target.closest('[data-plan-col-action="add"]');
+  if (addBtn){
+    const col = addBtn.closest('.plan-col');
+    if (!col || !planDraft) return;
+    const sec = col.dataset.section;
+    const s = newSubject();
+    planDraft.subjects[sec].push(s);
+    const ul = col.querySelector('.plan-col-list');
+    const empty = ul.querySelector('.plan-col-empty');
+    if (empty) empty.remove();
+    const li = document.createElement('li');
+    li.className = 'plan-row';
+    li.dataset.id = s.id;
+    li.innerHTML = planRowHTML(s);
+    ul.appendChild(li);
+    li.querySelector('.plan-row-name').focus();
+    updateSectionTotal(col, sec);
+    updatePlanTotal();
+    return;
+  }
+});
+
+els.planColumns.addEventListener('input', e => {
+  if (!planDraft) return;
+  const row = e.target.closest('.plan-row');
+  if (!row) return;
+  const col = row.closest('.plan-col');
+  if (!col) return;
+  const sec = col.dataset.section;
+  const id = Number(row.dataset.id);
+  const idx = planDraft.subjects[sec].findIndex(s => s.id === id);
+  if (idx < 0) return;
+  const subj = planDraft.subjects[sec][idx];
+  if (e.target.classList.contains('plan-row-name')){
+    subj.name = e.target.value;
+    updatePlanTotal();
+  } else if (e.target.classList.contains('plan-row-hours')){
+    subj.weight = Math.min(18, Math.max(0, Number(e.target.value) || 0));
+    updateSectionTotal(col, sec);
+    updatePlanTotal();
+  }
+});
+els.planName.addEventListener('input', () => {
+  if (planDraft) planDraft.name = els.planName.value;
+});
+
+function cleanDraft(draft){
+  if (!draft) return null;
+  const out = { morning:[], afternoon:[], evening:[] };
+  let any = false;
+  for (const sec of SECTIONS){
+    for (const s of (draft.subjects[sec] || [])){
+      const name = String(s.name || '').trim();
+      if (!name) continue;
+      const weight = Math.min(18, Math.max(0.5, Number(s.weight) || 1));
+      out[sec].push({ name, weight });
+      any = true;
+    }
+  }
+  if (!any){ showError('Add at least one subject with a name.'); return null; }
+  return out;
+}
+function downloadPlan(plan){
+  const blob = new Blob([planToJSON(plan)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const safe = plan.name.replace(/[^a-z0-9\-_]+/gi, '-').toLowerCase() || 'study-plan';
+  const a = document.createElement('a');
+  a.href = url; a.download = `${safe}.json`;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+/* ============================================================
+   EVENTS
+   ============================================================ */
+els.templateRow.addEventListener('click', e => {
+  const card = e.target.closest('[data-template]');
+  if (!card) return;
+  applyTemplate(card.dataset.template);
+});
+els.settingsBtn.addEventListener('click', () => {
+  settingsOpen = !settingsOpen;
+  els.settings.hidden = !settingsOpen;
+  els.settingsBtn.classList.toggle('active', settingsOpen);
+  schedulePersist();
+});
+els.hoursSeg.addEventListener('click', e => {
+  const btn = e.target.closest('button[data-hours]');
+  if (!btn) return;
+  const target = Number(btn.dataset.hours);
+  const current = totalHoursFromSubjects() || 1;
+  const factor = target / current;
+  for (const sec of SECTIONS){
+    for (const s of subjects[sec]) s.weight = Math.round(s.weight * factor * 10) / 10;
+  }
+  timers.clear(); stopTimerLoop();
+  renderAll(true);
+});
+
+/* Coalesce input events → render once, 200ms after user stops. */
+let inputDebounce = null;
+function scheduleInputRender(){
+  if (inputDebounce) return;
+  inputDebounce = setTimeout(() => {
+    inputDebounce = null;
+    renderAll();
+  }, 200);
+}
+['wake','lunch','lunchDur','dinner','dinnerDur'].forEach(id => {
+  els[id].addEventListener('input', scheduleInputRender);
+  els[id].addEventListener('change', () => {
+    if (inputDebounce){ clearTimeout(inputDebounce); inputDebounce = null; }
+    renderAll();
+  });
+});
+els.session.addEventListener('change', () => renderAll());
+
+els.filterTabs.addEventListener('click', e => {
+  const btn = e.target.closest('button[data-filter]');
+  if (!btn) return;
+  filter = btn.dataset.filter;
+  [...els.filterTabs.children].forEach(b => b.classList.toggle('active', b === btn));
+  renderAll(true);
+});
+els.densityBtn.addEventListener('click', () => {
+  density = density === 'compact' ? 'comfortable' : 'compact';
+  renderAll(true);
+});
+els.clearBtn.addEventListener('click', () => {
+  checked.clear();
+  els.checklist.querySelectorAll('.cl-item').forEach(r => r.classList.remove('is-done'));
+  updateProgress();
+  schedulePersist();
+});
+els.openBuilderBtn.addEventListener('click', openPlanModal);
+els.buildBtnTop.addEventListener('click', openPlanModal);
+
+els.checklist.addEventListener('click', e => {
+  const chk = e.target.closest('[data-action="check"]');
+  if (chk){
+    const row = chk.closest('.cl-item');
+    markChecked(row.dataset.sig, !checked.has(row.dataset.sig));
+    return;
+  }
+  const btn = e.target.closest('[data-timer="toggle"]');
+  if (btn){
+    const timerEl = btn.closest('.cl-timer');
+    const t = timerEl && timerEl.__timer;
+    if (!t) return;
+    ensureAudio();
+    if (t.done){
+      t.remaining = t.total; t.done = false; t.running = true;
+      t.startedAt = Date.now();
+      /* force full repaint on restart */
+      t._lastSec = null; t._lastPct = null;
+      paintTimerFull(t);
+    } else if (t.running){
+      t.running = false;
+      repaintTimerState(t);
+    } else {
+      if (!t.startedAt) t.startedAt = Date.now();
+      t.running = true;
+      paintStarted(t);
+      repaintTimerState(t);
+    }
+    if (t.running) ensureTimerLoop();
+  }
+});
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && !els.planModal.hidden){ closePlanModal(); return; }
+  if (e.key !== ' ' && e.key !== 'Spacebar') return;
+  const tag = document.activeElement && document.activeElement.tagName;
+  if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+  const row = document.activeElement && document.activeElement.closest
+    ? document.activeElement.closest('.cl-item') : null;
+  if (!row) return;
+  e.preventDefault();
+  markChecked(row.dataset.sig, !checked.has(row.dataset.sig));
+});
+
+els.dropzone.addEventListener('click', () => els.file.click());
+els.dropzone.addEventListener('keydown', e => {
+  if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); els.file.click(); }
+});
+els.file.addEventListener('change', e => {
+  const f = e.target.files && e.target.files[0];
+  if (f) readFile(f);
+  e.target.value = '';
+});
+['dragenter','dragover'].forEach(ev =>
+  els.dropzone.addEventListener(ev, e => {
+    e.preventDefault(); els.dropzone.classList.add('drag');
+  }));
+['dragleave','dragend','drop'].forEach(ev =>
+  els.dropzone.addEventListener(ev, e => {
+    e.preventDefault(); els.dropzone.classList.remove('drag');
+  }));
+els.dropzone.addEventListener('drop', e => {
+  const f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+  if (f) readFile(f);
+});
+els.templateBtn.addEventListener('click', () => {
+  downloadPlan({ name: planName === DEFAULT_PLAN_NAME ? 'study-plan' : planName,
+    subjects: cloneSubjects(subjects) });
+});
+els.resetBtn.addEventListener('click', () => {
+  loadedFileName = '';
+  checked.clear(); timers.clear(); stopTimerLoop();
+  applyPlan({ name: DEFAULT_PLAN_NAME, subjects: DEFAULT_SUBJECTS });
+});
+
+/* ============================================================
+   INIT
+   ============================================================ */
+try {
+  const saved = JSON.parse(localStorage.getItem('studyChecklist5') || 'null');
+  if (saved){
+    planName = saved.planName || DEFAULT_PLAN_NAME;
+    filter = ['all','study','breaks','meals'].includes(saved.filter) ? saved.filter : 'all';
+    density = saved.density === 'compact' ? 'compact' : 'comfortable';
+    settingsOpen = saved.settingsOpen === true;
+    els.wake.value    = saved.wake   || '06:00';
+    els.lunch.value   = saved.lunch  || '12:30';
+    els.dinner.value  = saved.dinner || '18:30';
+    if (MEAL_DURATIONS.includes(Number(saved.lunchDur))) els.lunchDur.value = String(saved.lunchDur);
+    if (MEAL_DURATIONS.includes(Number(saved.dinnerDur))) els.dinnerDur.value = String(saved.dinnerDur);
+    els.session.value = saved.session || '50,10,25';
+    if (saved.subjects && typeof saved.subjects === 'object' && saved.subjects.morning){
+      subjects = cloneSubjects(saved.subjects);
+    } else if (Array.isArray(saved.subjects) && saved.subjects.length){
+      subjects = { morning:[], afternoon:[], evening:[] };
+      const per = Math.ceil(saved.subjects.length / 3);
+      saved.subjects.forEach((s, i) => {
+        const item = { name: String(s.name||'').trim(),
+                       weight: Number(s.weight) > 0 ? Number(s.weight) : 1 };
+        if (i < per) subjects.morning.push(item);
+        else if (i < per*2) subjects.afternoon.push(item);
+        else subjects.evening.push(item);
+      });
+    }
+    if (Array.isArray(saved.checked)) checked = new Set(saved.checked);
+  }
+} catch(e){}
+
+[...els.filterTabs.children].forEach(b =>
+  b.classList.toggle('active', b.dataset.filter === filter));
+
+renderAll(true);
+})();
+</script>
+</body>
+</html>
