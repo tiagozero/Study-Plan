@@ -334,8 +334,7 @@ input[type=time]::-webkit-calendar-picker-indicator{filter:opacity(.55)}
 
 .plan-modal{position:fixed;inset:0;z-index:200;display:grid;
   place-items:center;padding:16px}
-.plan-modal-backdrop{position:absolute;inset:0;background:rgba(20,20,19,.45);
-  backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);
+.plan-modal-backdrop{position:absolute;inset:0;background:rgba(20,20,19,.6);
   animation:fadeIn .2s ease}
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
 .plan-modal-card{position:relative;width:min(980px,100%);
@@ -430,6 +429,13 @@ input[type=time]::-webkit-calendar-picker-indicator{filter:opacity(.55)}
   .cl-timer-readout{min-width:70px}.cl-timer-started{font-size:.54rem}
   .seg button{font-size:.72rem;padding:8px 2px}.tpl-card{width:156px}
 }
+/* While any modal is open, the page behind it is inert — stop its animations
+   and transitions so the compositor isn't doing continuous work (a pulsing
+   box-shadow, timer bar transitions, etc.) for content the user can't see
+   or interact with. This, plus dropping backdrop-filter above, is what was
+   actually pegging the CPU/GPU while the Study plan builder stayed open. */
+body.modal-open .checklist *{animation:none!important;transition:none!important}
+
 @media print{
   body{background:#fff}
   .settings,.toolbar,.icon-btn,.cl-timer,.cl-hint,.templates,.cl-drag,.plan-modal{
@@ -1106,11 +1112,13 @@ function tick(){
   lastTickTime = now;
   if (dt <= 0) return;
 
+  const modalOpen = !els.planModal.hidden;
   let anyRunning = false;
   timers.forEach(t => {
     if (!t.running || t.done) return;
     anyRunning = true;
     t.remaining = Math.max(0, t.remaining - dt);
+    if (modalOpen) return; /* still counting down, just not painting hidden DOM */
     if (t.remaining === 0){
       t.running = false; t.done = true; beep();
       if (t.refs && t.refs.root){
@@ -1622,11 +1630,13 @@ function openPlanModal(){
   els.planModal.hidden = false;
   requestAnimationFrame(() => els.planName.focus());
   document.body.style.overflow = 'hidden';
+  document.body.classList.add('modal-open');
 }
 function closePlanModal(){
   els.planModal.hidden = true;
   planDraft = null;
   document.body.style.overflow = '';
+  document.body.classList.remove('modal-open');
 }
 
 function planRowHTML(s){
