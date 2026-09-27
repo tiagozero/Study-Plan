@@ -57,6 +57,7 @@ body{min-height:100vh;background:var(--bg);color:var(--text);
   color:var(--text-2);font-variant-numeric:tabular-nums;
   min-width:42px;text-align:right}
 
+/* ============ Study plan cards row ============ */
 .templates{margin:14px 0 6px}
 .templates-head{display:flex;align-items:baseline;justify-content:space-between;
   gap:12px;margin-bottom:10px}
@@ -68,7 +69,7 @@ body{min-height:100vh;background:var(--bg);color:var(--text);
 .template-row::-webkit-scrollbar{height:6px}
 .template-row::-webkit-scrollbar-thumb{background:var(--line-strong);
   border-radius:99px}
-.tpl-card{flex:0 0 auto;width:172px;padding:12px 13px 13px;border-radius:12px;
+.tpl-card{flex:0 0 auto;width:190px;padding:12px 13px 13px;border-radius:12px;
   background:var(--surface);border:1px solid var(--line);
   box-shadow:var(--shadow-sm);text-align:left;display:flex;flex-direction:column;
   gap:6px;transition:transform .15s ease,box-shadow .15s ease;
@@ -86,8 +87,18 @@ body{min-height:100vh;background:var(--bg);color:var(--text);
   color:var(--text-3);border:1px solid var(--line)}
 .tpl-card.is-active .tpl-badge{background:var(--tpl-accent,var(--accent));
   color:#fff;border-color:transparent}
-.tpl-name{font-size:.82rem;font-weight:800;letter-spacing:-.01em;line-height:1.15}
-.tpl-desc{font-size:.66rem;color:var(--text-3);font-weight:600;line-height:1.35}
+.tpl-name{font-size:.82rem;font-weight:800;letter-spacing:-.01em;line-height:1.15;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tpl-desc{font-size:.66rem;color:var(--text-3);font-weight:600;line-height:1.35;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tpl-empty{flex:1 1 auto;padding:16px 18px;font-size:.78rem;line-height:1.55;
+  color:var(--text-3);background:var(--surface-2);
+  border:1px dashed var(--line-strong);border-radius:12px;text-align:center}
+.tpl-empty b{color:var(--text-2);font-weight:800}
+.tpl-empty-btn{margin-top:10px;padding:7px 14px;border-radius:8px;
+  font-size:.72rem;font-weight:800;background:var(--accent);color:#fff;
+  border:1px solid var(--accent);transition:background .15s,border-color .15s}
+.tpl-empty-btn:hover{background:#4338ca;border-color:#4338ca}
 
 .settings{background:var(--surface);border:1px solid var(--line);
   border-radius:var(--radius-lg);padding:22px;margin:16px 0 20px;
@@ -151,6 +162,9 @@ input[type=time]::-webkit-calendar-picker-indicator{filter:opacity(.55)}
 .file-err{margin-top:8px;padding:8px 11px;border-radius:8px;
   font-size:.72rem;line-height:1.4;color:#b91c1c;background:#fef2f2;
   border:1px solid #fecaca;display:flex;gap:7px;align-items:flex-start}
+.file-note{margin-top:8px;padding:8px 11px;border-radius:8px;
+  font-size:.72rem;line-height:1.4;color:#047857;background:#ecfdf5;
+  border:1px solid #a7f3d0;display:flex;gap:7px;align-items:flex-start}
 .sfield-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:4px}
 .mini{padding:5px 10px;border-radius:6px;font-size:.7rem;font-weight:700;
   background:transparent;border:1px solid var(--line);color:var(--text-2);
@@ -166,7 +180,7 @@ input[type=time]::-webkit-calendar-picker-indicator{filter:opacity(.55)}
   font-weight:700;color:var(--text-2);transition:background .15s,color .15s}
 .filter-tabs button:hover{color:var(--text)}
 .filter-tabs button.active{background:var(--text);color:var(--bg)}
-.toolbar-right{display:flex;gap:8px;align-items:center}
+.toolbar-right{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .toolbar-btn{padding:7px 12px;border-radius:8px;font-size:.72rem;font-weight:700;
   background:var(--surface);border:1px solid var(--line);color:var(--text-2);
   box-shadow:var(--shadow-sm);transition:border-color .15s,color .15s,transform .15s}
@@ -191,7 +205,6 @@ input[type=time]::-webkit-calendar-picker-indicator{filter:opacity(.55)}
   border:1px solid var(--line);border-radius:var(--radius-lg);
   box-shadow:var(--shadow-sm);overflow:hidden}
 
-/* ============ Row — heavily isolated for perf ============ */
 .cl-item{
   display:grid;
   grid-template-columns:18px 34px 84px 1fr auto;
@@ -200,18 +213,15 @@ input[type=time]::-webkit-calendar-picker-indicator{filter:opacity(.55)}
   border-bottom:1px solid var(--line);
   position:relative;overflow:hidden;
   transition:background .15s;
-  /* Perf: browser skips layout/paint for off-screen rows entirely */
   content-visibility:auto;
   contain-intrinsic-size:auto 62px;
 }
 .cl-item:last-child{border-bottom:0}
 .cl-item:hover{background:var(--surface-2)}
 
-/* left type accent — uses background-color only */
 .cl-item::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;
   background:var(--tc);opacity:.9}
 
-/* progressive fill — transform-based, GPU composited, no layout thrash */
 .cl-item::after{
   content:'';position:absolute;left:0;top:0;bottom:0;right:0;
   background:var(--tc);opacity:.045;pointer-events:none;
@@ -295,7 +305,6 @@ input[type=time]::-webkit-calendar-picker-indicator{filter:opacity(.55)}
   white-space:nowrap;visibility:hidden;transition:color .2s;min-height:.7rem}
 .cl-item.has-started .cl-timer-started{visibility:visible}
 
-/* timer bar — transform based, only one per timer */
 .cl-timer-bar{width:44px;height:3px;border-radius:99px;
   background:var(--surface-2);overflow:hidden;flex:none}
 .cl-timer-bar-fill{height:100%;width:100%;border-radius:99px;
@@ -417,6 +426,64 @@ input[type=time]::-webkit-calendar-picker-indicator{filter:opacity(.55)}
 .plan-apply:hover{background:#4338ca;border-color:#4338ca}
 .plan-apply:disabled{opacity:.4;cursor:not-allowed}
 
+/* ============ Study plan library modal ============ */
+.lib-card{width:min(780px,100%)}
+.lib-toolbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;
+  padding:16px 24px 4px}
+.lib-uploader{flex:1 1 280px;min-width:0}
+.lib-count{font-size:.64rem;font-weight:800;letter-spacing:.08em;
+  text-transform:uppercase;color:var(--text-3);white-space:nowrap}
+.lib-msg{margin:10px 24px 0;padding:8px 11px;border-radius:8px;
+  font-size:.72rem;line-height:1.45;color:#b91c1c;background:#fef2f2;
+  border:1px solid #fecaca}
+.lib-list{list-style:none;margin:0;padding:12px 24px 16px;overflow-y:auto;
+  flex:1 1 auto;display:flex;flex-direction:column;gap:9px;min-height:140px}
+.lib-empty{padding:38px 16px;text-align:center;font-size:.8rem;line-height:1.6;
+  color:var(--text-3);background:var(--surface-2);
+  border:1px dashed var(--line-strong);border-radius:12px}
+.lib-item{display:flex;align-items:center;gap:14px;padding:12px 14px;
+  background:var(--surface-2);border:1px solid var(--line);border-radius:12px;
+  transition:border-color .15s}
+.lib-item:hover{border-color:var(--line-strong)}
+.lib-item.is-current{border-color:var(--accent);background:var(--accent-soft)}
+.lib-main{min-width:0;flex:1 1 auto;display:flex;flex-direction:column;gap:4px}
+.lib-name{display:flex;align-items:center;gap:8px;font-size:.86rem;font-weight:800;
+  letter-spacing:-.01em;color:var(--text);min-width:0}
+.lib-name > span:first-child{white-space:nowrap;overflow:hidden;
+  text-overflow:ellipsis}
+.lib-badge{font-size:.55rem;font-weight:900;letter-spacing:.08em;padding:2px 6px;
+  border-radius:99px;background:var(--accent);color:#fff;flex:none}
+.lib-meta{font-size:.68rem;color:var(--text-3);font-weight:600}
+.lib-pills{display:flex;flex-wrap:wrap;gap:4px;margin-top:2px}
+.lib-pill{font-size:.62rem;padding:2px 7px;border-radius:99px;
+  background:var(--surface);border:1px solid var(--line);color:var(--text-2);
+  font-weight:700}
+.lib-actions{display:flex;gap:6px;flex:none;flex-wrap:wrap;justify-content:flex-end}
+.lib-btn{padding:6px 11px;border-radius:7px;font-size:.7rem;font-weight:800;
+  border:1px solid var(--line);background:var(--surface);color:var(--text-2);
+  transition:border-color .15s,color .15s,background .15s}
+.lib-btn:hover{border-color:var(--accent);color:var(--accent)}
+.lib-btn.apply{background:var(--accent);border-color:var(--accent);color:#fff}
+.lib-btn.apply:hover{background:#4338ca;border-color:#4338ca;color:#fff}
+.lib-btn.danger:hover{border-color:#fecaca;background:#fee2e2;color:#b91c1c}
+@media(max-width:600px){
+  .lib-item{flex-direction:column;align-items:stretch}
+  .lib-actions{justify-content:flex-start}
+  .lib-list{padding:12px 16px 16px}
+  .lib-toolbar{padding:16px 16px 4px}
+  .lib-msg{margin:10px 16px 0}
+}
+
+/* ============ Toast ============ */
+.toast{position:fixed;left:50%;bottom:26px;z-index:400;
+  transform:translateX(-50%) translateY(20px);
+  background:rgba(20,20,19,.92);color:#fff;padding:12px 20px;
+  border-radius:11px;font-size:.82rem;font-weight:700;line-height:1.35;
+  opacity:0;pointer-events:none;transition:opacity .25s,transform .25s;
+  box-shadow:0 16px 40px -10px rgba(20,20,19,.5);
+  max-width:min(520px,90vw);text-align:center}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
 @media (max-width:600px){
   .cl-item{grid-template-columns:16px 30px 1fr auto;
     grid-template-areas:"drag check body timer" ".    time  time .";
@@ -427,19 +494,16 @@ input[type=time]::-webkit-calendar-picker-indicator{filter:opacity(.55)}
   .cl-time .end{display:inline;margin:0 0 0 6px}
   .cl-timer{grid-area:timer}.cl-timer-bar{display:none}
   .cl-timer-readout{min-width:70px}.cl-timer-started{font-size:.54rem}
-  .seg button{font-size:.72rem;padding:8px 2px}.tpl-card{width:156px}
+  .seg button{font-size:.72rem;padding:8px 2px}.tpl-card{width:160px}
 }
 /* While any modal is open, the page behind it is inert — stop its animations
-   and transitions so the compositor isn't doing continuous work (a pulsing
-   box-shadow, timer bar transitions, etc.) for content the user can't see
-   or interact with. This, plus dropping backdrop-filter above, is what was
-   actually pegging the CPU/GPU while the Study plan builder stayed open. */
+   and transitions so the compositor isn't doing continuous work. */
 body.modal-open .checklist *{animation:none!important;transition:none!important}
 
 @media print{
   body{background:#fff}
-  .settings,.toolbar,.icon-btn,.cl-timer,.cl-hint,.templates,.cl-drag,.plan-modal{
-    display:none!important}
+  .settings,.toolbar,.icon-btn,.cl-timer,.cl-hint,.templates,
+  .cl-drag,.plan-modal,.toast{display:none!important}
   .cl-item::after{display:none}.cl-item{box-shadow:none;content-visibility:visible}
 }
 </style>
@@ -472,8 +536,8 @@ body.modal-open .checklist *{animation:none!important;transition:none!important}
 
   <section class="templates">
     <div class="templates-head">
-      <span class="templates-label">Quick start</span>
-      <span class="templates-hint">Tap a template to apply</span>
+      <span class="templates-label">My study plans</span>
+      <span class="templates-hint" id="templatesHint">Tap a plan to apply</span>
     </div>
     <div class="template-row" id="templateRow"></div>
   </section>
@@ -524,7 +588,7 @@ body.modal-open .checklist *{animation:none!important;transition:none!important}
         </select>
       </div>
       <div class="sfield wide">
-        <label>Study plan — JSON file</label>
+        <label>Study plans — JSON library</label>
         <div class="uploader" id="dropzone" role="button" tabindex="0">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
                stroke="currentColor" stroke-width="2" stroke-linecap="round"
@@ -533,12 +597,14 @@ body.modal-open .checklist *{animation:none!important;transition:none!important}
             <polyline points="17 8 12 3 7 8"/>
             <line x1="12" y1="3" x2="12" y2="15"/>
           </svg>
-          <span id="dropText">Drop a <b>.json</b> plan, or <b>browse</b></span>
-          <input type="file" id="file" accept=".json,application/json" hidden>
+          <span id="dropText">Drop <b>.json</b> plan files, or <b>browse</b> — select as many as you like</span>
+          <input type="file" id="file" accept=".json,application/json" multiple hidden>
         </div>
         <div class="subj-pills" id="subjPills"></div>
         <div class="file-err" id="fileErr" hidden></div>
+        <div class="file-note" id="fileNote" hidden></div>
         <div class="sfield-actions">
+          <button class="mini" id="libraryBtn" type="button">Manage study plans…</button>
           <button class="mini" id="openBuilderBtn" type="button">Create plan…</button>
           <button class="mini" id="templateBtn" type="button">Download current</button>
           <button class="mini" id="resetBtn" type="button">Reset</button>
@@ -555,6 +621,7 @@ body.modal-open .checklist *{animation:none!important;transition:none!important}
       <button data-filter="meals">Meals</button>
     </div>
     <div class="toolbar-right">
+      <button class="toolbar-btn" id="libraryBtnTop" type="button">Study plans</button>
       <button class="toolbar-btn primary" id="buildBtnTop" type="button">+ New plan</button>
       <button class="toolbar-btn" id="densityBtn" type="button">Compact</button>
       <button class="toolbar-btn" id="clearBtn" type="button">Clear done</button>
@@ -584,6 +651,7 @@ body.modal-open .checklist *{animation:none!important;transition:none!important}
     <footer class="plan-modal-foot">
       <div class="plan-total">Total <b id="planTotal">0h</b></div>
       <div class="plan-actions">
+        <button class="mini" type="button" data-plan-action="save">Save to library</button>
         <button class="mini" type="button" data-plan-action="download">Download JSON</button>
         <button class="mini" type="button" data-plan-action="cancel">Cancel</button>
         <button class="plan-apply" type="button" data-plan-action="apply" id="planApply">Apply plan</button>
@@ -592,6 +660,46 @@ body.modal-open .checklist *{animation:none!important;transition:none!important}
   </div>
 </div>
 
+<div class="plan-modal" id="libraryModal" hidden>
+  <div class="plan-modal-backdrop" data-lib-close></div>
+  <div class="plan-modal-card lib-card" role="dialog" aria-labelledby="libModalTitle">
+    <header class="plan-modal-head">
+      <div>
+        <h2 id="libModalTitle">Study plans library</h2>
+        <p class="plan-modal-sub">Import one or many <b>.json</b> plan files at once. They stay saved in this browser and can be applied any time.</p>
+      </div>
+      <button class="plan-modal-close" type="button" data-lib-close aria-label="Close">×</button>
+    </header>
+
+    <div class="lib-toolbar">
+      <div class="uploader lib-uploader" id="libDrop" role="button" tabindex="0">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2" stroke-linecap="round"
+             stroke-linejoin="round" aria-hidden="true">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+          <polyline points="17 8 12 3 7 8"/>
+          <line x1="12" y1="3" x2="12" y2="15"/>
+        </svg>
+        <span id="libDropText">Drop <b>.json</b> plan files, or <b>browse</b> — multiple allowed</span>
+        <input type="file" id="libFile" accept=".json,application/json" multiple hidden>
+      </div>
+      <span class="lib-count" id="libCount">0 plans saved</span>
+    </div>
+    <div class="lib-msg" id="libErr" hidden></div>
+    <ul class="lib-list" id="libList"></ul>
+    <footer class="plan-modal-foot">
+      <div class="plan-total">Saved <b id="libTotalCount">0</b></div>
+      <div class="plan-actions">
+        <button class="mini" type="button" data-lib-action="export-all">Download all</button>
+        <button class="mini" type="button" data-lib-action="clear-all" id="libClearBtn">Clear library</button>
+        <button class="plan-apply" type="button" data-lib-close>Done</button>
+      </div>
+    </footer>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
 <script>
 (() => {
 "use strict";
@@ -599,7 +707,6 @@ body.modal-open .checklist *{animation:none!important;transition:none!important}
 /* ============================================================
    CONSTANTS
    ============================================================ */
-const ALLOWED_HOURS = [4, 6, 8, 10];
 const MEAL_DURATIONS = [15, 20, 30, 45, 60, 90];
 const DEFAULT_MEAL_DUR = 45;
 const SECTIONS = ['morning','afternoon','evening'];
@@ -610,38 +717,13 @@ const SECTION_META = {
 };
 const DEFAULT_PLAN_NAME = "Today's plan";
 
+const LIB_KEY = 'studyChecklist5.library';
+const LIB_MAX = 200;
+
 const DEFAULT_SUBJECTS = {
   morning:   [{ name:'Math',      weight:2 }, { name:'Physics', weight:1 }],
   afternoon: [{ name:'Chemistry', weight:1.5 }],
   evening:   [{ name:'Biology',   weight:1.5 }]
-};
-
-const TEMPLATES = {
-  balanced:{name:'Balanced Day',desc:'6h · 50/10 · spread across day',icon:'⚖️',accent:'#6366f1',
-    config:{hours:6,wake:'06:00',lunch:'12:30',lunchDur:45,dinner:'18:30',dinnerDur:45,session:'50,10,25',
-      subjects:{morning:[{name:'Math',weight:2},{name:'Physics',weight:1}],
-        afternoon:[{name:'Chemistry',weight:1.5}],evening:[{name:'Biology',weight:1.5}]}}},
-  examCram:{name:'Exam Cram',desc:'10h · 25/5 · high intensity',icon:'🔥',accent:'#ef4444',
-    config:{hours:10,wake:'05:30',lunch:'12:00',lunchDur:30,dinner:'18:00',dinnerDur:30,session:'25,5,20',
-      subjects:{morning:[{name:'Math',weight:3},{name:'Physics',weight:1.5}],
-        afternoon:[{name:'Physics',weight:1.5},{name:'Chemistry',weight:2}],
-        evening:[{name:'Chemistry',weight:1},{name:'Revision',weight:1}]}}},
-  deepFocus:{name:'Deep Focus',desc:'8h · 90/15 · fewer topics',icon:'🎯',accent:'#0ea5e9',
-    config:{hours:8,wake:'06:30',lunch:'12:30',lunchDur:45,dinner:'18:30',dinnerDur:45,session:'90,15,30',
-      subjects:{morning:[{name:'Thesis',weight:3}],afternoon:[{name:'Research',weight:2.5}],
-        evening:[{name:'Reading',weight:2.5}]}}},
-  earlyBird:{name:'Early Bird',desc:'6h · 50/10 · done by noon',icon:'🌅',accent:'#f59e0b',
-    config:{hours:6,wake:'04:30',lunch:'11:30',lunchDur:30,dinner:'17:30',dinnerDur:45,session:'50,10,25',
-      subjects:{morning:[{name:'Writing',weight:2.5},{name:'Reading',weight:1.5}],
-        afternoon:[{name:'Revision',weight:2}],evening:[]}}},
-  lightReview:{name:'Light Review',desc:'4h · 25/5 · easy pace',icon:'🌱',accent:'#10b981',
-    config:{hours:4,wake:'07:00',lunch:'12:30',lunchDur:60,dinner:'19:00',dinnerDur:60,session:'25,5,20',
-      subjects:{morning:[{name:'Review',weight:1.5}],afternoon:[{name:'Flashcards',weight:1.5}],
-        evening:[{name:'Practice',weight:1}]}}},
-  weekendBlitz:{name:'Weekend Blitz',desc:'10h · 50/10 · single project',icon:'⚡',accent:'#8b5cf6',
-    config:{hours:10,wake:'08:00',lunch:'12:30',lunchDur:60,dinner:'19:00',dinnerDur:60,session:'50,10,25',
-      subjects:{morning:[{name:'Project',weight:4}],afternoon:[{name:'Project',weight:3.5}],
-        evening:[{name:'Project',weight:2.5}]}}}
 };
 
 const TIMED = new Set(['study','break','longbreak']);
@@ -659,6 +741,7 @@ const ICON = {
   replay:'<svg class="icon-reset" viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>',
   grip:'<svg viewBox="0 0 9 13" fill="currentColor" aria-hidden="true"><circle cx="2" cy="2" r="1.1"/><circle cx="7" cy="2" r="1.1"/><circle cx="2" cy="6.5" r="1.1"/><circle cx="7" cy="6.5" r="1.1"/><circle cx="2" cy="11" r="1.1"/><circle cx="7" cy="11" r="1.1"/></svg>'
 };
+const LIB_ICONS = ['📘','📗','📙','📕','📓','📔','🎓','🧠','✏️','🔖'];
 
 /* ============================================================
    STATE
@@ -673,19 +756,17 @@ let checked        = new Set();
 let timers         = new Map();
 let dragState      = null;
 let planDraft      = null;
+let library        = [];
 let _sid           = 0;
 
-/* Render caches — avoid rebuilding DOM when nothing structural changed */
 let _lastStructureKey = '';
-let _lastTemplateKey  = '';
+let _lastPlanCardsKey = '';
 let _lastHoursKey     = '';
 
-/* Timer loop lifecycle */
 let timerIntervalId = null;
 let lastTickTime = 0;
-
-/* Persistence debounce */
 let persistTimerId = null;
+let toastTimerId = null;
 
 const els = {
   app:        document.getElementById('app'),
@@ -694,6 +775,7 @@ const els = {
   progressFill:  document.getElementById('progressFill'),
   progressLabel: document.getElementById('progressLabel'),
   templateRow:document.getElementById('templateRow'),
+  templatesHint:document.getElementById('templatesHint'),
   settings:   document.getElementById('settings'),
   settingsBtn:document.getElementById('settingsBtn'),
   hoursSeg:   document.getElementById('hoursSeg'),
@@ -708,6 +790,8 @@ const els = {
   file:       document.getElementById('file'),
   subjPills:  document.getElementById('subjPills'),
   fileErr:    document.getElementById('fileErr'),
+  fileNote:   document.getElementById('fileNote'),
+  libraryBtn: document.getElementById('libraryBtn'),
   openBuilderBtn: document.getElementById('openBuilderBtn'),
   templateBtn:document.getElementById('templateBtn'),
   resetBtn:   document.getElementById('resetBtn'),
@@ -715,12 +799,23 @@ const els = {
   densityBtn: document.getElementById('densityBtn'),
   clearBtn:   document.getElementById('clearBtn'),
   buildBtnTop:document.getElementById('buildBtnTop'),
+  libraryBtnTop:document.getElementById('libraryBtnTop'),
   checklist:  document.getElementById('checklist'),
   planModal:  document.getElementById('planModal'),
   planName:   document.getElementById('planName'),
   planColumns:document.getElementById('planColumns'),
   planTotal:  document.getElementById('planTotal'),
-  planApply:  document.getElementById('planApply')
+  planApply:  document.getElementById('planApply'),
+  libraryModal: document.getElementById('libraryModal'),
+  libDrop:    document.getElementById('libDrop'),
+  libDropText:document.getElementById('libDropText'),
+  libFile:    document.getElementById('libFile'),
+  libErr:     document.getElementById('libErr'),
+  libList:    document.getElementById('libList'),
+  libCount:   document.getElementById('libCount'),
+  libTotalCount: document.getElementById('libTotalCount'),
+  libClearBtn:document.getElementById('libClearBtn'),
+  toast:      document.getElementById('toast')
 };
 
 /* ============================================================
@@ -752,6 +847,11 @@ function fmtClock(ts){
   const ap = h < 12 ? 'am' : 'pm'; h = h % 12 || 12;
   return `${h}:${String(m).padStart(2,'0')}${ap}`;
 }
+function fmtDate(ts){
+  try {
+    return new Date(ts).toLocaleDateString(undefined,{month:'short',day:'numeric'});
+  } catch(e){ return ''; }
+}
 const esc = s => String(s).replace(/[&<>"']/g, c =>
   ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
@@ -760,6 +860,8 @@ function currentMinutes(){
   return d.getHours()*60 + d.getMinutes();
 }
 function newSubject(name='', weight=1){ return { id: ++_sid, name, weight }; }
+function newId(){ return 'p' + Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+
 function cloneSubjects(src){
   const out = { morning:[], afternoon:[], evening:[] };
   for (const sec of SECTIONS){
@@ -777,6 +879,18 @@ function totalHoursFromSubjects(){
   let t = 0;
   for (const s of allSubjects()) t += Number(s.weight) || 0;
   return t;
+}
+function subjectsHours(map){
+  let t = 0;
+  for (const sec of SECTIONS){
+    for (const s of (map[sec] || [])) t += Number(s.weight) || 0;
+  }
+  return t;
+}
+function subjectsCount(map){
+  let n = 0;
+  for (const sec of SECTIONS) n += (map[sec] || []).length;
+  return n;
 }
 function findSubjectLocation(name){
   for (const sec of SECTIONS){
@@ -825,7 +939,21 @@ function beep(){
 }
 
 /* ============================================================
-   JSON
+   TOAST
+   ============================================================ */
+function showToast(msg, ms = 3200){
+  if (!els.toast) return;
+  if (!msg){ els.toast.classList.remove('show'); return; }
+  els.toast.textContent = msg;
+  els.toast.classList.add('show');
+  if (toastTimerId) clearTimeout(toastTimerId);
+  toastTimerId = setTimeout(() => {
+    els.toast.classList.remove('show');
+  }, ms);
+}
+
+/* ============================================================
+   JSON PARSING
    ============================================================ */
 function parseOneSubject(item, i){
   if (typeof item === 'string'){
@@ -852,10 +980,9 @@ function dedupe(list){
   }
   return out;
 }
-function parsePlanJSON(raw){
-  let data;
-  try { data = JSON.parse(raw); }
-  catch(err){ throw new Error('Invalid JSON — ' + err.message); }
+
+function planFromObject(data, fallbackName){
+  const fb = String(fallbackName || 'Imported plan').trim() || 'Imported plan';
 
   if (data && typeof data === 'object' && !Array.isArray(data)
       && (Array.isArray(data.morning) || Array.isArray(data.afternoon) || Array.isArray(data.evening))) {
@@ -868,7 +995,10 @@ function parsePlanJSON(raw){
       out[sec] = dedupe(out[sec]);
     }
     if (!any) throw new Error('The plan contains no subjects.');
-    return { name: String(data.name || data.title || 'Imported plan').trim() || 'Imported plan', subjects: out };
+    return {
+      name: String(data.name || data.title || '').trim() || fb,
+      subjects: out
+    };
   }
 
   let arr;
@@ -886,8 +1016,25 @@ function parsePlanJSON(raw){
     else if (i < per * 2) out.afternoon.push(s);
     else out.evening.push(s);
   });
-  return { name: String((data && data.name) || 'Imported plan').trim() || 'Imported plan', subjects: out };
+  return {
+    name: String((data && data.name) || '').trim() || fb,
+    subjects: out
+  };
 }
+
+function parsePlansFromText(raw, fallbackName){
+  let data;
+  try { data = JSON.parse(raw); }
+  catch(err){ throw new Error('Invalid JSON — ' + err.message); }
+
+  if (data && typeof data === 'object' && !Array.isArray(data) && Array.isArray(data.plans)){
+    if (!data.plans.length) throw new Error('The bundle contains no plans.');
+    return data.plans.map((p, i) =>
+      planFromObject(p, data.plans.length === 1 ? fallbackName : `${fallbackName} ${i+1}`));
+  }
+  return [planFromObject(data, fallbackName)];
+}
+
 function planToJSON(plan){
   return JSON.stringify({
     name: plan.name,
@@ -898,38 +1045,376 @@ function planToJSON(plan){
 }
 
 /* ============================================================
+   MESSAGES
+   ============================================================ */
+function showError(msg){
+  if (!msg){ els.fileErr.hidden = true; els.fileErr.innerHTML = ''; return; }
+  const lines = Array.isArray(msg) ? msg : String(msg).split('\n');
+  els.fileErr.hidden = false;
+  els.fileErr.innerHTML = `<span>⚠</span><span>${lines.map(esc).join('<br>')}</span>`;
+}
+function showNote(msg){
+  if (!msg){ els.fileNote.hidden = true; els.fileNote.innerHTML = ''; return; }
+  els.fileNote.hidden = false;
+  els.fileNote.innerHTML = `<span>✓</span><span>${esc(msg)}</span>`;
+}
+function showLibError(msg){
+  if (!msg){ els.libErr.hidden = true; els.libErr.innerHTML = ''; return; }
+  const lines = Array.isArray(msg) ? msg : String(msg).split('\n');
+  els.libErr.hidden = false;
+  els.libErr.innerHTML = lines.map(esc).join('<br>');
+}
+
+/* ============================================================
+   DOWNLOAD
+   ============================================================ */
+function downloadBlob(text, filename){
+  const blob = new Blob([text], { type:'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+function safeFileName(name){
+  return String(name || 'study-plan').replace(/[^a-z0-9\-_]+/gi,'-').toLowerCase() || 'study-plan';
+}
+function downloadPlan(plan){
+  downloadBlob(planToJSON(plan), `${safeFileName(plan.name)}.json`);
+}
+function downloadAllPlans(){
+  if (!library.length){ showLibError('No saved plans to download.'); return; }
+  const bundle = {
+    app: 'study-plan-library',
+    version: 1,
+    plans: library.map(p => ({
+      name: p.name,
+      morning:   p.subjects.morning.map(s => ({ name:s.name, hours:s.weight })),
+      afternoon: p.subjects.afternoon.map(s => ({ name:s.name, hours:s.weight })),
+      evening:   p.subjects.evening.map(s => ({ name:s.name, hours:s.weight }))
+    }))
+  };
+  downloadBlob(JSON.stringify(bundle, null, 2), 'study-plans.json');
+}
+
+/* ============================================================
+   LIBRARY (saved study plans)
+   ============================================================ */
+function normalizeStoredPlan(p){
+  if (!p || typeof p !== 'object') return null;
+  const src = p.subjects;
+  if (!src || typeof src !== 'object') return null;
+  const out = { morning:[], afternoon:[], evening:[] };
+  let any = false;
+  for (const sec of SECTIONS){
+    const list = Array.isArray(src[sec]) ? src[sec] : [];
+    for (const s of list){
+      const name = String((s && s.name) || '').trim();
+      if (!name) continue;
+      const w = Number(s && s.weight);
+      out[sec].push({ name, weight: (Number.isFinite(w) && w > 0) ? Math.min(18, w) : 1 });
+      any = true;
+    }
+  }
+  if (!any) return null;
+  return {
+    id: String(p.id || newId()),
+    name: String(p.name || 'Untitled plan').trim() || 'Untitled plan',
+    subjects: out,
+    savedAt: Number(p.savedAt) || Date.now()
+  };
+}
+
+function loadLibrary(){
+  try {
+    const raw = JSON.parse(localStorage.getItem(LIB_KEY) || '[]');
+    if (!Array.isArray(raw)) return [];
+    return raw.map(normalizeStoredPlan).filter(Boolean);
+  } catch(e){ return []; }
+}
+
+function persistLibrary(){
+  try {
+    localStorage.setItem(LIB_KEY, JSON.stringify(library));
+    return true;
+  } catch(e){
+    showLibError('Could not save — browser storage is full. Delete a few plans and try again.');
+    showToast('Storage full — delete some saved plans.');
+    return false;
+  }
+}
+
+function addPlanToLibrary(plan){
+  const entry = normalizeStoredPlan({ name: plan.name, subjects: plan.subjects });
+  if (!entry) return null;
+
+  const sameName = library.filter(p => p.name.toLowerCase() === entry.name.toLowerCase());
+  if (sameName.length){
+    for (const ex of sameName){
+      if (plansMatch(ex.subjects, entry.subjects)){
+        ex.savedAt = Date.now();
+        return ex;
+      }
+    }
+    let n = 2;
+    let newName;
+    do {
+      newName = `${entry.name} (${n})`;
+      n++;
+    } while (library.some(p => p.name.toLowerCase() === newName.toLowerCase()));
+    entry.name = newName;
+  }
+
+  library.push(entry);
+  while (library.length > LIB_MAX) library.shift();
+  return entry;
+}
+
+function removePlanFromLibrary(id){
+  library = library.filter(p => p.id !== id);
+  persistLibrary();
+  renderLibrary();
+  _lastPlanCardsKey = '';   /* force card row rebuild */
+  renderPlanCards();
+}
+
+/* ============================================================
+   PLAN CARDS ROW  (replaces old "Quick start" templates)
+   ------------------------------------------------------------
+   Shows ONLY the user's imported / saved study plans. If the
+   library is empty, an empty-state card invites them to import.
+   ============================================================ */
+function planCardsKey(){
+  /* Rebuild the row DOM only when the set of plans or their
+     identity/labels actually change. */
+  return library.map(p =>
+    `${p.id}:${p.name}:${p.savedAt}:${subjectsCount(p.subjects)}`
+  ).join('|');
+}
+
+function buildPlanCardsDOM(){
+  if (!library.length){
+    els.templateRow.innerHTML = `
+      <div class="tpl-empty">
+        No study plans yet.<br>
+        Import one or more <b>.json</b> files to get started.
+        <br>
+        <button class="tpl-empty-btn" type="button" data-open-library>Import study plans…</button>
+      </div>`;
+    if (els.templatesHint) els.templatesHint.textContent = 'Nothing imported yet';
+    return;
+  }
+
+  const sorted = [...library].sort((a,b) => b.savedAt - a.savedAt);
+  let html = '';
+  let i = 0;
+  for (const p of sorted){
+    const isCurrent = plansMatch(subjects, p.subjects);
+    const count = subjectsCount(p.subjects);
+    const hours = subjectsHours(p.subjects);
+    const icon = LIB_ICONS[i++ % LIB_ICONS.length];
+    html += `<button class="tpl-card${isCurrent ? ' is-active' : ''}" type="button"
+        data-plan-id="${esc(p.id)}"
+        title="Apply &quot;${esc(p.name)}&quot;"
+        style="--tpl-accent:var(--accent)">
+      <div class="tpl-card-top">
+        <span class="tpl-icon">${icon}</span>
+        <span class="tpl-badge">${isCurrent ? 'ACTIVE' : 'APPLY'}</span>
+      </div>
+      <span class="tpl-name">${esc(p.name)}</span>
+      <span class="tpl-desc">${count} subject${count===1?'':'s'} · ${esc(fmtHours(hours))} · ${esc(fmtDate(p.savedAt))}</span>
+    </button>`;
+  }
+  els.templateRow.innerHTML = html;
+
+  if (els.templatesHint){
+    els.templatesHint.textContent = library.length === 1
+      ? '1 saved plan · tap to apply'
+      : `${library.length} saved plans · tap to apply`;
+  }
+}
+
+function updatePlanCardsActiveState(){
+  if (!library.length) return;
+  for (const card of els.templateRow.children){
+    const id = card.dataset && card.dataset.planId;
+    if (!id) continue;
+    const plan = library.find(p => p.id === id);
+    if (!plan) continue;
+    const active = plansMatch(subjects, plan.subjects);
+    if (card.classList.contains('is-active') !== active){
+      card.classList.toggle('is-active', active);
+      const badge = card.querySelector('.tpl-badge');
+      if (badge) badge.textContent = active ? 'ACTIVE' : 'APPLY';
+    }
+  }
+}
+
+function renderPlanCards(force){
+  const key = planCardsKey();
+  if (force || key !== _lastPlanCardsKey){
+    _lastPlanCardsKey = key;
+    buildPlanCardsDOM();
+  } else {
+    updatePlanCardsActiveState();
+  }
+}
+
+/* ============================================================
+   LIBRARY MODAL
+   ============================================================ */
+function renderLibrary(){
+  if (!els.libList) return;
+  const n = library.length;
+  els.libCount.textContent = n === 1 ? '1 plan saved' : `${n} plans saved`;
+  els.libTotalCount.textContent = String(n);
+
+  if (!n){
+    els.libList.innerHTML =
+      `<li class="lib-empty">No saved plans yet.<br>Drop one or more <b>.json</b> files above to import them.</li>`;
+    return;
+  }
+
+  const sorted = [...library].sort((a,b) => b.savedAt - a.savedAt);
+  let html = '';
+  for (const p of sorted){
+    const isCurrent = plansMatch(subjects, p.subjects);
+    const count = subjectsCount(p.subjects);
+    const hours = subjectsHours(p.subjects);
+
+    const flat = [];
+    for (const sec of SECTIONS) for (const s of p.subjects[sec]) flat.push(s);
+    let pills = '';
+    const shown = flat.slice(0, 6);
+    for (const s of shown){
+      pills += `<span class="lib-pill">${esc(s.name)} · ${esc(fmtHours(s.weight))}</span>`;
+    }
+    if (flat.length > shown.length){
+      pills += `<span class="lib-pill">+${flat.length - shown.length} more</span>`;
+    }
+
+    html += `<li class="lib-item${isCurrent ? ' is-current' : ''}" data-id="${esc(p.id)}">
+      <div class="lib-main">
+        <div class="lib-name">
+          <span>${esc(p.name)}</span>
+          ${isCurrent ? '<span class="lib-badge">CURRENT</span>' : ''}
+        </div>
+        <div class="lib-meta">${count} subject${count===1?'':'s'} · ${esc(fmtHours(hours))} · saved ${esc(fmtDate(p.savedAt))}</div>
+        <div class="lib-pills">${pills}</div>
+      </div>
+      <div class="lib-actions">
+        <button class="lib-btn apply" type="button" data-lib-item-action="apply">Apply</button>
+        <button class="lib-btn" type="button" data-lib-item-action="download">JSON</button>
+        <button class="lib-btn danger" type="button" data-lib-item-action="delete">Delete</button>
+      </div>
+    </li>`;
+  }
+  els.libList.innerHTML = html;
+}
+
+function anyModalOpen(){
+  return !els.planModal.hidden || !els.libraryModal.hidden;
+}
+function syncBodyModalState(){
+  const open = anyModalOpen();
+  document.body.style.overflow = open ? 'hidden' : '';
+  document.body.classList.toggle('modal-open', open);
+}
+function openLibraryModal(){
+  renderLibrary();
+  showLibError('');
+  disarmClear();
+  els.libraryModal.hidden = false;
+  syncBodyModalState();
+}
+function closeLibraryModal(){
+  els.libraryModal.hidden = true;
+  syncBodyModalState();
+}
+
+/* ============================================================
+   FILE IMPORT — supports many files at once
+   ============================================================ */
+function isJsonFile(file){
+  return /\.json$/i.test(file.name) || file.type === 'application/json';
+}
+function readFileText(file){
+  return new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => resolve(String(r.result));
+    r.onerror = () => reject(new Error('could not be read'));
+    r.readAsText(file);
+  });
+}
+function fileBaseName(name){
+  return String(name || '').replace(/\.json$/i,'').replace(/[_-]+/g,' ').trim() || 'Imported plan';
+}
+
+async function importFiles(fileList){
+  const files = Array.from(fileList || []);
+  if (!files.length) return;
+
+  const parsedPlans = [];
+  const errors = [];
+
+  for (const f of files){
+    if (!isJsonFile(f)){ errors.push(`${f.name} — not a .json file`); continue; }
+    try {
+      const text = await readFileText(f);
+      const plans = parsePlansFromText(text, fileBaseName(f.name));
+      for (const p of plans){ p.source = f.name; parsedPlans.push(p); }
+    } catch(err){
+      errors.push(`${f.name} — ${err.message}`);
+    }
+  }
+
+  if (parsedPlans.length){
+    const added = [];
+    for (const p of parsedPlans){
+      const entry = addPlanToLibrary(p);
+      if (entry) added.push(entry);
+    }
+    persistLibrary();
+
+    /* Only auto-apply when a single plan was imported. */
+    if (parsedPlans.length === 1){
+      applyPlan(parsedPlans[0], files[0] ? files[0].name : '');
+    } else {
+      renderPlanCards(true);
+    }
+
+    if (!els.libraryModal.hidden) renderLibrary();
+
+    const msg = added.length === 1
+      ? `Saved "${added[0].name}" to your library.`
+      : `Saved ${added.length} plans to your library.`;
+    showNote(msg);
+    showToast(msg);
+  } else {
+    showNote('');
+  }
+
+  if (errors.length){
+    showError(errors);
+    if (!els.libraryModal.hidden) showLibError(errors);
+  } else {
+    showError('');
+    if (!els.libraryModal.hidden) showLibError('');
+  }
+}
+
+/* ============================================================
    APPLY PLAN
    ============================================================ */
-function applyPlan(plan){
+function applyPlan(plan, fileName = ''){
   planName = plan.name || DEFAULT_PLAN_NAME;
   subjects = cloneSubjects(plan.subjects);
-  loadedFileName = '';
+  loadedFileName = fileName;
   checked.clear();
   timers.clear();
   stopTimerLoop();
   showError('');
-  renderAll(true);      /* force structural rebuild */
-}
-function showError(msg){
-  if (!msg){ els.fileErr.hidden = true; els.fileErr.textContent = ''; return; }
-  els.fileErr.hidden = false;
-  els.fileErr.innerHTML = `<span>⚠</span><span>${esc(msg)}</span>`;
-}
-function readFile(file){
-  if (!file) return;
-  const isJson = /\.json$/i.test(file.name) || file.type === 'application/json';
-  if (!isJson){ showError(`"${file.name}" is not a .json file.`); return; }
-  const r = new FileReader();
-  r.onload = () => {
-    try {
-      const plan = parsePlanJSON(String(r.result));
-      applyPlan(plan);
-      loadedFileName = file.name;
-      renderAll(true);
-    } catch(err){ showError(err.message); }
-  };
-  r.onerror = () => showError('Could not read that file.');
-  r.readAsText(file);
+  renderAll(true);
 }
 
 /* ============================================================
@@ -937,11 +1422,6 @@ function readFile(file){
    ============================================================ */
 function buildSchedule(){
   const [studyLen, shortB, longB] = els.session.value.split(',').map(Number);
-  /* Cap at 18h/day: the builder's hour inputs (and imported JSON) have no
-     upper bound, and without this cap a large value forces buildSchedule's
-     loop toward its 4000-iteration guard, producing thousands of blocks that
-     then all get rendered, wired for timers, and diffed on every keystroke —
-     this was the source of the "Study plan builder" slowdown. */
   const MAX_STUDY_HOURS = 18;
   const totalStudy = Math.min(totalHoursFromSubjects(), MAX_STUDY_HOURS) * 60;
   const wake = parseTime(els.wake.value || '06:00');
@@ -974,11 +1454,9 @@ function buildSchedule(){
   let studyDone = 0, sessionNo = 0, guard = 0;
 
   while (studyDone < totalStudy && guard++ < 4000){
-    /* next pending meal */
     let nm = null;
     for (const m of meals){ if (!m.done){ nm = m; break; } }
 
-    /* due meal? */
     let due = null;
     for (const m of meals){
       if (!m.done && t >= m.start){ due = m; break; }
@@ -1027,7 +1505,6 @@ function buildSchedule(){
     if (studyDone < totalStudy){
       const isLong = sessionNo % 4 === 0;
       let dur = isLong ? longB : shortB;
-      /* next pending meal after this one */
       let nm2 = null;
       for (const m of meals){ if (!m.done){ nm2 = m; break; } }
       if (nm2 && t + dur > nm2.start) dur = Math.max(0, nm2.start - t);
@@ -1112,28 +1589,25 @@ function tick(){
   lastTickTime = now;
   if (dt <= 0) return;
 
-  const modalOpen = !els.planModal.hidden;
+  const modalOpen = anyModalOpen();
   let anyRunning = false;
   timers.forEach(t => {
     if (!t.running || t.done) return;
     anyRunning = true;
     t.remaining = Math.max(0, t.remaining - dt);
-    if (modalOpen) return; /* still counting down, just not painting hidden DOM */
+    if (modalOpen) return;
     if (t.remaining === 0){
       t.running = false; t.done = true; beep();
       if (t.refs && t.refs.root){
         const sig = t.refs.root.dataset.sig;
         if (sig) markChecked(sig, true);
       }
-      /* repaint once with final state */
       if (t.refs) repaintTimerState(t);
     } else {
-      /* only repaint if the second changed */
       const sec = Math.floor(t.remaining);
       if (t._lastSec !== sec){
         if (t.refs) paintDigits(t);
       }
-      /* bar updates every tick but only writes when value actually changed */
       if (t.refs) paintBar(t);
     }
   });
@@ -1141,7 +1615,6 @@ function tick(){
   if (!anyRunning) stopTimerLoop();
 }
 
-/* ---- smallest possible DOM writes ---- */
 function paintDigits(t){
   const sec = Math.floor(t.remaining);
   t._lastSec = sec;
@@ -1228,43 +1701,8 @@ function updateProgress(){
 }
 
 /* ============================================================
-   TEMPLATES (cached)
+   PLAN MATCHING
    ============================================================ */
-function buildTemplateDOM(){
-  let html = '';
-  for (const key of Object.keys(TEMPLATES)){
-    const t = TEMPLATES[key];
-    html += `<button class="tpl-card" type="button" data-template="${key}" style="--tpl-accent:${t.accent}">
-      <div class="tpl-card-top">
-        <span class="tpl-icon">${t.icon}</span>
-        <span class="tpl-badge">APPLY</span>
-      </div>
-      <span class="tpl-name">${esc(t.name)}</span>
-      <span class="tpl-desc">${esc(t.desc)}</span>
-    </button>`;
-  }
-  els.templateRow.innerHTML = html;
-}
-function updateTemplateActiveState(){
-  const key = JSON.stringify({
-    s: subjects,
-    w: els.wake.value, l: els.lunch.value, ld: els.lunchDur.value,
-    d: els.dinner.value, dd: els.dinnerDur.value, se: els.session.value
-  });
-  if (key === _lastTemplateKey) return;
-  _lastTemplateKey = key;
-  let i = 0;
-  for (const k of Object.keys(TEMPLATES)){
-    const card = els.templateRow.children[i++];
-    if (!card) continue;
-    const active = currentMatchesTemplate(k);
-    if (card.classList.contains('is-active') !== active){
-      card.classList.toggle('is-active', active);
-      const badge = card.querySelector('.tpl-badge');
-      if (badge) badge.textContent = active ? 'ACTIVE' : 'APPLY';
-    }
-  }
-}
 function normalizeForCompare(subj){
   const out = {};
   for (const sec of SECTIONS){
@@ -1279,30 +1717,6 @@ function plansMatch(a, b){
     if (JSON.stringify(na[sec]) !== JSON.stringify(nb[sec])) return false;
   }
   return true;
-}
-function currentMatchesTemplate(key){
-  const t = TEMPLATES[key];
-  if (!t) return false;
-  const c = t.config;
-  if (!plansMatch(subjects, c.subjects)) return false;
-  return els.wake.value === c.wake
-    && els.lunch.value === c.lunch
-    && Number(els.lunchDur.value) === c.lunchDur
-    && els.dinner.value === c.dinner
-    && Number(els.dinnerDur.value) === c.dinnerDur
-    && els.session.value === c.session;
-}
-function applyTemplate(key){
-  const t = TEMPLATES[key]; if (!t) return;
-  const c = t.config;
-  els.wake.value = c.wake;
-  els.lunch.value = c.lunch;
-  els.lunchDur.value = String(c.lunchDur);
-  els.dinner.value = c.dinner;
-  els.dinnerDur.value = String(c.dinnerDur);
-  els.session.value = c.session;
-  checked.clear(); timers.clear(); stopTimerLoop(); loadedFileName = '';
-  applyPlan({ name: t.name, subjects: c.subjects });
 }
 
 /* ============================================================
@@ -1414,7 +1828,6 @@ function renderChecklistStructure(blocks){
   els.checklist.innerHTML = html;
 }
 
-/* Re-attach refs after structural render (only needed for timers) */
 function wireTimerRefs(){
   for (const t of timers.values()){
     t.refs = null;
@@ -1472,7 +1885,6 @@ function renderAll(forceStructure){
      <span class="dot"></span>
      <span>${doneCount} done</span>`;
 
-  /* Subject pills — cheap to rebuild, only when needed */
   const subjKey = JSON.stringify(subjects);
   if (els.subjPills._key !== subjKey){
     els.subjPills._key = subjKey;
@@ -1495,14 +1907,13 @@ function renderAll(forceStructure){
 
   els.dropText.innerHTML = loadedFileName
     ? `<span class="fname">${esc(loadedFileName)}</span> · ${totalSubjectCount()} subject${totalSubjectCount()===1?'':'s'}`
-    : `Drop a <b>.json</b> plan, or <b>browse</b>`;
+    : `Drop <b>.json</b> plan files, or <b>browse</b> — select as many as you like`;
 
   if (els.app.classList.contains('compact') !== (density === 'compact')){
     els.app.classList.toggle('compact', density === 'compact');
   }
   els.densityBtn.textContent = density === 'compact' ? 'Comfortable' : 'Compact';
 
-  /* hours seg active — only when it changes */
   const hoursKey = String(totalH);
   if (_lastHoursKey !== hoursKey){
     _lastHoursKey = hoursKey;
@@ -1512,11 +1923,9 @@ function renderAll(forceStructure){
     }
   }
 
-  /* Template cards: DOM once + active class only */
-  if (!els.templateRow.children.length) buildTemplateDOM();
-  updateTemplateActiveState();
+  /* Plan cards row — shows library plans (or empty state) */
+  renderPlanCards();
 
-  /* Checklist structure: only when it actually changes */
   const key = computeStructureKey(blocks);
   const needsStructure = forceStructure || key !== _lastStructureKey;
   if (needsStructure){
@@ -1527,6 +1936,8 @@ function renderAll(forceStructure){
 
   updateProgress();
 
+  if (!els.libraryModal.hidden) renderLibrary();
+
   if (els.settings.hidden === settingsOpen){
     els.settings.hidden = !settingsOpen;
     els.settingsBtn.classList.toggle('active', settingsOpen);
@@ -1536,7 +1947,7 @@ function renderAll(forceStructure){
 }
 
 /* ============================================================
-   PERSIST (debounced, non-blocking)
+   PERSIST
    ============================================================ */
 function schedulePersist(){
   if (persistTimerId !== null) return;
@@ -1559,7 +1970,7 @@ function schedulePersist(){
 }
 
 /* ============================================================
-   DRAG & DROP
+   DRAG & DROP (checklist)
    ============================================================ */
 function clearDragUI(){
   els.checklist
@@ -1629,14 +2040,12 @@ function openPlanModal(){
   renderPlanColumns();
   els.planModal.hidden = false;
   requestAnimationFrame(() => els.planName.focus());
-  document.body.style.overflow = 'hidden';
-  document.body.classList.add('modal-open');
+  syncBodyModalState();
 }
 function closePlanModal(){
   els.planModal.hidden = true;
   planDraft = null;
-  document.body.style.overflow = '';
-  document.body.classList.remove('modal-open');
+  syncBodyModalState();
 }
 
 function planRowHTML(s){
@@ -1706,6 +2115,16 @@ els.planModal.addEventListener('click', e => {
       const finalName = (els.planName.value.trim() || 'Custom plan');
       closePlanModal();
       applyPlan({ name: finalName, subjects: cleaned });
+    } else if (action === 'save'){
+      const cleaned = cleanDraft(planDraft);
+      if (!cleaned) return;
+      const finalName = (els.planName.value.trim() || 'Custom plan');
+      const entry = addPlanToLibrary({ name: finalName, subjects: cleaned });
+      persistLibrary();
+      renderPlanCards(true);
+      renderLibrary();
+      showToast(entry ? `Saved "${entry.name}" to your library.` : 'Could not save plan.');
+      showLibError('');
     } else if (action === 'download'){
       const cleaned = cleanDraft(planDraft);
       if (!cleaned) return;
@@ -1797,24 +2216,106 @@ function cleanDraft(draft){
   if (!any){ showError('Add at least one subject with a name.'); return null; }
   return out;
 }
-function downloadPlan(plan){
-  const blob = new Blob([planToJSON(plan)], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const safe = plan.name.replace(/[^a-z0-9\-_]+/gi, '-').toLowerCase() || 'study-plan';
-  const a = document.createElement('a');
-  a.href = url; a.download = `${safe}.json`;
-  document.body.appendChild(a); a.click(); a.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
+
+/* ============================================================
+   LIBRARY MODAL EVENTS
+   ============================================================ */
+let clearArmed = false;
+let clearTimer = null;
+function disarmClear(){
+  clearArmed = false;
+  if (clearTimer){ clearTimeout(clearTimer); clearTimer = null; }
+  if (els.libClearBtn) els.libClearBtn.textContent = 'Clear library';
 }
+function armClear(){
+  clearArmed = true;
+  if (els.libClearBtn) els.libClearBtn.textContent = 'Tap again to confirm';
+  clearTimer = setTimeout(disarmClear, 3500);
+}
+
+els.libraryModal.addEventListener('click', e => {
+  if (e.target.closest('[data-lib-close]')){ closeLibraryModal(); return; }
+
+  const action = e.target.closest('[data-lib-action]');
+  if (action){
+    const a = action.dataset.libAction;
+    if (a === 'export-all'){ downloadAllPlans(); }
+    else if (a === 'clear-all'){
+      if (!library.length) return;
+      if (!clearArmed){ armClear(); return; }
+      disarmClear();
+      library = [];
+      persistLibrary();
+      renderLibrary();
+      renderPlanCards(true);
+      showLibError('');
+      showToast('Library cleared.');
+    }
+    return;
+  }
+
+  const itemBtn = e.target.closest('[data-lib-item-action]');
+  if (itemBtn){
+    const li = itemBtn.closest('.lib-item');
+    if (!li) return;
+    const plan = library.find(p => p.id === li.dataset.id);
+    if (!plan) return;
+    const act = itemBtn.dataset.libItemAction;
+    if (act === 'apply'){
+      applyPlan({ name: plan.name, subjects: plan.subjects });
+      showToast(`Applied "${plan.name}".`);
+      closeLibraryModal();
+    } else if (act === 'download'){
+      downloadPlan({ name: plan.name, subjects: plan.subjects });
+    } else if (act === 'delete'){
+      removePlanFromLibrary(plan.id);
+      showToast(`Deleted "${plan.name}".`);
+    }
+  }
+});
+
+els.libDrop.addEventListener('click', () => els.libFile.click());
+els.libDrop.addEventListener('keydown', e => {
+  if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); els.libFile.click(); }
+});
+els.libFile.addEventListener('change', e => {
+  const files = Array.from(e.target.files || []);
+  e.target.value = '';
+  if (files.length) importFiles(files);
+});
+['dragenter','dragover'].forEach(ev =>
+  els.libDrop.addEventListener(ev, e => {
+    e.preventDefault(); els.libDrop.classList.add('drag');
+  }));
+['dragleave','dragend','drop'].forEach(ev =>
+  els.libDrop.addEventListener(ev, e => {
+    e.preventDefault(); els.libDrop.classList.remove('drag');
+  }));
+els.libDrop.addEventListener('drop', e => {
+  const files = Array.from((e.dataTransfer && e.dataTransfer.files) || []);
+  if (files.length) importFiles(files);
+});
+
+/* ============================================================
+   PLAN CARDS ROW EVENTS
+   ============================================================ */
+els.templateRow.addEventListener('click', e => {
+  /* empty-state import button */
+  if (e.target.closest('[data-open-library]')){
+    openLibraryModal();
+    return;
+  }
+  const card = e.target.closest('[data-plan-id]');
+  if (!card) return;
+  const plan = library.find(p => p.id === card.dataset.planId);
+  if (!plan) return;
+  applyPlan({ name: plan.name, subjects: plan.subjects });
+  showToast(`Applied "${plan.name}".`);
+});
 
 /* ============================================================
    EVENTS
    ============================================================ */
-els.templateRow.addEventListener('click', e => {
-  const card = e.target.closest('[data-template]');
-  if (!card) return;
-  applyTemplate(card.dataset.template);
-});
 els.settingsBtn.addEventListener('click', () => {
   settingsOpen = !settingsOpen;
   els.settings.hidden = !settingsOpen;
@@ -1834,7 +2335,6 @@ els.hoursSeg.addEventListener('click', e => {
   renderAll(true);
 });
 
-/* Coalesce input events → render once, 200ms after user stops. */
 let inputDebounce = null;
 function scheduleInputRender(){
   if (inputDebounce) return;
@@ -1871,6 +2371,8 @@ els.clearBtn.addEventListener('click', () => {
 });
 els.openBuilderBtn.addEventListener('click', openPlanModal);
 els.buildBtnTop.addEventListener('click', openPlanModal);
+els.libraryBtn.addEventListener('click', openLibraryModal);
+els.libraryBtnTop.addEventListener('click', openLibraryModal);
 
 els.checklist.addEventListener('click', e => {
   const chk = e.target.closest('[data-action="check"]');
@@ -1888,7 +2390,6 @@ els.checklist.addEventListener('click', e => {
     if (t.done){
       t.remaining = t.total; t.done = false; t.running = true;
       t.startedAt = Date.now();
-      /* force full repaint on restart */
       t._lastSec = null; t._lastPct = null;
       paintTimerFull(t);
     } else if (t.running){
@@ -1905,7 +2406,10 @@ els.checklist.addEventListener('click', e => {
 });
 
 document.addEventListener('keydown', e => {
-  if (e.key === 'Escape' && !els.planModal.hidden){ closePlanModal(); return; }
+  if (e.key === 'Escape'){
+    if (!els.libraryModal.hidden){ closeLibraryModal(); return; }
+    if (!els.planModal.hidden){ closePlanModal(); return; }
+  }
   if (e.key !== ' ' && e.key !== 'Spacebar') return;
   const tag = document.activeElement && document.activeElement.tagName;
   if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
@@ -1916,14 +2420,15 @@ document.addEventListener('keydown', e => {
   markChecked(row.dataset.sig, !checked.has(row.dataset.sig));
 });
 
+/* settings dropzone */
 els.dropzone.addEventListener('click', () => els.file.click());
 els.dropzone.addEventListener('keydown', e => {
   if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); els.file.click(); }
 });
 els.file.addEventListener('change', e => {
-  const f = e.target.files && e.target.files[0];
-  if (f) readFile(f);
+  const files = Array.from(e.target.files || []);
   e.target.value = '';
+  if (files.length) importFiles(files);
 });
 ['dragenter','dragover'].forEach(ev =>
   els.dropzone.addEventListener(ev, e => {
@@ -1934,22 +2439,25 @@ els.file.addEventListener('change', e => {
     e.preventDefault(); els.dropzone.classList.remove('drag');
   }));
 els.dropzone.addEventListener('drop', e => {
-  const f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
-  if (f) readFile(f);
+  const files = Array.from((e.dataTransfer && e.dataTransfer.files) || []);
+  if (files.length) importFiles(files);
 });
+
 els.templateBtn.addEventListener('click', () => {
   downloadPlan({ name: planName === DEFAULT_PLAN_NAME ? 'study-plan' : planName,
     subjects: cloneSubjects(subjects) });
 });
 els.resetBtn.addEventListener('click', () => {
-  loadedFileName = '';
   checked.clear(); timers.clear(); stopTimerLoop();
+  showNote('');
   applyPlan({ name: DEFAULT_PLAN_NAME, subjects: DEFAULT_SUBJECTS });
 });
 
 /* ============================================================
    INIT
    ============================================================ */
+library = loadLibrary();
+
 try {
   const saved = JSON.parse(localStorage.getItem('studyChecklist5') || 'null');
   if (saved){
