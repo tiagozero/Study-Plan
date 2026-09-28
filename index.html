@@ -500,9 +500,38 @@ input[type=time]::-webkit-calendar-picker-indicator{filter:opacity(.55)}
    and transitions so the compositor isn't doing continuous work. */
 body.modal-open .checklist *{animation:none!important;transition:none!important}
 
+/* ============ View tabs + history calendar ============ */
+.view-tabs{margin:2px 0 14px;display:inline-flex}
+.cal-head{display:flex;align-items:center;gap:10px;margin:8px 0 14px}
+.cal-head h2{margin:0;flex:1 1 auto;text-align:center;font-size:1.05rem;
+  font-weight:800;letter-spacing:-.02em}
+.cal-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px}
+.cal-stat{background:var(--surface);border:1px solid var(--line);border-radius:12px;
+  padding:12px 14px;box-shadow:var(--shadow-sm)}
+.cal-stat b{display:block;font-family:var(--mono);font-size:1.25rem;font-weight:800;
+  letter-spacing:-.02em}
+.cal-stat span{font-size:.62rem;font-weight:800;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--text-3)}
+.cal-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px}
+.cal-dow{font-size:.6rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--text-3);text-align:center;padding:4px 0}
+.cal-day{min-height:70px;background:var(--surface);border:1px solid var(--line);
+  border-radius:10px;padding:6px 8px;display:flex;flex-direction:column;
+  justify-content:space-between;gap:2px}
+.cal-day.empty{background:transparent;border:0}
+.cal-day.future{opacity:.5}
+.cal-day.today{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft)}
+.cal-day .n{font-size:.68rem;font-weight:700;color:var(--text-3)}
+.cal-day .c{font-family:var(--mono);font-size:1.1rem;font-weight:800;line-height:1}
+.cal-day .t{font-size:.58rem;font-weight:700;color:var(--text-3)}
+.cal-day.full .c{color:#047857}
+@media(max-width:600px){
+  .cal-grid{gap:4px}.cal-day{min-height:56px;padding:4px 5px;border-radius:8px}
+  .cal-day .c{font-size:.9rem}.cal-day .t{display:none}
+}
 @media print{
   body{background:#fff}
-  .settings,.toolbar,.icon-btn,.cl-timer,.cl-hint,.templates,
+  .view-tabs,.settings,.toolbar,.icon-btn,.cl-timer,.cl-hint,.templates,
   .cl-drag,.plan-modal,.toast{display:none!important}
   .cl-item::after{display:none}.cl-item{box-shadow:none;content-visibility:visible}
 }
@@ -534,6 +563,12 @@ body.modal-open .checklist *{animation:none!important;transition:none!important}
     </div>
   </header>
 
+  <div class="filter-tabs view-tabs" id="viewTabs">
+    <button data-view="today" class="active">Today</button>
+    <button data-view="history">History</button>
+  </div>
+
+  <div id="todayView">
   <section class="templates">
     <div class="templates-head">
       <span class="templates-label">My study plans</span>
@@ -624,13 +659,25 @@ body.modal-open .checklist *{animation:none!important;transition:none!important}
       <button class="toolbar-btn" id="libraryBtnTop" type="button">Study plans</button>
       <button class="toolbar-btn primary" id="buildBtnTop" type="button">+ New plan</button>
       <button class="toolbar-btn" id="densityBtn" type="button">Compact</button>
-      <button class="toolbar-btn" id="clearBtn" type="button">Clear done</button>
+      <button class="toolbar-btn" id="clearBtn" type="button">Reset tasks</button>
     </div>
   </div>
 
   <div class="checklist" id="checklist"></div>
 
   <p class="cl-hint">Drag study blocks to move subjects between sections · <kbd>Space</kbd> toggles the focused item</p>
+  </div>
+
+  <div id="historyView" hidden>
+    <div class="cal-head">
+      <button class="icon-btn" id="calPrev" type="button" aria-label="Previous month">‹</button>
+      <h2 id="calTitle"></h2>
+      <button class="icon-btn" id="calNext" type="button" aria-label="Next month">›</button>
+      <button class="toolbar-btn" id="calToday" type="button">Today</button>
+    </div>
+    <div class="cal-stats" id="calStats"></div>
+    <div class="cal-grid" id="calGrid"></div>
+  </div>
 </div>
 
 <div class="plan-modal" id="planModal" hidden>
@@ -718,6 +765,7 @@ const SECTION_META = {
 const DEFAULT_PLAN_NAME = "Today's plan";
 
 const LIB_KEY = 'studyChecklist5.library';
+const HIST_KEY = 'studyChecklist5.history';
 const LIB_MAX = 200;
 
 const DEFAULT_SUBJECTS = {
@@ -767,6 +815,13 @@ let timerIntervalId = null;
 let lastTickTime = 0;
 let persistTimerId = null;
 let restoredTimers = null;
+let history = {};
+let dayKey = todayKey();
+let view = 'today';
+let calY = new Date().getFullYear(), calM = new Date().getMonth();
+let _ready = false;
+let _lastBlocks = [];
+let _lastHistJson = '';
 let restoredAt = 0;
 let toastTimerId = null;
 
@@ -819,6 +874,72 @@ const els = {
   libClearBtn:document.getElementById('libClearBtn'),
   toast:      document.getElementById('toast')
 };
+
+
+/* ============================================================
+   STORAGE — localStorage + IndexedDB (+ window.name for reloads)
+   ============================================================ */
+let idb = null;
+let lastStorageError = null;
+function todayKey(d = new Date()){
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+function openIDB(){
+  return new Promise(res => {
+    try {
+      if (!window.indexedDB) return res(null);
+      const r = indexedDB.open('studyChecklist', 1);
+      r.onupgradeneeded = () => { try { r.result.createObjectStore('kv'); } catch(e){} };
+      r.onsuccess = () => { idb = r.result; res(idb); };
+      r.onerror = () => res(null);
+      r.onblocked = () => res(null);
+    } catch(e){ res(null); }
+  });
+}
+function idbGet(key){
+  return new Promise(res => {
+    if (!idb) return res(null);
+    try {
+      const rq = idb.transaction('kv').objectStore('kv').get(key);
+      rq.onsuccess = () => res(rq.result == null ? null : rq.result);
+      rq.onerror = () => res(null);
+    } catch(e){ res(null); }
+  });
+}
+function idbSet(key, val){
+  if (!idb) return false;
+  try {
+    const tx = idb.transaction('kv', 'readwrite');
+    tx.objectStore('kv').put(val, key);
+    return true;
+  } catch(e){ lastStorageError = e; return false; }
+}
+/* Write to every backend that works; true if at least one durable one did. */
+function kvSet(key, str){
+  let lsOk = true;
+  try { localStorage.setItem(key, str); }
+  catch(e){ lsOk = false; lastStorageError = e; }
+  const idbOk = idbSet(key, str);
+  return lsOk || idbOk;
+}
+/* Read from every backend; the copy with the newest savedAt wins. */
+async function kvGet(key, withWindowName){
+  const cands = [];
+  try { const v = localStorage.getItem(key); if (v) cands.push(v); } catch(e){}
+  const iv = await idbGet(key); if (iv) cands.push(iv);
+  if (withWindowName){
+    try { if (window.name.startsWith('SC5:')) cands.push(window.name.slice(4)); } catch(e){}
+  }
+  let best = null, bestT = -1;
+  for (const c of cands){
+    try {
+      const o = JSON.parse(c);
+      const t = (o && Number(o.savedAt)) || 0;
+      if (best === null || t > bestT){ best = c; bestT = t; }
+    } catch(e){}
+  }
+  return best;
+}
 
 /* ============================================================
    HELPERS
@@ -1127,23 +1248,20 @@ function normalizeStoredPlan(p){
   };
 }
 
-function loadLibrary(){
+function loadLibrary(text){
   try {
-    const raw = JSON.parse(localStorage.getItem(LIB_KEY) || '[]');
+    const raw = JSON.parse(text || '[]');
     if (!Array.isArray(raw)) return [];
     return raw.map(normalizeStoredPlan).filter(Boolean);
   } catch(e){ return []; }
 }
 
 function persistLibrary(){
-  try {
-    localStorage.setItem(LIB_KEY, JSON.stringify(library));
-    return true;
-  } catch(e){
-    showLibError('Could not save — browser storage is full. Delete a few plans and try again.');
-    showToast('Storage full — delete some saved plans.');
-    return false;
-  }
+  if (kvSet(LIB_KEY, JSON.stringify(library))) return true;
+  const why = lastStorageError ? ` (${lastStorageError.name || 'error'})` : '';
+  showLibError('Could not save — browser storage is blocked or full' + why + '.');
+  showToast('Could not save plans — browser storage is blocked or full.');
+  return false;
 }
 
 function addPlanToLibrary(plan){
@@ -1659,7 +1777,7 @@ function repaintTimerState(t){
   }
   if (t.refs.root){
     t.refs.root.classList.toggle('is-running', t.running && !t.done);
-    t.refs.root.classList.toggle('is-done', t.done);
+    t.refs.root.classList.toggle('is-done', t.done || checked.has(t.refs.root.dataset.sig));
   }
 }
 function paintStarted(t){
@@ -1889,6 +2007,7 @@ function computeStructureKey(blocks){
 function renderAll(forceStructure){
   const built = buildSchedule();
   const blocks = assignSigs(built.blocks);
+  _lastBlocks = blocks;
   syncTimers(blocks);
 
   const totalH = totalHoursFromSubjects();
@@ -1980,27 +2099,46 @@ function serializeTimers(){
   return out;
 }
 
+function recordToday(){
+  if (!_lastBlocks.length) return;
+  let done = 0;
+  for (const b of _lastBlocks) if (checked.has(b.sig)) done++;
+  const total = _lastBlocks.length;
+  if (done > 0 || history[dayKey]) history[dayKey] = { done, total };
+}
+
 function persistNow(){
   if (persistTimerId !== null){ clearTimeout(persistTimerId); persistTimerId = null; }
-  try {
-    localStorage.setItem(STATE_KEY, JSON.stringify({
-      planName, filter, density, settingsOpen, loadedFileName,
-      wake:    els.wake.value,
-      lunch:   els.lunch.value,
-      lunchDur: els.lunchDur.value,
-      dinner:  els.dinner.value,
-      dinnerDur: els.dinnerDur.value,
-      session: els.session.value,
-      subjects,
-      checked: [...checked],
-      timers: serializeTimers(),
-      savedAt: Date.now()
-    }));
-  } catch(e){
-    if (!_persistWarned){
-      _persistWarned = true;
-      showToast('Could not save progress — browser storage is unavailable or blocked.', 5000);
-    }
+  if (!_ready) return;          /* never overwrite saved data before it is loaded */
+  recordToday();
+  const now = Date.now();
+  const state = JSON.stringify({
+    planName, filter, density, settingsOpen, loadedFileName,
+    wake:    els.wake.value,
+    lunch:   els.lunch.value,
+    lunchDur: els.lunchDur.value,
+    dinner:  els.dinner.value,
+    dinnerDur: els.dinnerDur.value,
+    session: els.session.value,
+    subjects,
+    checked: [...checked],
+    timers: serializeTimers(),
+    day: dayKey,
+    savedAt: now
+  });
+  let ok = kvSet(STATE_KEY, state);
+  try { window.name = 'SC5:' + state; } catch(e){}
+
+  const hj = JSON.stringify(history);
+  if (hj !== _lastHistJson){
+    _lastHistJson = hj;
+    ok = kvSet(HIST_KEY, JSON.stringify({ days: history, savedAt: now })) && ok;
+  }
+  if (!ok && !_persistWarned){
+    _persistWarned = true;
+    const why = lastStorageError ? ` (${lastStorageError.name || 'error'})` : '';
+    showToast('Could not save progress' + why + ' — browser storage is blocked. '
+      + 'Open the file directly in a normal browser tab (not a preview or private window).', 7000);
   }
 }
 
@@ -2410,11 +2548,26 @@ els.densityBtn.addEventListener('click', () => {
   density = density === 'compact' ? 'comfortable' : 'compact';
   renderAll(true);
 });
+let resetArmed = false, resetTimer = null;
+function disarmReset(){
+  resetArmed = false;
+  if (resetTimer){ clearTimeout(resetTimer); resetTimer = null; }
+  els.clearBtn.textContent = 'Reset tasks';
+  els.clearBtn.classList.remove('primary');
+}
 els.clearBtn.addEventListener('click', () => {
-  checked.clear();
-  els.checklist.querySelectorAll('.cl-item').forEach(r => r.classList.remove('is-done'));
-  updateProgress();
-  schedulePersist();
+  if (!resetArmed){
+    resetArmed = true;
+    els.clearBtn.textContent = 'Tap again to confirm';
+    els.clearBtn.classList.add('primary');
+    resetTimer = setTimeout(disarmReset, 3500);
+    return;
+  }
+  disarmReset();
+  checked.clear(); timers.clear(); stopTimerLoop();
+  renderAll(true);
+  persistNow();
+  showToast('All tasks reset.');
 });
 els.openBuilderBtn.addEventListener('click', openPlanModal);
 els.buildBtnTop.addEventListener('click', openPlanModal);
@@ -2501,13 +2654,109 @@ els.resetBtn.addEventListener('click', () => {
   applyPlan({ name: DEFAULT_PLAN_NAME, subjects: DEFAULT_SUBJECTS });
 });
 
+
+/* ============================================================
+   HISTORY (calendar view)
+   ============================================================ */
+function historyStreak(){
+  const d = new Date();
+  const doneOn = k => (history[k] && history[k].done > 0);
+  if (!doneOn(todayKey(d))) d.setDate(d.getDate() - 1);
+  let n = 0;
+  while (doneOn(todayKey(d))){ n++; d.setDate(d.getDate() - 1); }
+  return n;
+}
+function renderHistory(){
+  recordToday();
+  const first = new Date(calY, calM, 1);
+  const daysIn = new Date(calY, calM + 1, 0).getDate();
+  const lead = first.getDay();
+  document.getElementById('calTitle').textContent =
+    first.toLocaleDateString(undefined, { month:'long', year:'numeric' });
+
+  let html = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat']
+    .map(d => `<div class="cal-dow">${d}</div>`).join('');
+  for (let i = 0; i < lead; i++) html += '<div class="cal-day empty"></div>';
+
+  let monthDone = 0, activeDays = 0;
+  for (let d = 1; d <= daysIn; d++){
+    const key = todayKey(new Date(calY, calM, d));
+    const rec = history[key];
+    const isToday = key === dayKey, future = key > dayKey;
+    const done = rec ? rec.done : 0, total = rec ? rec.total : 0;
+    monthDone += done; if (done > 0) activeDays++;
+    const ratio = total ? Math.min(1, done / total) : 0;
+    const bg = done > 0 ? ` style="background:rgba(16,185,129,${(0.08 + 0.32 * ratio).toFixed(2)})"` : '';
+    const body = done > 0
+      ? `<span class="c">${done}</span><span class="t">of ${total} done</span>`
+      : `<span class="t">${future ? '' : '—'}</span>`;
+    html += `<div class="cal-day${isToday ? ' today' : ''}${future ? ' future' : ''}${total && done >= total ? ' full' : ''}"${bg}
+      title="${esc(key)}: ${done} of ${total || 0} completed">
+      <span class="n">${d}</span>${body}</div>`;
+  }
+  document.getElementById('calGrid').innerHTML = html;
+  document.getElementById('calStats').innerHTML =
+    `<div class="cal-stat"><b>${monthDone}</b><span>Tasks this month</span></div>
+     <div class="cal-stat"><b>${activeDays}</b><span>Active days</span></div>
+     <div class="cal-stat"><b>${historyStreak()}</b><span>Day streak</span></div>`;
+}
+function setView(v){
+  view = v;
+  document.getElementById('todayView').hidden = v !== 'today';
+  document.getElementById('historyView').hidden = v !== 'history';
+  document.querySelectorAll('#viewTabs button').forEach(b =>
+    b.classList.toggle('active', b.dataset.view === v));
+  if (v === 'history') renderHistory();
+}
+document.getElementById('viewTabs').addEventListener('click', e => {
+  const b = e.target.closest('button[data-view]');
+  if (b) setView(b.dataset.view);
+});
+document.getElementById('calPrev').addEventListener('click', () => {
+  calM--; if (calM < 0){ calM = 11; calY--; } renderHistory();
+});
+document.getElementById('calNext').addEventListener('click', () => {
+  calM++; if (calM > 11){ calM = 0; calY++; } renderHistory();
+});
+document.getElementById('calToday').addEventListener('click', () => {
+  const n = new Date(); calY = n.getFullYear(); calM = n.getMonth(); renderHistory();
+});
+
+/* New day → fresh checklist (yesterday's counts stay in History). */
+function checkDayRollover(){
+  const k = todayKey();
+  if (!_ready || k === dayKey) return;
+  persistNow();                 /* records the finished day */
+  dayKey = k;
+  checked.clear(); timers.clear(); stopTimerLoop();
+  renderAll(true);
+  persistNow();
+  if (view === 'history') renderHistory();
+}
+setInterval(checkDayRollover, 30000);
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') checkDayRollover();
+});
+
 /* ============================================================
    INIT
    ============================================================ */
-library = loadLibrary();
+async function init(){
+await openIDB();
+library = loadLibrary(await kvGet(LIB_KEY));
+try {
+  const h = JSON.parse((await kvGet(HIST_KEY)) || 'null');
+  if (h && h.days && typeof h.days === 'object'){
+    for (const k of Object.keys(h.days)){
+      const r = h.days[k];
+      if (r && Number.isFinite(r.done)) history[k] = { done: r.done, total: Number(r.total) || r.done };
+    }
+  }
+  _lastHistJson = JSON.stringify(history);
+} catch(e){}
 
 try {
-  const saved = JSON.parse(localStorage.getItem('studyChecklist5') || 'null');
+  const saved = JSON.parse((await kvGet(STATE_KEY, true)) || 'null');
   if (saved){
     planName = saved.planName || DEFAULT_PLAN_NAME;
     filter = ['all','study','breaks','meals'].includes(saved.filter) ? saved.filter : 'all';
@@ -2532,9 +2781,10 @@ try {
         else subjects.evening.push(item);
       });
     }
-    if (Array.isArray(saved.checked)) checked = new Set(saved.checked);
+    const sameDay = !saved.day || saved.day === dayKey;
+    if (sameDay && Array.isArray(saved.checked)) checked = new Set(saved.checked);
     loadedFileName = typeof saved.loadedFileName === 'string' ? saved.loadedFileName : '';
-    if (saved.timers && typeof saved.timers === 'object'){
+    if (sameDay && saved.timers && typeof saved.timers === 'object'){
       restoredTimers = saved.timers;
       restoredAt = Number(saved.savedAt) || Date.now();
     }
@@ -2547,7 +2797,10 @@ try {
 renderAll(true);
 restoredTimers = null;
 timers.forEach(t => { if (t.running && !t.done) ensureTimerLoop(); });
+_ready = true;
 persistNow();
+}
+init();
 })();
 </script>
 </body>
