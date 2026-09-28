@@ -205,17 +205,6 @@ input[type=time]::-webkit-calendar-picker-indicator{filter:opacity(.55)}
   border:1px solid var(--line);border-radius:var(--radius-lg);
   box-shadow:var(--shadow-sm);overflow:hidden}
 
-/* Empty sections are hidden until a drag starts — then they become drop zones */
-.cl-section.is-empty{display:none}
-#checklist.is-dragging .cl-section.is-empty{display:flex}
-#checklist.is-dragging .cl-section.is-empty .cl-list{
-  background:var(--surface-2);border:1px dashed var(--line-strong);
-  box-shadow:none;transition:box-shadow .15s,background .15s}
-.cl-drop-hint{list-style:none;padding:18px 12px;text-align:center;
-  font-size:.74rem;font-weight:600;color:var(--text-3)}
-.cl-section.is-drop-zone .cl-list{
-  box-shadow:inset 0 0 0 2px var(--accent);background:var(--accent-soft)}
-
 .cl-item{
   display:grid;
   grid-template-columns:18px 34px 84px 1fr auto;
@@ -223,13 +212,12 @@ input[type=time]::-webkit-calendar-picker-indicator{filter:opacity(.55)}
   padding:11px 16px 11px 8px;
   border-bottom:1px solid var(--line);
   position:relative;overflow:hidden;
-  transition:background .15s,opacity .15s;
+  transition:background .15s;
   content-visibility:auto;
   contain-intrinsic-size:auto 62px;
 }
 .cl-item:last-child{border-bottom:0}
 .cl-item:hover{background:var(--surface-2)}
-.cl-item:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
 
 .cl-item::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;
   background:var(--tc);opacity:.9}
@@ -242,33 +230,17 @@ input[type=time]::-webkit-calendar-picker-indicator{filter:opacity(.55)}
 }
 .cl-item > *{position:relative;z-index:1}
 
-/* ---- drag handle ---- */
 .cl-drag{width:18px;height:24px;flex:none;display:grid;place-items:center;
-  color:var(--text-3);opacity:.28;transition:opacity .15s,color .15s;
-  cursor:grab;padding:0;touch-action:none;-webkit-user-select:none;user-select:none}
+  color:var(--text-3);opacity:0;transition:opacity .15s,color .15s;
+  cursor:grab;padding:0}
 .cl-drag:active{cursor:grabbing}
-.cl-item[data-draggable="true"]:hover .cl-drag{opacity:.75}
+.cl-item[data-draggable="true"]:hover .cl-drag{opacity:.6}
 .cl-item[data-draggable="true"] .cl-drag:hover{opacity:1;color:var(--text-2)}
 .cl-drag svg{width:9px;height:13px;pointer-events:none}
-
-/* ---- drag states ---- */
-.cl-item.is-dragging{opacity:.3;background:var(--accent-soft)}
-.cl-item.is-drag-target{background:var(--accent-soft)!important}
-.cl-item.is-drag-target.is-drop-before{box-shadow:inset 0 3px 0 var(--accent)}
-.cl-item.is-drag-target.is-drop-after{box-shadow:inset 0 -3px 0 var(--accent)}
-body.is-dragging-item{cursor:grabbing;user-select:none;-webkit-user-select:none}
-
-.cl-drag-ghost{
-  position:fixed;left:0;top:0;z-index:600;pointer-events:none;
-  max-width:70vw;padding:9px 13px;border-radius:10px;
-  background:var(--surface);border:1px solid var(--accent);
-  box-shadow:0 16px 36px -14px rgba(20,20,19,.45);
-  font-size:.84rem;font-weight:700;color:var(--text);
-  display:flex;align-items:center;gap:8px;opacity:.97;
-  transform:translate3d(0,0,0);will-change:transform}
-.cl-drag-ghost .g-tag{font-size:.56rem;font-weight:900;letter-spacing:.08em;
-  text-transform:uppercase;padding:2px 7px;border-radius:99px;
-  background:var(--accent-soft);color:var(--accent);flex:none}
+.cl-item.is-dragging{opacity:.35}
+.cl-item.is-drag-target{background:var(--accent-soft)!important;
+  box-shadow:inset 0 0 0 2px var(--accent)}
+.cl-item.is-drag-target::before{background:var(--accent);opacity:1}
 
 .cl-check{width:24px;height:24px;flex:none;border-radius:7px;
   border:1.5px solid var(--line-strong);background:var(--surface);
@@ -658,7 +630,7 @@ body.modal-open .checklist *{animation:none!important;transition:none!important}
 
   <div class="checklist" id="checklist"></div>
 
-  <p class="cl-hint">Drag the <kbd>⠿</kbd> handle onto another block to move a subject between sections · <kbd>Space</kbd> toggles the focused row</p>
+  <p class="cl-hint">Drag study blocks to move subjects between sections · <kbd>Space</kbd> toggles the focused item</p>
 </div>
 
 <div class="plan-modal" id="planModal" hidden>
@@ -745,9 +717,8 @@ const SECTION_META = {
 };
 const DEFAULT_PLAN_NAME = "Today's plan";
 
-const STATE_KEY = 'studyChecklist5';
-const LIB_KEY   = 'studyChecklist5.library';
-const LIB_MAX   = 200;
+const LIB_KEY = 'studyChecklist5.library';
+const LIB_MAX = 200;
 
 const DEFAULT_SUBJECTS = {
   morning:   [{ name:'Math',      weight:2 }, { name:'Physics', weight:1 }],
@@ -783,6 +754,7 @@ let subjects       = cloneSubjects(DEFAULT_SUBJECTS);
 let loadedFileName = '';
 let checked        = new Set();
 let timers         = new Map();
+let dragState      = null;
 let planDraft      = null;
 let library        = [];
 let _sid           = 0;
@@ -794,8 +766,9 @@ let _lastHoursKey     = '';
 let timerIntervalId = null;
 let lastTickTime = 0;
 let persistTimerId = null;
+let restoredTimers = null;
+let restoredAt = 0;
 let toastTimerId = null;
-let storageWarned = false;
 
 const els = {
   app:        document.getElementById('app'),
@@ -1208,9 +1181,14 @@ function removePlanFromLibrary(id){
 }
 
 /* ============================================================
-   PLAN CARDS ROW
+   PLAN CARDS ROW  (replaces old "Quick start" templates)
+   ------------------------------------------------------------
+   Shows ONLY the user's imported / saved study plans. If the
+   library is empty, an empty-state card invites them to import.
    ============================================================ */
 function planCardsKey(){
+  /* Rebuild the row DOM only when the set of plans or their
+     identity/labels actually change. */
   return library.map(p =>
     `${p.id}:${p.name}:${p.savedAt}:${subjectsCount(p.subjects)}`
   ).join('|');
@@ -1357,7 +1335,7 @@ function closeLibraryModal(){
 }
 
 /* ============================================================
-   FILE IMPORT
+   FILE IMPORT — supports many files at once
    ============================================================ */
 function isJsonFile(file){
   return /\.json$/i.test(file.name) || file.type === 'application/json';
@@ -1400,6 +1378,7 @@ async function importFiles(fileList){
     }
     persistLibrary();
 
+    /* Only auto-apply when a single plan was imported. */
     if (parsedPlans.length === 1){
       applyPlan(parsedPlans[0], files[0] ? files[0].name : '');
     } else {
@@ -1438,7 +1417,6 @@ function applyPlan(plan, fileName = ''){
   stopTimerLoop();
   showError('');
   renderAll(true);
-  flushPersist();
 }
 
 /* ============================================================
@@ -1564,13 +1542,11 @@ function buildSchedule(){
   return { blocks, wake, lightsOut, sleepMin };
 }
 
-/* Signature is deliberately independent of duration/schedule position so
-   ticks, timers and checked state survive rhythm changes and drag moves. */
 function assignSigs(blocks){
   const counters = new Map();
   for (let i = 0; i < blocks.length; i++){
     const b = blocks[i];
-    const base = `${b.type}|${b.label}`;
+    const base = `${b.type}|${b.label}|${b.dur}`;
     const n = (counters.get(base) || 0) + 1;
     counters.set(base, n);
     b.sig = `${base}#${n}`;
@@ -1581,34 +1557,33 @@ function assignSigs(blocks){
 /* ============================================================
    TIMER ENGINE
    ============================================================ */
-function newTimerState(totalSec){
-  return {
-    total: totalSec, remaining: totalSec,
-    running:false, done:false, startedAt:null,
-    refs:null, _state:null,
-    _lastSec:null, _lastPct:null,
-    _lastHasStarted:null
-  };
-}
-
 function syncTimers(blocks){
   const next = new Map();
   for (const b of blocks){
     if (!TIMED.has(b.type)) continue;
-    const durSec = Math.max(0, Math.round(b.dur * 60));
-    let t = timers.get(b.sig);
-    if (!t){
-      t = newTimerState(durSec);
-    } else if (!t.startedAt && !t.done && !t.running){
-      /* nothing invested yet — adopt the new duration */
-      if (t.total !== durSec){
-        t.total = durSec;
-        t.remaining = durSec;
-        t._lastSec = null;
-        t._lastPct = null;
+    let ex = timers.get(b.sig);
+    if (!ex && restoredTimers && restoredTimers[b.sig]){
+      const r = restoredTimers[b.sig];
+      const total = b.dur * 60;
+      if (Number(r.total) === total){
+        let remaining = Math.min(total, Math.max(0, Number(r.remaining) || 0));
+        let running = !!r.running, done = !!r.done;
+        if (running && !done){
+          remaining = Math.max(0, remaining - (Date.now() - restoredAt) / 1000);
+          if (remaining === 0){ running = false; done = true; checked.add(b.sig); }
+        }
+        ex = { total, remaining, running, done, startedAt: r.startedAt || null,
+               refs:null, _state:null, _lastSec:null, _lastPct:null,
+               _lastHasStarted:null, _lastStartedText:null };
       }
     }
-    next.set(b.sig, t);
+    next.set(b.sig, ex || {
+      total: b.dur * 60, remaining: b.dur * 60,
+      running:false, done:false, startedAt:null,
+      refs:null, _state:null,
+      _lastSec:null, _lastPct:null,
+      _lastHasStarted:null, _lastStartedText:null
+    });
   }
   timers = next;
 }
@@ -1666,7 +1641,7 @@ function paintDigits(t){
 }
 function paintBar(t){
   const total = t.total || 1;
-  const pct = Math.min(1, Math.max(0, 1 - t.remaining/total));
+  const pct = 1 - t.remaining/total;
   const pctR = Math.round(pct * 1000) / 1000;
   if (t._lastPct === pctR) return;
   t._lastPct = pctR;
@@ -1797,9 +1772,7 @@ function renderRowHTML(b){
     ? `${fmtDur(b.dur)} · ends ${fmtTime(b.start + b.dur)}`
     : `${fmtDur(b.dur)}`;
 
-  const handleHTML = `<span class="cl-drag" ${isDraggable
-      ? 'title="Drag to move between sections" role="button" aria-label="Drag handle"'
-      : 'aria-hidden="true"'}>
+  const handleHTML = `<span class="cl-drag" ${isDraggable ? 'title="Drag to move between sections"' : 'aria-hidden="true"'}>
       ${isDraggable ? ICON.grip : ''}
     </span>`;
 
@@ -1816,8 +1789,7 @@ function renderRowHTML(b){
   return `<li class="cl-item ${isDone ? 'is-done' : ''} ${isNow ? 'is-now' : ''} ${hasStarted ? 'has-started' : ''}"
       data-sig="${esc(b.sig)}"
       data-type="${b.type}"
-      tabindex="0"
-      ${isDraggable ? `data-draggable="true" data-subject="${esc(b.label)}"` : ''}
+      ${isDraggable ? `data-draggable="true" draggable="true" data-subject="${esc(b.label)}"` : ''}
       data-timer-root
       style="--tc:${tc}">
     ${handleHTML}
@@ -1855,14 +1827,12 @@ function renderChecklistStructure(blocks){
     els.checklist.innerHTML = `<div class="cl-empty">No blocks match this filter.</div>`;
     return;
   }
-  /* All three sections are always rendered. Empty ones stay hidden until a
-     drag begins, at which point they become drop targets. */
   let html = '';
   for (const key of SECTIONS){
     const list = groups[key];
+    if (!list.length) continue;
     const meta = SECTION_META[key];
-    const empty = list.length === 0;
-    html += `<section class="cl-section${empty ? ' is-empty' : ''}" data-section="${key}">
+    html += `<section class="cl-section">
       <div class="cl-section-head">
         <span class="cl-section-title">
           <span class="icon">${meta.icon}</span>${meta.label}
@@ -1870,11 +1840,7 @@ function renderChecklistStructure(blocks){
         <span class="cl-section-count"></span>
       </div>
       <ul class="cl-list">`;
-    if (empty){
-      html += `<li class="cl-drop-hint">Drop a study block here</li>`;
-    } else {
-      for (const b of list) html += renderRowHTML(b);
-    }
+    for (const b of list) html += renderRowHTML(b);
     html += `</ul></section>`;
   }
   els.checklist.innerHTML = html;
@@ -1887,6 +1853,7 @@ function wireTimerRefs(){
     t._lastSec = null;
     t._lastPct = null;
     t._lastHasStarted = null;
+    t._lastStartedText = null;
   }
   els.checklist.querySelectorAll('[data-timer-root]').forEach(root => {
     const sig = root.dataset.sig;
@@ -1974,6 +1941,7 @@ function renderAll(forceStructure){
     }
   }
 
+  /* Plan cards row — shows library plans (or empty state) */
   renderPlanCards();
 
   const key = computeStructureKey(blocks);
@@ -1997,271 +1965,114 @@ function renderAll(forceStructure){
 }
 
 /* ============================================================
-   PERSIST  —  robust: debounced write + flush on page hide
+   PERSIST
    ============================================================ */
-function saveState(){
-  persistTimerId = null;
-  const timersOut = {};
+const STATE_KEY = 'studyChecklist5';
+let _persistWarned = false;
+
+function serializeTimers(){
+  const out = {};
   timers.forEach((t, sig) => {
-    timersOut[sig] = {
-      total: Math.round(t.total),
-      remaining: Math.round(t.remaining),
-      running: !!t.running,
-      done: !!t.done,
-      startedAt: t.startedAt || null
-    };
+    if (!t.startedAt && !t.done && !t.running && t.remaining >= t.total) return;
+    out[sig] = { total:t.total, remaining:t.remaining, running:t.running && !t.done,
+                 done:t.done, startedAt:t.startedAt };
   });
+  return out;
+}
+
+function persistNow(){
+  if (persistTimerId !== null){ clearTimeout(persistTimerId); persistTimerId = null; }
   try {
     localStorage.setItem(STATE_KEY, JSON.stringify({
-      v: 6,
       planName, filter, density, settingsOpen, loadedFileName,
-      wake:      els.wake.value,
-      lunch:     els.lunch.value,
-      lunchDur:  els.lunchDur.value,
-      dinner:    els.dinner.value,
+      wake:    els.wake.value,
+      lunch:   els.lunch.value,
+      lunchDur: els.lunchDur.value,
+      dinner:  els.dinner.value,
       dinnerDur: els.dinnerDur.value,
-      session:   els.session.value,
+      session: els.session.value,
       subjects,
       checked: [...checked],
-      timers: timersOut
+      timers: serializeTimers(),
+      savedAt: Date.now()
     }));
   } catch(e){
-    if (!storageWarned){
-      storageWarned = true;
-      showToast('Heads-up: this browser blocked saving, so progress can\'t be stored.', 5200);
+    if (!_persistWarned){
+      _persistWarned = true;
+      showToast('Could not save progress — browser storage is unavailable or blocked.', 5000);
     }
   }
 }
+
 function schedulePersist(){
   if (persistTimerId !== null) return;
-  persistTimerId = setTimeout(saveState, 250);
+  persistTimerId = setTimeout(persistNow, 150);
 }
-function flushPersist(){
-  if (persistTimerId !== null){
-    clearTimeout(persistTimerId);
-    persistTimerId = null;
-  }
-  saveState();
-}
-window.addEventListener('pagehide', flushPersist);
-window.addEventListener('beforeunload', flushPersist);
+
+/* Flush pending changes whenever the page is hidden, refreshed or closed. */
+window.addEventListener('pagehide', persistNow);
+window.addEventListener('beforeunload', persistNow);
 document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'hidden') flushPersist();
+  if (document.visibilityState === 'hidden') persistNow();
 });
 
 /* ============================================================
-   DRAG & DROP — pointer based (mouse, pen AND touch)
+   DRAG & DROP (checklist)
    ============================================================ */
-const DND = {
-  pending: null,      /* armed pointer, drag not started yet */
-  active: false,      /* drag started */
-  subject: '',
-  rowEl: null,
-  ghost: null,
-  drop: null          /* { sec, rowEl, after, beforeSubject } */
-};
-
-function moveSubjectTo(name, toSec, beforeName){
-  if (!SECTIONS.includes(toSec)) return false;
-  if (beforeName === name) return false;
-  const loc = findSubjectLocation(name);
-  if (!loc) return false;
-
-  if (loc.sec === toSec){
-    const cur = loc.idx;
-    let target = beforeName
-      ? subjects[toSec].findIndex(s => s.name === beforeName)
-      : subjects[toSec].length;
-    if (target < 0) target = subjects[toSec].length;
-    if (target === cur || target === cur + 1) return false;
-  }
-
-  const [item] = subjects[loc.sec].splice(loc.idx, 1);
-  let idx = subjects[toSec].length;
-  if (beforeName){
-    const t = subjects[toSec].findIndex(s => s.name === beforeName);
-    if (t >= 0) idx = t;
-  }
-  subjects[toSec].splice(idx, 0, item);
-  return true;
-}
-
-function nextDraggableName(rowEl){
-  let n = rowEl.nextElementSibling;
-  while (n){
-    if (n.classList && n.classList.contains('cl-item')
-        && n.dataset && n.dataset.draggable === 'true'){
-      return n.dataset.subject || null;
-    }
-    n = n.nextElementSibling;
-  }
-  return null;
-}
-
-function beginDrag(){
-  const p = DND.pending;
-  if (!p) return;
-  DND.active = true;
-  DND.subject = p.subject;
-  DND.rowEl = p.row;
-
-  p.row.classList.add('is-dragging');
-  els.checklist.classList.add('is-dragging');
-  document.body.classList.add('is-dragging-item');
-
-  const ghost = document.createElement('div');
-  ghost.className = 'cl-drag-ghost';
-  ghost.innerHTML = `<span class="g-name">${esc(p.subject)}</span>
-                     <span class="g-tag">Move</span>`;
-  document.body.appendChild(ghost);
-  DND.ghost = ghost;
-  positionGhost(p.startX, p.startY);
-}
-
-function positionGhost(x, y){
-  if (!DND.ghost) return;
-  DND.ghost.style.transform = `translate3d(${x + 14}px, ${y - 16}px, 0)`;
-}
-
-function sameDrop(a, b){
-  if (!a || !b) return a === b;
-  return a.sec === b.sec && a.rowEl === b.rowEl && a.after === b.after;
-}
-
-function paintDropTarget(){
+function clearDragUI(){
   els.checklist
-    .querySelectorAll('.is-drag-target, .is-drop-before, .is-drop-after')
-    .forEach(el => el.classList.remove('is-drag-target','is-drop-before','is-drop-after'));
-  els.checklist
-    .querySelectorAll('.cl-section.is-drop-zone')
-    .forEach(el => el.classList.remove('is-drop-zone'));
-
-  const d = DND.drop;
-  if (!d) return;
-  if (d.rowEl){
-    d.rowEl.classList.add('is-drag-target');
-    d.rowEl.classList.add(d.after ? 'is-drop-after' : 'is-drop-before');
-  } else {
-    const secEl = els.checklist.querySelector(`.cl-section[data-section="${d.sec}"]`);
-    if (secEl) secEl.classList.add('is-drop-zone');
-  }
+    .querySelectorAll('.cl-item.is-dragging, .cl-item.is-drag-target')
+    .forEach(r => r.classList.remove('is-dragging','is-drag-target'));
 }
 
-function updateDropTarget(x, y){
-  const el = document.elementFromPoint(x, y);
-  let next = null;
-  if (el && els.checklist.contains(el)){
-    const sectionEl = el.closest('.cl-section');
-    if (sectionEl && sectionEl.dataset.section){
-      const sec = sectionEl.dataset.section;
-      const rowEl = el.closest('.cl-item[data-draggable="true"]');
-      if (rowEl && rowEl !== DND.rowEl && rowEl.dataset.subject){
-        const r = rowEl.getBoundingClientRect();
-        const after = y > r.top + r.height / 2;
-        next = {
-          sec,
-          rowEl,
-          after,
-          beforeSubject: after ? nextDraggableName(rowEl) : rowEl.dataset.subject
-        };
-      } else {
-        next = { sec, rowEl:null, after:false, beforeSubject:null };
-      }
+els.checklist.addEventListener('dragstart', e => {
+  const row = e.target.closest('.cl-item[data-draggable="true"]');
+  if (!row) return;
+  dragState = { sig: row.dataset.sig, subject: row.dataset.subject };
+  row.classList.add('is-dragging');
+  try {
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', dragState.subject);
+  } catch(err){}
+});
+els.checklist.addEventListener('dragover', e => {
+  if (!dragState) return;
+  const row = e.target.closest('.cl-item[data-draggable="true"]');
+  if (!row || row.dataset.sig === dragState.sig) return;
+  e.preventDefault();
+  try { e.dataTransfer.dropEffect = 'move'; } catch(err){}
+  if (!row.classList.contains('is-drag-target')){
+    els.checklist.querySelectorAll('.cl-item.is-drag-target')
+      .forEach(r => r.classList.remove('is-drag-target'));
+    row.classList.add('is-drag-target');
+  }
+});
+els.checklist.addEventListener('dragleave', e => {
+  const row = e.target.closest('.cl-item.is-drag-target');
+  if (row && !row.contains(e.relatedTarget)) row.classList.remove('is-drag-target');
+});
+els.checklist.addEventListener('drop', e => {
+  e.preventDefault();
+  const row = e.target.closest('.cl-item[data-draggable="true"]');
+  if (!row || !dragState){ clearDragUI(); dragState = null; return; }
+  const fromName = dragState.subject;
+  const toName   = row.dataset.subject;
+  if (fromName && toName && fromName !== toName){
+    const a = findSubjectLocation(fromName);
+    const b = findSubjectLocation(toName);
+    if (a && b && !(a.sec === b.sec && a.idx === b.idx)){
+      const tmp = subjects[a.sec][a.idx];
+      subjects[a.sec][a.idx] = subjects[b.sec][b.idx];
+      subjects[b.sec][b.idx] = tmp;
+      timers.clear(); stopTimerLoop();
+      clearDragUI(); dragState = null;
+      renderAll(true);
+      return;
     }
   }
-  if (sameDrop(DND.drop, next)) return;
-  DND.drop = next;
-  paintDropTarget();
-}
-
-function autoScroll(y){
-  const margin = 72, speed = 14;
-  if (y < margin) window.scrollBy(0, -speed);
-  else if (y > window.innerHeight - margin) window.scrollBy(0, speed);
-}
-
-function cleanupDrag(){
-  if (DND.ghost && DND.ghost.parentNode) DND.ghost.parentNode.removeChild(DND.ghost);
-  if (DND.rowEl) DND.rowEl.classList.remove('is-dragging');
-  els.checklist.classList.remove('is-dragging');
-  els.checklist
-    .querySelectorAll('.is-drag-target, .is-drop-before, .is-drop-after, .is-drop-zone')
-    .forEach(el => el.classList.remove('is-drag-target','is-drop-before','is-drop-after','is-drop-zone'));
-  document.body.classList.remove('is-dragging-item');
-  DND.pending = null;
-  DND.active = false;
-  DND.ghost = null;
-  DND.rowEl = null;
-  DND.drop = null;
-  DND.subject = '';
-}
-
-els.checklist.addEventListener('pointerdown', e => {
-  if (DND.pending || DND.active) return;
-  const handle = e.target.closest && e.target.closest('.cl-drag');
-  if (!handle) return;
-  const row = handle.closest('.cl-item[data-draggable="true"]');
-  if (!row || !row.dataset.subject) return;
-  if (e.pointerType === 'mouse' && e.button !== 0) return;
-
-  const sectionEl = row.closest('.cl-section');
-  DND.pending = {
-    pointerId: e.pointerId,
-    row,
-    subject: row.dataset.subject,
-    startX: e.clientX,
-    startY: e.clientY
-  };
-  DND.drop = null;
-  try { handle.setPointerCapture(e.pointerId); } catch(err){}
-  e.preventDefault();
+  clearDragUI(); dragState = null;
 });
-
-document.addEventListener('pointermove', e => {
-  if (!DND.pending) return;
-  if (e.pointerId !== DND.pending.pointerId) return;
-
-  if (!DND.active){
-    const dx = e.clientX - DND.pending.startX;
-    const dy = e.clientY - DND.pending.startY;
-    if (dx*dx + dy*dy < 36) return;   /* small dead-zone before a drag begins */
-    beginDrag();
-  }
-  if (!DND.active) return;
-  e.preventDefault();
-  positionGhost(e.clientX, e.clientY);
-  updateDropTarget(e.clientX, e.clientY);
-  autoScroll(e.clientY);
-}, { passive:false });
-
-function endPointerDrag(commit){
-  if (!DND.pending && !DND.active) return;
-  const wasActive = DND.active;
-  const drop = DND.drop;
-  const subject = DND.subject;
-  cleanupDrag();
-
-  if (!commit || !wasActive || !drop || !subject) return;
-  const moved = moveSubjectTo(subject, drop.sec, drop.beforeSubject);
-  if (moved){
-    renderAll(true);
-    flushPersist();
-    const label = (SECTION_META[drop.sec] || {}).label || drop.sec;
-    showToast(`Moved “${subject}” to ${label}.`, 1800);
-  }
-}
-
-document.addEventListener('pointerup', e => {
-  if (!DND.pending && !DND.active) return;
-  if (DND.pending && e.pointerId !== DND.pending.pointerId) return;
-  endPointerDrag(true);
-});
-document.addEventListener('pointercancel', e => {
-  if (!DND.pending && !DND.active) return;
-  if (DND.pending && e.pointerId !== DND.pending.pointerId) return;
-  endPointerDrag(false);
-});
-window.addEventListener('blur', () => { if (DND.active || DND.pending) endPointerDrag(false); });
+els.checklist.addEventListener('dragend', () => { clearDragUI(); dragState = null; });
 
 /* ============================================================
    PLAN BUILDER MODAL
@@ -2536,6 +2347,7 @@ els.libDrop.addEventListener('drop', e => {
    PLAN CARDS ROW EVENTS
    ============================================================ */
 els.templateRow.addEventListener('click', e => {
+  /* empty-state import button */
   if (e.target.closest('[data-open-library]')){
     openLibraryModal();
     return;
@@ -2566,8 +2378,8 @@ els.hoursSeg.addEventListener('click', e => {
   for (const sec of SECTIONS){
     for (const s of subjects[sec]) s.weight = Math.round(s.weight * factor * 10) / 10;
   }
+  timers.clear(); stopTimerLoop();
   renderAll(true);
-  flushPersist();
 });
 
 let inputDebounce = null;
@@ -2583,10 +2395,9 @@ function scheduleInputRender(){
   els[id].addEventListener('change', () => {
     if (inputDebounce){ clearTimeout(inputDebounce); inputDebounce = null; }
     renderAll();
-    flushPersist();
   });
 });
-els.session.addEventListener('change', () => { renderAll(); flushPersist(); });
+els.session.addEventListener('change', () => renderAll());
 
 els.filterTabs.addEventListener('click', e => {
   const btn = e.target.closest('button[data-filter]');
@@ -2594,18 +2405,16 @@ els.filterTabs.addEventListener('click', e => {
   filter = btn.dataset.filter;
   [...els.filterTabs.children].forEach(b => b.classList.toggle('active', b === btn));
   renderAll(true);
-  flushPersist();
 });
 els.densityBtn.addEventListener('click', () => {
   density = density === 'compact' ? 'comfortable' : 'compact';
   renderAll(true);
-  flushPersist();
 });
 els.clearBtn.addEventListener('click', () => {
   checked.clear();
   els.checklist.querySelectorAll('.cl-item').forEach(r => r.classList.remove('is-done'));
   updateProgress();
-  flushPersist();
+  schedulePersist();
 });
 els.openBuilderBtn.addEventListener('click', openPlanModal);
 els.buildBtnTop.addEventListener('click', openPlanModal);
@@ -2616,7 +2425,7 @@ els.checklist.addEventListener('click', e => {
   const chk = e.target.closest('[data-action="check"]');
   if (chk){
     const row = chk.closest('.cl-item');
-    if (row) markChecked(row.dataset.sig, !checked.has(row.dataset.sig));
+    markChecked(row.dataset.sig, !checked.has(row.dataset.sig));
     return;
   }
   const btn = e.target.closest('[data-timer="toggle"]');
@@ -2640,7 +2449,7 @@ els.checklist.addEventListener('click', e => {
       repaintTimerState(t);
     }
     if (t.running) ensureTimerLoop();
-    flushPersist();
+    schedulePersist();
   }
 });
 
@@ -2650,11 +2459,10 @@ document.addEventListener('keydown', e => {
     if (!els.planModal.hidden){ closePlanModal(); return; }
   }
   if (e.key !== ' ' && e.key !== 'Spacebar') return;
-  const active = document.activeElement;
-  const tag = active && active.tagName;
-  if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT'
-      || tag === 'BUTTON' || tag === 'A') return;
-  const row = active && active.closest ? active.closest('.cl-item') : null;
+  const tag = document.activeElement && document.activeElement.tagName;
+  if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+  const row = document.activeElement && document.activeElement.closest
+    ? document.activeElement.closest('.cl-item') : null;
   if (!row) return;
   e.preventDefault();
   markChecked(row.dataset.sig, !checked.has(row.dataset.sig));
@@ -2699,13 +2507,12 @@ els.resetBtn.addEventListener('click', () => {
 library = loadLibrary();
 
 try {
-  const saved = JSON.parse(localStorage.getItem(STATE_KEY) || 'null');
+  const saved = JSON.parse(localStorage.getItem('studyChecklist5') || 'null');
   if (saved){
     planName = saved.planName || DEFAULT_PLAN_NAME;
     filter = ['all','study','breaks','meals'].includes(saved.filter) ? saved.filter : 'all';
     density = saved.density === 'compact' ? 'compact' : 'comfortable';
     settingsOpen = saved.settingsOpen === true;
-    loadedFileName = typeof saved.loadedFileName === 'string' ? saved.loadedFileName : '';
     els.wake.value    = saved.wake   || '06:00';
     els.lunch.value   = saved.lunch  || '12:30';
     els.dinner.value  = saved.dinner || '18:30';
@@ -2726,24 +2533,10 @@ try {
       });
     }
     if (Array.isArray(saved.checked)) checked = new Set(saved.checked);
-
-    /* restore timer state so a refresh doesn't wipe running timers */
+    loadedFileName = typeof saved.loadedFileName === 'string' ? saved.loadedFileName : '';
     if (saved.timers && typeof saved.timers === 'object'){
-      for (const sig of Object.keys(saved.timers)){
-        const v = saved.timers[sig];
-        if (!v || typeof v !== 'object') continue;
-        const total = Math.max(0, Number(v.total) || 0);
-        const remaining = Number.isFinite(Number(v.remaining))
-          ? Math.max(0, Number(v.remaining)) : total;
-        timers.set(sig, {
-          total, remaining,
-          running: !!v.running,
-          done: !!v.done,
-          startedAt: v.startedAt ? Number(v.startedAt) : null,
-          refs: null, _state: null,
-          _lastSec: null, _lastPct: null, _lastHasStarted: null
-        });
-      }
+      restoredTimers = saved.timers;
+      restoredAt = Number(saved.savedAt) || Date.now();
     }
   }
 } catch(e){}
@@ -2752,14 +2545,9 @@ try {
   b.classList.toggle('active', b.dataset.filter === filter));
 
 renderAll(true);
-
-/* resume any timer that was running before the reload */
-let anyRunning = false;
-timers.forEach(t => { if (t.running && !t.done) anyRunning = true; });
-if (anyRunning) ensureTimerLoop();
-
-/* make sure the very first paint is saved even if the user bounces instantly */
-flushPersist();
+restoredTimers = null;
+timers.forEach(t => { if (t.running && !t.done) ensureTimerLoop(); });
+persistNow();
 })();
 </script>
 </body>
