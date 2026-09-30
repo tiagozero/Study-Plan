@@ -37,6 +37,7 @@
   .top{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px}
   .brand{font-size:17px;font-weight:600;letter-spacing:-.02em}
   .brand span{color:var(--accent)}
+  .top-actions{display:flex;gap:6px}
   .icon-btn{
     display:inline-flex;align-items:center;justify-content:center;
     width:36px;height:36px;border-radius:10px;
@@ -58,9 +59,9 @@
   .col-left .card{position:sticky;top:22px}
   @media(max-width:860px){ .col-left .card{position:static} }
 
-  .sec-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}
+  .sec-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;flex-wrap:wrap}
   .sec-head h2{margin:0;font-size:13px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
-  .sec-actions{display:flex;gap:8px}
+  .sec-actions{display:flex;gap:8px;flex-wrap:wrap}
 
   /* ---------- tabs ---------- */
   .tabs{
@@ -69,11 +70,12 @@
   }
   .tabs button{
     flex:1;border:0;background:transparent;color:var(--muted);
-    padding:9px 10px;border-radius:10px;font-size:13.5px;font-weight:500;
-    cursor:pointer;transition:.15s;
+    padding:9px 6px;border-radius:10px;font-size:13.5px;font-weight:500;
+    cursor:pointer;transition:.15s;white-space:nowrap;
   }
   .tabs button:hover{color:var(--text)}
   .tabs button.on{background:var(--surface-2);color:var(--text)}
+  @media(max-width:620px){ .tabs button{font-size:11.5px;padding:8px 3px} }
   .tab-panel[hidden]{display:none}
 
   /* ---------- toggle switch ---------- */
@@ -105,6 +107,7 @@
   .btn.primary{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
   .btn.primary:hover{filter:brightness(1.06)}
   .btn.wide{width:100%;margin-top:4px;padding:10px}
+  .btn.sm{padding:5px 10px;font-size:12px}
   .btn:disabled{opacity:.4;cursor:not-allowed}
   .btn:disabled:hover{border-color:var(--border)}
 
@@ -146,6 +149,8 @@
     padding:7px 6px;border-radius:8px;font-size:13px;cursor:pointer;transition:.15s;
   }
   .seg button.on{background:var(--seg-active);color:var(--text);font-weight:500}
+  .seg.sm{margin-top:0;flex:0 0 auto}
+  .seg.sm button{padding:6px 11px;font-size:12.5px;flex:0 0 auto}
 
   /* ---------- settings ---------- */
   details.settings{margin-top:14px;border-top:1px solid var(--border);padding-top:12px}
@@ -167,7 +172,7 @@
     border-radius:10px;padding:9px 11px;font:inherit;font-size:14px;
     font-weight:400;outline:none;transition:border-color .15s;
   }
-  input:focus,textarea:focus{border-color:var(--accent)}
+  input:focus,textarea:focus,select:focus{border-color:var(--accent)}
   textarea{resize:vertical;font-family:inherit}
   .two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 
@@ -181,7 +186,7 @@
   .session-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
   .session-title{font-weight:550;font-size:14.5px;letter-spacing:-.01em}
   .session-meta{font-size:12px;color:var(--muted);margin-top:2px}
-  .session-actions{display:flex;gap:4px;align-items:center;flex-shrink:0}
+  .session-actions{display:flex;gap:4px;align-items:center;flex-shrink:0;flex-wrap:wrap;justify-content:flex-end}
   .session-actions .btn{padding:6px 11px;font-size:12.5px;border-radius:8px}
   .bar{height:4px;background:var(--surface-2);border-radius:99px;overflow:hidden;margin:11px 0 9px}
   .bar i{display:block;height:100%;background:var(--accent);border-radius:99px;transition:width .35s ease}
@@ -195,8 +200,12 @@
   .chip.done{background:var(--accent-soft);color:var(--accent)}
   .chip.static{cursor:default}
   .chip.static:hover{border-color:transparent}
+  .chip.link{text-decoration:none;color:var(--accent);background:var(--accent-soft);cursor:pointer}
+  .chip.link:hover{border-color:var(--accent)}
 
-  /* ---------- resources ---------- */
+  .res-mini{display:flex;flex-wrap:wrap;gap:5px;margin-top:10px;padding-top:10px;border-top:1px dashed var(--border)}
+
+  /* ---------- resources panel ---------- */
   .res-form{display:grid;grid-template-columns:1fr 1fr auto;gap:8px;margin-bottom:14px}
   .res-form input{margin-top:0}
   @media(max-width:560px){ .res-form{grid-template-columns:1fr} }
@@ -208,17 +217,128 @@
   .res-name a{text-decoration:none}
   .res-name a:hover{text-decoration:underline}
 
+  /* ---------- resource picker ---------- */
+  .pick-list{max-height:190px;overflow:auto;border:1px solid var(--border);border-radius:11px;padding:6px;overscroll-behavior:contain}
+  .pick{
+    display:flex;align-items:center;gap:9px;padding:7px 9px;border-radius:8px;cursor:pointer;font-size:13.5px;
+    /* PERF: skip rendering offscreen rows */
+    content-visibility: auto;
+    contain-intrinsic-size: auto 34px;
+  }
+  .pick:hover{background:var(--surface-2)}
+  .pick input[type=checkbox]{
+    display:block;width:15px;height:15px;margin:0;padding:0;flex:0 0 auto;
+    accent-color:var(--accent);border-radius:4px;
+  }
+  .pick-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .pick-url{font-size:11px;color:var(--muted);max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .pick-empty{font-size:12.5px;color:var(--muted);text-align:center;padding:16px}
+
+  /* ---------- dashboard ---------- */
+  .stat-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:20px}
+  @media(max-width:560px){ .stat-grid{grid-template-columns:repeat(2,minmax(0,1fr))} }
+  .stat{background:var(--surface-2);border-radius:12px;padding:12px 14px}
+  .stat-v{font-size:20px;font-weight:600;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+  .stat-l{font-size:11px;color:var(--muted);margin-top:2px;text-transform:uppercase;letter-spacing:.05em}
+
+  .dash-block{margin-bottom:20px}
+  .dash-block:last-child{margin-bottom:0}
+  .dash-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:10px}
+  .dash-head h3{margin:0;font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+  .dash-head span{font-size:12px;color:var(--muted)}
+
+  .chart{display:flex;gap:3px;align-items:stretch}
+  .bar-col{flex:1 1 0;min-width:0;display:flex;flex-direction:column;gap:6px}
+  .bar-track{height:118px;background:var(--surface-2);border-radius:6px;display:flex;align-items:flex-end;overflow:hidden}
+  .bar-fill{width:100%;background:var(--accent);border-radius:5px;transition:height .3s ease}
+  .bar-lbl{font-size:9.5px;color:var(--muted);text-align:center;white-space:nowrap;overflow:hidden}
+
+  .brk-row{display:grid;grid-template-columns:1fr auto;gap:3px 10px;padding:9px 0;border-bottom:1px solid var(--border)}
+  .brk-row:last-child{border-bottom:0;padding-bottom:0}
+  .brk-name{font-size:13.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .brk-val{font-size:12.5px;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+  .brk-bar{grid-column:1/-1;height:4px;background:var(--surface-2);border-radius:99px;overflow:hidden}
+  .brk-bar i{display:block;height:100%;background:var(--accent);border-radius:99px}
+
+  /* ---------- plan ---------- */
+  .plan-nav{display:flex;align-items:center;gap:8px;margin-bottom:14px}
+  .plan-nav .lbl{flex:1;font-size:14px;font-weight:600;letter-spacing:-.01em;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .plan-day{display:flex;gap:12px;padding:12px 0;border-bottom:1px solid var(--border)}
+  .plan-day:last-child{border-bottom:0}
+  .plan-day-head{width:96px;flex-shrink:0;font-size:12px;color:var(--muted)}
+  .plan-day-head b{display:block;font-size:14px;color:var(--text);font-weight:600;letter-spacing:-.01em}
+  .plan-day.today .plan-day-head b{color:var(--accent)}
+  .plan-day-list{flex:1;display:flex;flex-direction:column;gap:6px;min-width:0}
+  .plan-item{
+    display:flex;align-items:center;gap:9px;padding:9px 11px;border:1px solid var(--border);border-radius:10px;font-size:13px;transition:.15s;
+    content-visibility: auto;
+    contain-intrinsic-size: auto 42px;
+  }
+  .plan-item:hover{border-color:var(--muted)}
+  .plan-item.done{opacity:.55}
+  .plan-item.done .plan-title{text-decoration:line-through}
+  .plan-item input[type=checkbox]{
+    width:15px;height:15px;margin:0;padding:0;flex:0 0 auto;
+    display:inline-block;accent-color:var(--accent);border-radius:4px;
+  }
+  .plan-title{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500}
+  .plan-meta{font-size:11.5px;color:var(--muted);white-space:nowrap}
+  .plan-empty{font-size:12.5px;color:var(--muted);padding:12px;text-align:center;border:1px dashed var(--border);border-radius:10px}
+  .plan-add{font-size:12.5px;color:var(--muted);border:1px dashed var(--border);border-radius:10px;padding:7px;text-align:center;cursor:pointer;background:transparent;width:100%;transition:.15s}
+  .plan-add:hover{color:var(--text);border-color:var(--muted)}
+  @media(max-width:640px){ .plan-day{flex-direction:column;gap:6px} .plan-day-head{width:auto;display:flex;gap:8px;align-items:baseline} .plan-day-head b{display:inline} }
+
+  .plan-cal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+  .plan-cal .cal-h{font-size:10.5px;color:var(--muted);text-align:center;padding:4px 0;text-transform:uppercase;letter-spacing:.05em}
+  .cal-cell{min-height:78px;border:1px solid var(--border);border-radius:9px;padding:5px 6px;background:var(--surface);cursor:pointer;display:flex;flex-direction:column;gap:3px;transition:.15s}
+  .cal-cell:hover{border-color:var(--muted)}
+  .cal-cell.out{opacity:.4}
+  .cal-cell.today{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft)}
+  .cal-num{font-size:11.5px;color:var(--muted);font-weight:500}
+  .cal-cell.today .cal-num{color:var(--accent)}
+  .cal-item{font-size:10.5px;padding:2px 5px;border-radius:5px;background:var(--accent-soft);color:var(--accent);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .cal-item.done{opacity:.5;text-decoration:line-through}
+  @media(max-width:560px){ .cal-cell{min-height:58px;padding:4px} .cal-item{display:none} }
+
+  /* ---------- template groups ---------- */
+  .tpl-group{margin-bottom:22px}
+  .tpl-group:last-child{margin-bottom:0}
+  .tpl-group-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:6px 0 10px;border-bottom:1px solid var(--border);margin-bottom:12px}
+  .tpl-group-head h3{margin:0;font-size:12.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+  .tpl-group-head h3 span{color:var(--muted);font-weight:400;letter-spacing:0;text-transform:none;font-size:12px}
+  .tpl-group-head .actions{display:flex;gap:6px}
+  .tpl-empty{font-size:12.5px;color:var(--muted);padding:14px;text-align:center;border:1px dashed var(--border);border-radius:10px}
+
+  /* ---------- backup modal ---------- */
+  .backup-stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px}
+  @media(max-width:480px){ .backup-stat-grid{grid-template-columns:repeat(2,1fr)} }
+  .backup-stat{background:var(--surface-2);border-radius:10px;padding:9px 11px;text-align:center}
+  .backup-stat b{display:block;font-size:16px;font-weight:600;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+  .backup-stat span{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+  .backup-row{display:flex;gap:8px;margin-bottom:12px}
+  .backup-row .btn{flex:1;padding:11px}
+  .backup-meta{font-size:11.5px;color:var(--muted);line-height:1.55;margin:0}
+  .backup-warn{
+    display:flex;gap:9px;align-items:flex-start;
+    background:var(--surface-2);border:1px solid var(--border);
+    border-radius:10px;padding:10px 12px;margin-top:12px;
+    font-size:12px;color:var(--muted);line-height:1.5;
+  }
+  .backup-warn svg{flex-shrink:0;margin-top:1px;color:var(--accent)}
+
   /* ---------- modal ---------- */
+  /* PERF: no backdrop-filter, no overlay animation, containment added */
   .overlay{
     position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;
-    padding:20px;background:rgba(0,0,0,.45);backdrop-filter:blur(3px);
-    animation:fade .15s ease;
+    padding:20px;background:rgba(0,0,0,.55);
+    contain: strict;
   }
   .overlay[hidden]{display:none}
-  @keyframes fade{from{opacity:0}to{opacity:1}}
   .modal{
     width:100%;max-width:470px;max-height:86vh;overflow:auto;
     background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:20px;
+    contain: content;
+    overscroll-behavior: contain;
   }
   .modal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
   .modal-head h3{margin:0;font-size:15px;font-weight:600;letter-spacing:-.01em}
@@ -227,13 +347,16 @@
     font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;
     background:var(--surface-2);padding:1px 5px;border-radius:5px;color:var(--text);
   }
-  .preview{margin:12px 0;max-height:160px;overflow:auto}
+  .preview{margin:12px 0;max-height:160px;overflow:auto;overscroll-behavior:contain}
   .prev-item{
     display:flex;justify-content:space-between;gap:10px;align-items:baseline;
     font-size:13px;padding:7px 10px;border-radius:8px;background:var(--surface-2);margin-bottom:5px;
+    content-visibility: auto;
+    contain-intrinsic-size: auto 34px;
   }
   .prev-item span{font-size:11.5px;color:var(--muted);white-space:nowrap}
   .prev-empty{font-size:12.5px;color:var(--muted);text-align:center;padding:10px}
+  .prev-more{font-size:11.5px;color:var(--muted);text-align:center;padding:8px}
 
   /* toast */
   .toast{
@@ -242,6 +365,7 @@
     padding:9px 16px;border-radius:99px;font-size:13px;font-weight:500;
     opacity:0;pointer-events:none;transition:.22s ease;z-index:60;
     box-shadow:0 8px 24px rgba(0,0,0,.18);
+    contain: layout paint;
   }
   .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 </style>
@@ -251,7 +375,16 @@
 <div class="app">
   <header class="top">
     <div class="brand">study<span>plan</span></div>
-    <button class="icon-btn" id="themeBtn" title="Toggle theme" aria-label="Toggle theme"></button>
+    <div class="top-actions">
+      <button class="icon-btn" id="backupBtn" title="Backup & restore" aria-label="Backup & restore">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <ellipse cx="12" cy="5" rx="9" ry="3"/>
+          <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/>
+          <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
+        </svg>
+      </button>
+      <button class="icon-btn" id="themeBtn" title="Toggle theme" aria-label="Toggle theme"></button>
+    </div>
   </header>
 
   <div class="layout">
@@ -307,6 +440,8 @@
 
       <div class="tabs" id="tabBar" role="tablist">
         <button data-tab="sessions"  role="tab" class="on">Sessions</button>
+        <button data-tab="plan"      role="tab">Plan</button>
+        <button data-tab="dashboard" role="tab">Dashboard</button>
         <button data-tab="resources" role="tab">Resources</button>
         <button data-tab="templates" role="tab">Templates</button>
       </div>
@@ -321,6 +456,39 @@
           </div>
         </div>
         <div id="sessionList"></div>
+      </section>
+
+      <!-- ---- Plan panel ---- -->
+      <section class="card tab-panel" data-panel="plan" role="tabpanel" hidden>
+        <div class="sec-head">
+          <h2>Plan</h2>
+          <div class="seg sm" id="planSeg">
+            <button data-range="day">Day</button>
+            <button data-range="week" class="on">Week</button>
+            <button data-range="month">Month</button>
+          </div>
+        </div>
+        <div class="plan-nav">
+          <button class="icon-btn sm" id="planPrev" title="Previous">‹</button>
+          <span class="lbl" id="planLabel"></span>
+          <button class="icon-btn sm" id="planNext" title="Next">›</button>
+          <button class="btn sm" id="planToday">Today</button>
+        </div>
+        <div id="planBody"></div>
+      </section>
+
+      <!-- ---- Dashboard panel ---- -->
+      <section class="card tab-panel" data-panel="dashboard" role="tabpanel" hidden>
+        <div class="sec-head">
+          <h2>Dashboard</h2>
+          <div class="seg sm" id="dashSeg">
+            <button data-range="day">Day</button>
+            <button data-range="week" class="on">Week</button>
+            <button data-range="month">Month</button>
+            <button data-range="all">All</button>
+          </div>
+        </div>
+        <div id="dashBody"></div>
       </section>
 
       <!-- ---- Resources panel ---- -->
@@ -351,12 +519,13 @@
           <h2>Templates</h2>
           <div class="sec-actions">
             <button class="btn" id="importTplBtn">Import</button>
-            <button class="btn primary" id="addTplBtn">+ New</button>
+            <button class="btn" id="addGroupBtn">+ Section</button>
+            <button class="btn primary" id="addTplBtn">+ Template</button>
           </div>
         </div>
         <p class="hint" style="margin-top:-4px">
-          Reusable block layouts. Hit <b>Use</b> to turn a template into a session,
-          or <b>★</b> on any session to save it as a template.
+          Group reusable layouts into sections. Each template can be used to
+          <b>create a session</b>, <b>schedule</b> a plan, or attach resources.
         </p>
         <div id="templateList"></div>
       </section>
@@ -387,16 +556,28 @@
    ===================================================== */
 const KEY = "studyplan.v1";
 const BASE_TITLE = "Study Plan";
-const TABS = ["sessions", "resources", "templates"];
+const TABS = ["sessions", "plan", "dashboard", "resources", "templates"];
+const DAY = 86400000;
+const BACKUP_VERSION = 1;
 const $ = (s, r = document) => r.querySelector(s);
 
 let state = {
   theme: null,
-  ui: { tab: "sessions", hideResForm: false },
+  lastBackup: null,
+  ui: {
+    tab: "sessions",
+    hideResForm: false,
+    dashRange: "week",
+    planRange: "week",
+    planAnchor: null
+  },
   settings: { mode: "pomodoro", focus: 25, short: 5, long: 15, longEvery: 4 },
   sessions: [],
   resources: [],
-  templates: []
+  templates: [],
+  templateGroups: [],
+  plans: [],
+  history: []
 };
 
 let timer = {
@@ -410,6 +591,22 @@ const esc = s => String(s).replace(/[&<>"']/g, c =>
   ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
 const RING_C = 2 * Math.PI * 92;
+
+const ICON_LINK = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>`;
+
+/* ---- date helpers ---- */
+function dateKey(d) {
+  const x = d instanceof Date ? d : new Date(d);
+  return `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, "0")}-${String(x.getDate()).padStart(2, "0")}`;
+}
+function startOfDay(d) { const x = new Date(d); x.setHours(0, 0, 0, 0); return x; }
+function startOfWeek(d) {
+  const x = startOfDay(d);
+  const dow = (x.getDay() + 6) % 7;
+  x.setDate(x.getDate() - dow);
+  return x;
+}
+function addDays(d, n) { const x = new Date(d); x.setDate(x.getDate() + n); return x; }
 
 /* =====================================================
    PERSISTENCE
@@ -425,8 +622,18 @@ function load() {
         settings:  { ...state.settings, ...(d.settings || {}) },
         sessions:  Array.isArray(d.sessions)  ? d.sessions  : [],
         resources: Array.isArray(d.resources) ? d.resources : [],
-        templates: Array.isArray(d.templates) ? d.templates : []
+        plans:     Array.isArray(d.plans)     ? d.plans     : [],
+        history:   Array.isArray(d.history)   ? d.history   : []
       };
+
+      if (Array.isArray(d.templateGroups)) {
+        state.templateGroups = d.templateGroups;
+      } else if (Array.isArray(d.templates) && d.templates.length) {
+        state.templateGroups = [{ id: uid(), name: "General", templates: d.templates }];
+      } else {
+        state.templateGroups = [];
+      }
+      state.templates = [];
     }
   } catch (e) { /* ignore corrupt storage */ }
 
@@ -434,7 +641,33 @@ function load() {
     state.theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
   }
   if (!TABS.includes(state.ui.tab)) state.ui.tab = "sessions";
+  if (!["day", "week", "month", "all"].includes(state.ui.dashRange)) state.ui.dashRange = "week";
+  if (!["day", "week", "month"].includes(state.ui.planRange)) state.ui.planRange = "week";
+  if (!state.ui.planAnchor) state.ui.planAnchor = dateKey(new Date());
+  if (typeof state.lastBackup !== "number") state.lastBackup = null;
+
+  normalise();
   applyTheme();
+}
+
+function normalise() {
+  state.sessions.forEach(s => {
+    if (!Array.isArray(s.blocks)) s.blocks = [];
+    if (!Array.isArray(s.resources)) s.resources = [];
+    s.blocks.forEach(b => { if (typeof b.done !== "boolean") b.done = false; });
+  });
+  state.templateGroups.forEach(g => {
+    if (!Array.isArray(g.templates)) g.templates = [];
+    g.templates.forEach(t => {
+      if (!Array.isArray(t.blocks)) t.blocks = [];
+      if (!Array.isArray(t.resources)) t.resources = [];
+    });
+  });
+  state.plans.forEach(p => {
+    if (!Array.isArray(p.blocks)) p.blocks = [];
+    if (!Array.isArray(p.resources)) p.resources = [];
+    if (typeof p.done !== "boolean") p.done = false;
+  });
 }
 
 function save() {
@@ -491,6 +724,9 @@ function setTab(tab) {
   document.querySelectorAll(".tab-panel").forEach(p => {
     p.hidden = p.dataset.panel !== tab;
   });
+
+  if (tab === "dashboard") renderDashboard();
+  if (tab === "plan") renderPlan();
 }
 
 tabBar.addEventListener("click", e => {
@@ -536,6 +772,23 @@ function beep(freq = 660, dur = 0.45) {
 }
 
 /* =====================================================
+   HISTORY
+   ===================================================== */
+function logStudy(minutes, session, block) {
+  if (!minutes || minutes < 0.05) return;
+  state.history.push({
+    ts: Date.now(),
+    minutes: Math.round(minutes * 100) / 100,
+    sessionId: session.id,
+    sessionTitle: session.title,
+    topic: (block && block.topic) || ""
+  });
+  if (state.history.length > 8000) state.history = state.history.slice(-8000);
+  save();
+  if (state.ui.tab === "dashboard") renderDashboard();
+}
+
+/* =====================================================
    TIMER CORE
    ===================================================== */
 const ringFg   = $("#ringFg");
@@ -549,6 +802,14 @@ const skipBtn  = $("#skipBtn");
 const modeSeg  = $("#modeSeg");
 
 const getSession = id => state.sessions.find(s => s.id === id);
+
+function findTemplate(id) {
+  for (const g of state.templateGroups) {
+    const t = g.templates.find(x => x.id === id);
+    if (t) return t;
+  }
+  return null;
+}
 
 function fmtTime(sec) {
   sec = Math.max(0, Math.round(sec));
@@ -586,7 +847,7 @@ function startSession(id) {
   if (!s || !s.blocks.length) return;
 
   let idx = s.blocks.findIndex(b => !b.done);
-  if (idx === -1) {                       // everything done → start over
+  if (idx === -1) {
     s.blocks.forEach(b => (b.done = false));
     idx = 0;
     save();
@@ -623,7 +884,6 @@ function finishSession(s) {
   renderSessions();
 }
 
-/* advance the state machine by one phase */
 function endPhase() {
   const s = getSession(timer.sessionId);
   if (!s) return;
@@ -632,6 +892,7 @@ function endPhase() {
   const mode = state.settings.mode;
 
   if (mode === "freeflow") {
+    logStudy(timer.elapsed / 60, s, s.blocks[timer.blockIndex]);
     s.blocks[timer.blockIndex].done = true;
     if (timer.blockIndex < s.blocks.length - 1) {
       timer.blockIndex++;
@@ -642,6 +903,7 @@ function endPhase() {
       finishSession(s);
     }
   } else if (timer.phase === "work") {
+    logStudy((timer.total - timer.remaining) / 60, s, s.blocks[timer.blockIndex]);
     s.blocks[timer.blockIndex].done = true;
     if (timer.blockIndex >= s.blocks.length - 1) {
       finishSession(s);
@@ -667,7 +929,6 @@ function endPhase() {
   updateTimerUI();
 }
 
-/* main tick loop */
 setInterval(() => {
   if (!timer.running || !timer.sessionId) return;
 
@@ -751,7 +1012,6 @@ function updateTimerUI() {
     (s && !timer.finished && mode === "pomodoro" && timer.phase === "break")
       ? "var(--break)" : "var(--accent)";
 
-  // controls
   startBtn.disabled = !timer.sessionId;
   skipBtn.disabled  = !timer.sessionId || timer.finished;
   resetBtn.disabled = !timer.sessionId;
@@ -760,31 +1020,20 @@ function updateTimerUI() {
                        : timer.running  ? "Pause"
                        : (timer.sessionId ? "Resume" : "Start");
 
-  // segmented control
   [...modeSeg.children].forEach(b =>
     b.classList.toggle("on", b.dataset.mode === mode));
 
   updateTitle(secs);
 }
 
-/* =====================================================
-   BROWSER TAB TITLE
-   ===================================================== */
 function updateTitle(secs) {
   const s = getSession(timer.sessionId);
-
   if (!s) { document.title = BASE_TITLE; return; }
-
-  if (timer.finished) {
-    document.title = `✓ Done · ${BASE_TITLE}`;
-    return;
-  }
-
+  if (timer.finished) { document.title = `✓ Done · ${BASE_TITLE}`; return; }
   const prefix = timer.running ? "▶ " : "⏸ ";
   document.title = `${prefix}${fmtTime(secs)} · ${BASE_TITLE}`;
 }
 
-/* control handlers */
 startBtn.addEventListener("click", () => {
   if (!timer.sessionId) return;
   if (timer.finished) { startSession(timer.sessionId); return; }
@@ -815,6 +1064,363 @@ modeSeg.addEventListener("click", e => {
 });
 
 /* =====================================================
+   RESOURCES — shared helpers
+   ===================================================== */
+function safeUrl(u) {
+  if (!u) return "";
+  try {
+    const url = new URL(u.trim());
+    return (url.protocol === "http:" || url.protocol === "https:") ? url.href : "";
+  } catch (e) { return ""; }
+}
+
+const getResource = id => state.resources.find(r => r.id === id);
+
+function resChipsMarkup(ids) {
+  const items = (ids || []).map(getResource).filter(Boolean);
+  if (!items.length) return "";
+  return `<div class="res-mini">${items.map(r => {
+    const url = safeUrl(r.url);
+    return url
+      ? `<a class="chip link" href="${esc(url)}" target="_blank" rel="noopener noreferrer"
+            title="${esc(r.url)}">${esc(r.name)}</a>`
+      : `<span class="chip static" title="No link">${esc(r.name)}</span>`;
+  }).join("")}</div>`;
+}
+
+/* ---- Picker (used inside modals) ---- */
+let pickerEl = null;
+
+function pickItemsMarkup(selected) {
+  if (!state.resources.length)
+    return `<div class="pick-empty">No resources yet — add one below.</div>`;
+  return state.resources.map(r => `
+    <label class="pick">
+      <input type="checkbox" value="${r.id}" ${selected.includes(r.id) ? "checked" : ""}>
+      <span class="pick-name">${esc(r.name)}</span>
+      ${r.url ? `<span class="pick-url">${esc(r.url)}</span>` : ""}
+    </label>`).join("");
+}
+
+function pickerMarkup(selected) {
+  return `
+    <div class="pick-list" id="pickWrap">${pickItemsMarkup(selected)}</div>
+    <div class="res-form" style="margin-bottom:10px">
+      <input id="pickName" placeholder="New resource" autocomplete="off">
+      <input id="pickUrl" placeholder="https:// (optional)" autocomplete="off">
+      <button class="btn" type="button" id="pickAdd">Add</button>
+    </div>`;
+}
+
+function getPicked() {
+  if (!pickerEl) return [];
+  return [...pickerEl.querySelectorAll("input[type=checkbox]")]
+    .filter(i => i.checked).map(i => i.value);
+}
+
+/* PERF: append only the new row instead of re-rendering the whole picker */
+function appendPickItem(r, checked) {
+  if (!pickerEl) return;
+  const empty = pickerEl.querySelector(".pick-empty");
+  if (empty) empty.remove();
+
+  const label = document.createElement("label");
+  label.className = "pick";
+
+  const cb = document.createElement("input");
+  cb.type = "checkbox";
+  cb.value = r.id;
+  cb.checked = !!checked;
+  label.appendChild(cb);
+
+  const name = document.createElement("span");
+  name.className = "pick-name";
+  name.textContent = r.name;
+  label.appendChild(name);
+
+  if (r.url) {
+    const url = document.createElement("span");
+    url.className = "pick-url";
+    url.textContent = r.url;
+    label.appendChild(url);
+  }
+
+  pickerEl.appendChild(label);
+}
+
+function initPicker() {
+  pickerEl = document.getElementById("pickWrap");
+  const addBtn = document.getElementById("pickAdd");
+  if (!addBtn) return;
+
+  addBtn.addEventListener("click", () => {
+    const nameEl = document.getElementById("pickName");
+    const urlEl  = document.getElementById("pickUrl");
+    const name = nameEl.value.trim();
+    if (!name) { nameEl.focus(); return; }
+
+    const r = { id: uid(), name, url: urlEl.value.trim() };
+    state.resources.push(r);
+    save();
+
+    appendPickItem(r, true);
+
+    nameEl.value = "";
+    urlEl.value = "";
+    nameEl.focus();
+
+    renderResources();
+  });
+}
+
+function openAttachModal(kind, id) {
+  let item, title;
+  if (kind === "template") {
+    item = findTemplate(id);
+    title = "Template resources";
+  } else if (kind === "plan") {
+    item = state.plans.find(x => x.id === id);
+    title = "Plan item resources";
+  } else {
+    item = getSession(id);
+    title = "Session resources";
+  }
+  if (!item) return;
+  if (!Array.isArray(item.resources)) item.resources = [];
+
+  openModal(title, `
+    <p class="hint">Pick the resources attached to <b>${esc(item.title)}</b>.</p>
+    ${pickerMarkup(item.resources)}
+    <button class="btn primary wide" id="pickSave">Save</button>
+  `);
+
+  initPicker();
+
+  document.getElementById("pickSave").addEventListener("click", () => {
+    item.resources = getPicked();
+    save();
+    closeModal();
+    if (kind === "template") renderTemplates();
+    else if (kind === "plan") renderPlan();
+    else renderSessions();
+    toast("Resources updated");
+  });
+}
+
+/* =====================================================
+   BACKUP (Export / Import)
+   ===================================================== */
+function backupCounts() {
+  return {
+    sessions: state.sessions.length,
+    templates: state.templateGroups.reduce((a, g) => a + g.templates.length, 0),
+    sections: state.templateGroups.length,
+    plans: state.plans.length,
+    resources: state.resources.length,
+    history: state.history.length
+  };
+}
+
+function exportBackup() {
+  const payload = {
+    app: "studyplan",
+    version: BACKUP_VERSION,
+    exportedAt: new Date().toISOString(),
+    data: {
+      theme: state.theme,
+      ui: state.ui,
+      settings: state.settings,
+      sessions: state.sessions,
+      resources: state.resources,
+      templateGroups: state.templateGroups,
+      plans: state.plans,
+      history: state.history
+    }
+  };
+
+  try {
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const d = new Date();
+    const stamp = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `studyplan-backup-${stamp}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+
+    state.lastBackup = Date.now();
+    save();
+    closeModal();
+    toast("Backup exported");
+  } catch (e) {
+    alert("Could not export backup: " + e.message);
+  }
+}
+
+function importBackupFile(file) {
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    let parsed;
+    try {
+      parsed = JSON.parse(reader.result);
+    } catch (e) {
+      alert("That file is not valid JSON.");
+      return;
+    }
+
+    const data = (parsed && typeof parsed === "object" && parsed.data && typeof parsed.data === "object")
+      ? parsed.data
+      : parsed;
+
+    if (!data || typeof data !== "object") {
+      alert("Unrecognised backup format.");
+      return;
+    }
+
+    const hasAny =
+      Array.isArray(data.sessions) ||
+      Array.isArray(data.plans) ||
+      Array.isArray(data.templateGroups) ||
+      Array.isArray(data.templates) ||
+      Array.isArray(data.resources);
+    if (!hasAny) {
+      alert("This file doesn't look like a Study Plan backup.");
+      return;
+    }
+
+    let groups = [];
+    if (Array.isArray(data.templateGroups)) {
+      groups = data.templateGroups;
+    } else if (Array.isArray(data.templates) && data.templates.length) {
+      groups = [{ id: uid(), name: "Imported", templates: data.templates }];
+    }
+
+    const counts = {
+      sessions: (data.sessions || []).length,
+      sections: groups.length,
+      templates: groups.reduce((a, g) => a + ((g && g.templates) || []).length, 0),
+      plans: (data.plans || []).length,
+      resources: (data.resources || []).length,
+      history: (data.history || []).length
+    };
+
+    const ok = confirm(
+      "Import this backup?\n\n" +
+      `Sessions:  ${counts.sessions}\n` +
+      `Sections:  ${counts.sections}\n` +
+      `Templates: ${counts.templates}\n` +
+      `Plans:     ${counts.plans}\n` +
+      `Resources: ${counts.resources}\n` +
+      `History:   ${counts.history}\n\n` +
+      "This will REPLACE all current data. Continue?"
+    );
+    if (!ok) return;
+
+    state.sessions       = Array.isArray(data.sessions) ? data.sessions : [];
+    state.resources      = Array.isArray(data.resources) ? data.resources : [];
+    state.templateGroups = groups;
+    state.plans          = Array.isArray(data.plans) ? data.plans : [];
+    state.history        = Array.isArray(data.history) ? data.history : [];
+    if (data.settings && typeof data.settings === "object") {
+      state.settings = { ...state.settings, ...data.settings };
+    }
+    if (data.ui && typeof data.ui === "object") {
+      const { tab, hideResForm, dashRange, planRange } = data.ui;
+      if (TABS.includes(tab)) state.ui.tab = tab;
+      if (typeof hideResForm === "boolean") state.ui.hideResForm = hideResForm;
+      if (["day", "week", "month", "all"].includes(dashRange)) state.ui.dashRange = dashRange;
+      if (["day", "week", "month"].includes(planRange)) state.ui.planRange = planRange;
+    }
+
+    normalise();
+
+    timer.sessionId = null;
+    timer.running = false;
+    timer.finished = false;
+
+    save();
+
+    $("#setFocus").value = state.settings.focus;
+    $("#setShort").value = state.settings.short;
+    $("#setLong").value  = state.settings.long;
+    $("#setEvery").value = state.settings.longEvery;
+
+    setTab(state.ui.tab);
+    applyResFormToggle();
+    renderSessions();
+    renderResources();
+    renderTemplates();
+    renderDashboard();
+    renderPlan();
+    updateTimerUI();
+
+    closeModal();
+    toast("Backup imported");
+  };
+  reader.onerror = () => alert("Could not read that file.");
+  reader.readAsText(file);
+}
+
+function openBackupModal() {
+  const c = backupCounts();
+  const lastBackup = state.lastBackup
+    ? new Date(state.lastBackup).toLocaleString()
+    : "Never";
+
+  openModal("Backup & Restore", `
+    <p class="hint">Save all your data as a JSON file, or restore from a previous backup.</p>
+
+    <div class="backup-stat-grid">
+      <div class="backup-stat"><b>${c.sessions}</b><span>Sessions</span></div>
+      <div class="backup-stat"><b>${c.templates}</b><span>Templates</span></div>
+      <div class="backup-stat"><b>${c.plans}</b><span>Plans</span></div>
+      <div class="backup-stat"><b>${c.resources}</b><span>Resources</span></div>
+    </div>
+
+    <div class="backup-row">
+      <button class="btn primary" id="exportBtn" ${c.sessions + c.templates + c.plans + c.resources === 0 ? "disabled" : ""}>
+        Export backup
+      </button>
+      <button class="btn" id="importBtn">Import backup</button>
+    </div>
+
+    <input type="file" id="importFile" accept=".json,application/json" hidden>
+
+    <p class="backup-meta">
+      Last export: <b>${esc(lastBackup)}</b><br>
+      File includes sessions, plans, templates, resources, history, and settings.
+    </p>
+
+    <div class="backup-warn">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+        <line x1="12" y1="9" x2="12" y2="13"/>
+        <line x1="12" y1="17" x2="12.01" y2="17"/>
+      </svg>
+      <span>Importing <b>replaces</b> everything currently stored. Export a fresh backup first if you want a safety net.</span>
+    </div>
+  `);
+
+  const exportBtn = document.getElementById("exportBtn");
+  const importBtn = document.getElementById("importBtn");
+  const fileInput = document.getElementById("importFile");
+
+  if (exportBtn) exportBtn.addEventListener("click", exportBackup);
+  importBtn.addEventListener("click", () => fileInput.click());
+  fileInput.addEventListener("change", e => {
+    const f = e.target.files && e.target.files[0];
+    if (f) importBackupFile(f);
+    e.target.value = "";
+  });
+}
+
+$("#backupBtn").addEventListener("click", openBackupModal);
+
+/* =====================================================
    SESSIONS
    ===================================================== */
 const sessionList = $("#sessionList");
@@ -842,6 +1448,7 @@ function renderSessions() {
           </div>
           <div class="session-actions">
             <button class="btn" data-act="start">${active ? "Restart" : "Start"}</button>
+            <button class="icon-btn sm" data-act="res" title="Resources">${ICON_LINK}</button>
             <button class="icon-btn sm" data-act="tmpl" title="Save as template">★</button>
             <button class="icon-btn sm" data-act="del" title="Delete">✕</button>
           </div>
@@ -853,6 +1460,7 @@ function renderSessions() {
                   title="Toggle done">${esc(b.topic || "Block " + (i + 1))} · ${b.minutes}m</span>
           `).join("")}
         </div>
+        ${resChipsMarkup(s.resources)}
       </div>`;
   }).join("");
 }
@@ -870,6 +1478,8 @@ sessionList.addEventListener("click", e => {
 
   if (act === "start") {
     startSession(id);
+  } else if (act === "res") {
+    openAttachModal("session", id);
   } else if (act === "del") {
     if (!confirm(`Delete "${s.title}"?`)) return;
     state.sessions = state.sessions.filter(x => x.id !== id);
@@ -880,10 +1490,15 @@ sessionList.addEventListener("click", e => {
     }
     save(); renderSessions(); updateTimerUI();
   } else if (act === "tmpl") {
-    state.templates.push({
+    if (!state.templateGroups.length) {
+      state.templateGroups.push({ id: uid(), name: "General", templates: [] });
+    }
+    const targetGroup = state.templateGroups[0];
+    targetGroup.templates.push({
       id: uid(),
       title: s.title,
       blocks: s.blocks.map(b => ({ topic: b.topic, minutes: b.minutes })),
+      resources: [...(s.resources || [])],
       created: Date.now()
     });
     save();
@@ -891,7 +1506,7 @@ sessionList.addEventListener("click", e => {
     const prev = el.textContent;
     el.textContent = "✓";
     setTimeout(() => { el.textContent = prev; }, 900);
-    toast("Saved as template");
+    toast(`Saved to "${targetGroup.name}"`);
   } else if (act === "toggle") {
     const i = +el.dataset.i;
     s.blocks[i].done = !s.blocks[i].done;
@@ -900,58 +1515,380 @@ sessionList.addEventListener("click", e => {
 });
 
 /* =====================================================
+   PLAN
+   ===================================================== */
+const planSeg   = $("#planSeg");
+const planLabel = $("#planLabel");
+const planBody  = $("#planBody");
+const planPrev  = $("#planPrev");
+const planNext  = $("#planNext");
+const planToday = $("#planToday");
+
+function planAnchorDate() {
+  const d = state.ui.planAnchor
+    ? new Date(state.ui.planAnchor + "T00:00:00")
+    : new Date();
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
+function shiftPlan(dir) {
+  const d = planAnchorDate();
+  if (state.ui.planRange === "day")        d.setDate(d.getDate() + dir);
+  else if (state.ui.planRange === "week")  d.setDate(d.getDate() + 7 * dir);
+  else                                     d.setMonth(d.getMonth() + dir);
+  state.ui.planAnchor = dateKey(d);
+  save();
+  renderPlan();
+}
+
+function planTotal(blocks) {
+  return (blocks || []).reduce((a, b) => a + b.minutes, 0);
+}
+
+function renderPlanItem(p) {
+  const total = planTotal(p.blocks);
+  return `
+    <div class="plan-item ${p.done ? "done" : ""}" data-plan="${p.id}">
+      <input type="checkbox" data-act="toggle" ${p.done ? "checked" : ""}>
+      <span class="plan-title">${esc(p.title)}</span>
+      <span class="plan-meta">${p.blocks.length}b · ${total}m</span>
+      <button class="btn sm" data-act="start">Start</button>
+      <button class="icon-btn sm" data-act="res" title="Resources">${ICON_LINK}</button>
+      <button class="icon-btn sm" data-act="del" title="Remove">✕</button>
+    </div>`;
+}
+
+function renderPlanDay(d) {
+  const key = dateKey(d);
+  const todayKey = dateKey(new Date());
+  const items = state.plans
+    .filter(p => p.date === key)
+    .sort((a, b) => a.created - b.created);
+
+  return `
+    <div class="plan-day ${key === todayKey ? "today" : ""}">
+      <div class="plan-day-head">
+        <b>${d.toLocaleDateString(undefined, { weekday: "long" })}</b>
+        <span>${d.toLocaleDateString(undefined, { month: "short", day: "numeric" })}</span>
+      </div>
+      <div class="plan-day-list">
+        ${items.length ? items.map(renderPlanItem).join("") : `<div class="plan-empty">Nothing planned</div>`}
+        <button class="plan-add" data-add="${key}">+ Add to ${d.toLocaleDateString(undefined, { weekday: "short", day: "numeric" })}</button>
+      </div>
+    </div>`;
+}
+
+function renderMonthGrid(anchor) {
+  const year = anchor.getFullYear();
+  const month = anchor.getMonth();
+  const first = new Date(year, month, 1);
+  const startDow = (first.getDay() + 6) % 7;
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const prevMonthDays = new Date(year, month, 0).getDate();
+
+  const cells = [];
+  for (let i = startDow - 1; i >= 0; i--) {
+    cells.push({ d: new Date(year, month - 1, prevMonthDays - i), out: true });
+  }
+  for (let i = 1; i <= daysInMonth; i++) {
+    cells.push({ d: new Date(year, month, i), out: false });
+  }
+  while (cells.length % 7 !== 0) {
+    const last = cells[cells.length - 1].d;
+    cells.push({ d: addDays(last, 1), out: true });
+  }
+
+  const todayKey = dateKey(new Date());
+
+  return `
+    <div class="plan-cal">
+      ${["Mon","Tue","Wed","Thu","Fri","Sat","Sun"].map(d => `<div class="cal-h">${d}</div>`).join("")}
+      ${cells.map(c => {
+        const key = dateKey(c.d);
+        const items = state.plans.filter(p => p.date === key);
+        return `<div class="cal-cell ${c.out ? "out" : ""} ${key === todayKey ? "today" : ""}" data-day="${key}">
+          <div class="cal-num">${c.d.getDate()}</div>
+          ${items.slice(0, 3).map(p => `<div class="cal-item ${p.done ? "done" : ""}">${esc(p.title)}</div>`).join("")}
+          ${items.length > 3 ? `<div style="font-size:10px;color:var(--muted)">+${items.length - 3} more</div>` : ""}
+        </div>`;
+      }).join("")}
+    </div>`;
+}
+
+function renderPlan() {
+  const range = state.ui.planRange;
+  [...planSeg.children].forEach(b => b.classList.toggle("on", b.dataset.range === range));
+
+  const anchor = planAnchorDate();
+  let label = "";
+
+  if (range === "day") {
+    label = anchor.toLocaleDateString(undefined, {
+      weekday: "long", month: "long", day: "numeric", year: "numeric"
+    });
+  } else if (range === "week") {
+    const start = startOfWeek(anchor);
+    const end = addDays(start, 6);
+    label = `${start.toLocaleDateString(undefined, { month: "short", day: "numeric" })} – ${end.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}`;
+  } else {
+    label = anchor.toLocaleDateString(undefined, { month: "long", year: "numeric" });
+  }
+
+  planLabel.textContent = label;
+
+  let html = "";
+  if (range === "day") {
+    html = renderPlanDay(anchor);
+  } else if (range === "week") {
+    const start = startOfWeek(anchor);
+    for (let i = 0; i < 7; i++) html += renderPlanDay(addDays(start, i));
+  } else {
+    html = renderMonthGrid(anchor);
+  }
+
+  planBody.innerHTML = html;
+}
+
+planSeg.addEventListener("click", e => {
+  const b = e.target.closest("button[data-range]");
+  if (!b) return;
+  state.ui.planRange = b.dataset.range;
+  save();
+  renderPlan();
+});
+
+planPrev.addEventListener("click", () => shiftPlan(-1));
+planNext.addEventListener("click", () => shiftPlan(1));
+planToday.addEventListener("click", () => {
+  state.ui.planAnchor = dateKey(new Date());
+  save();
+  renderPlan();
+});
+
+planBody.addEventListener("click", e => {
+  const addBtn = e.target.closest("[data-add]");
+  if (addBtn) { openPlanAddModal(addBtn.dataset.add); return; }
+
+  const cell = e.target.closest("[data-day]");
+  if (cell && !e.target.closest("[data-plan]")) {
+    state.ui.planAnchor = cell.dataset.day;
+    state.ui.planRange = "day";
+    save();
+    renderPlan();
+    return;
+  }
+
+  const itemEl = e.target.closest("[data-plan]");
+  if (!itemEl) return;
+  const pid = itemEl.dataset.plan;
+  const act = e.target.closest("[data-act]");
+  if (!act) return;
+  const action = act.dataset.act;
+
+  if (action === "toggle") {
+    const p = state.plans.find(x => x.id === pid);
+    if (p) { p.done = !p.done; save(); renderPlan(); }
+  } else if (action === "del") {
+    state.plans = state.plans.filter(x => x.id !== pid);
+    save(); renderPlan();
+  } else if (action === "start") {
+    startPlanItem(pid);
+  } else if (action === "res") {
+    openAttachModal("plan", pid);
+  }
+});
+
+function startPlanItem(planId) {
+  const p = state.plans.find(x => x.id === planId);
+  if (!p) return;
+
+  let s = p.sessionId ? getSession(p.sessionId) : null;
+  if (!s) {
+    s = {
+      id: uid(),
+      title: p.title,
+      blocks: p.blocks.map(b => ({ topic: b.topic, minutes: b.minutes, done: false })),
+      resources: [...(p.resources || [])],
+      created: Date.now()
+    };
+    state.sessions.push(s);
+    p.sessionId = s.id;
+    save();
+    renderSessions();
+  }
+
+  startSession(s.id);
+  setTab("sessions");
+}
+
+/* PERF: single delegated click handler, capped preview, no per-item listeners */
+function openPlanAddModal(dateStr) {
+  const sessions = state.sessions;
+  const allTemplates = state.templateGroups.flatMap(g =>
+    g.templates.map(t => ({ t, groupName: g.name }))
+  );
+
+  const nothing = !sessions.length && !allTemplates.length;
+
+  openModal("Add to plan", `
+    <label class="fld">Date
+      <input id="plDate" type="date" value="${esc(dateStr)}">
+    </label>
+    <div class="fld" style="margin-bottom:6px">Pick a session or template</div>
+    <div class="pick-list" style="max-height:300px" id="planPickWrap">
+      ${nothing ? `<div class="pick-empty">Nothing to add. Create a session or template first.</div>` : ""}
+      ${sessions.map(s => `
+        <div class="pick" data-pick="session" data-id="${s.id}">
+          <span class="pick-name">${esc(s.title)}</span>
+          <span class="pick-url">${s.blocks.length}b · ${planTotal(s.blocks)}m</span>
+        </div>`).join("")}
+      ${allTemplates.map(({ t, groupName }) => `
+        <div class="pick" data-pick="template" data-id="${t.id}">
+          <span class="pick-name">${esc(t.title)}
+            <span style="color:var(--muted);font-size:11px">· ${esc(groupName)}</span>
+          </span>
+          <span class="pick-url">${t.blocks.length}b · ${planTotal(t.blocks)}m</span>
+        </div>`).join("")}
+    </div>
+  `, e => {
+    const el = e.target.closest("[data-pick]");
+    if (!el) return;
+    const date = (document.getElementById("plDate") || {}).value || dateStr;
+    addPlanFromSource(el.dataset.pick, el.dataset.id, date);
+    closeModal();
+    renderPlan();
+    toast("Added to plan");
+  });
+}
+
+function addPlanFromSource(kind, id, dateStr) {
+  let title, blocks, resources;
+  if (kind === "session") {
+    const s = getSession(id); if (!s) return;
+    title = s.title;
+    blocks = s.blocks.map(b => ({ topic: b.topic, minutes: b.minutes }));
+    resources = [...(s.resources || [])];
+  } else {
+    const t = findTemplate(id); if (!t) return;
+    title = t.title;
+    blocks = t.blocks.map(b => ({ topic: b.topic, minutes: b.minutes }));
+    resources = [...(t.resources || [])];
+  }
+
+  state.plans.push({
+    id: uid(),
+    date: dateStr,
+    title,
+    blocks: blocks.map(b => ({ ...b, done: false })),
+    resources,
+    done: false,
+    created: Date.now()
+  });
+  save();
+}
+
+/* =====================================================
    TEMPLATES
    ===================================================== */
 const templateList = $("#templateList");
 
+function renderTemplateCard(t, groupId) {
+  const total = t.blocks.length;
+  const mins  = planTotal(t.blocks);
+
+  return `
+    <div class="session" data-tpl="${t.id}" data-group="${groupId}">
+      <div class="session-head">
+        <div>
+          <div class="session-title">${esc(t.title)}</div>
+          <div class="session-meta">${total} block${total !== 1 ? "s" : ""} · ${mins} min total</div>
+        </div>
+        <div class="session-actions">
+          <button class="btn primary" data-act="use">Create session</button>
+          <button class="btn" data-act="schedule">Schedule</button>
+          <button class="icon-btn sm" data-act="res" title="Resources">${ICON_LINK}</button>
+          <button class="icon-btn sm" data-act="del" title="Delete">✕</button>
+        </div>
+      </div>
+      <div class="blocks" style="margin-top:11px">
+        ${t.blocks.map(b => `
+          <span class="chip static">${esc(b.topic || "Block")} · ${b.minutes}m</span>
+        `).join("")}
+      </div>
+      ${resChipsMarkup(t.resources)}
+    </div>`;
+}
+
 function renderTemplates() {
-  if (!state.templates.length) {
+  if (!state.templateGroups.length) {
     templateList.innerHTML =
-      `<div class="empty">No templates yet.<br>Create one or hit <b>★</b> on a session to save it here.</div>`;
+      `<div class="empty">No sections yet.<br>Create a <b>section</b> to organise your templates.</div>`;
     return;
   }
 
-  templateList.innerHTML = state.templates.map(t => {
-    const total = t.blocks.length;
-    const mins  = t.blocks.reduce((a, b) => a + b.minutes, 0);
-
-    return `
-      <div class="session" data-id="${t.id}">
-        <div class="session-head">
-          <div>
-            <div class="session-title">${esc(t.title)}</div>
-            <div class="session-meta">${total} block${total !== 1 ? "s" : ""} · ${mins} min total</div>
-          </div>
-          <div class="session-actions">
-            <button class="btn primary" data-act="use">Use</button>
-            <button class="icon-btn sm" data-act="del" title="Delete">✕</button>
-          </div>
+  templateList.innerHTML = state.templateGroups.map(g => `
+    <div class="tpl-group" data-group="${g.id}">
+      <div class="tpl-group-head">
+        <h3>${esc(g.name)} <span>· ${g.templates.length}</span></h3>
+        <div class="actions">
+          <button class="btn sm" data-act="add-tpl">+ Template</button>
+          <button class="icon-btn sm" data-act="rename-group" title="Rename section">✎</button>
+          <button class="icon-btn sm" data-act="del-group" title="Delete section">✕</button>
         </div>
-        <div class="blocks" style="margin-top:11px">
-          ${t.blocks.map(b => `
-            <span class="chip static">${esc(b.topic || "Block")} · ${b.minutes}m</span>
-          `).join("")}
-        </div>
-      </div>`;
-  }).join("");
+      </div>
+      ${g.templates.length
+        ? g.templates.map(t => renderTemplateCard(t, g.id)).join("")
+        : `<div class="tpl-empty">No templates in this section yet.</div>`}
+    </div>
+  `).join("");
 }
 
 templateList.addEventListener("click", e => {
-  const card = e.target.closest(".session");
-  if (!card) return;
-  const id = card.dataset.id;
-  const t  = state.templates.find(x => x.id === id);
-  if (!t) return;
+  const groupEl = e.target.closest("[data-group]");
+  if (!groupEl) return;
+  const groupId = groupEl.dataset.group;
+  const group = state.templateGroups.find(x => x.id === groupId);
+  if (!group) return;
 
-  const el = e.target.closest("[data-act]");
-  if (!el) return;
-  const act = el.dataset.act;
+  const actEl = e.target.closest("[data-act]");
+  if (!actEl) return;
+  const act = actEl.dataset.act;
+
+  if (act === "add-tpl") {
+    openCreateModal("template", groupId);
+    return;
+  }
+  if (act === "rename-group") {
+    const name = prompt("Section name:", group.name);
+    if (name === null) return;
+    const trimmed = name.trim();
+    if (!trimmed) return;
+    group.name = trimmed;
+    save();
+    renderTemplates();
+    return;
+  }
+  if (act === "del-group") {
+    if (!confirm(`Delete section "${group.name}" and all its templates?`)) return;
+    state.templateGroups = state.templateGroups.filter(x => x.id !== groupId);
+    save();
+    renderTemplates();
+    return;
+  }
+
+  const tplEl = e.target.closest("[data-tpl]");
+  if (!tplEl) return;
+  const tplId = tplEl.dataset.tpl;
+  const t = findTemplate(tplId);
+  if (!t) return;
 
   if (act === "use") {
     const session = {
       id: uid(),
       title: t.title,
       blocks: t.blocks.map(b => ({ topic: b.topic, minutes: b.minutes, done: false })),
+      resources: [...(t.resources || [])],
       created: Date.now()
     };
     state.sessions.push(session);
@@ -959,27 +1896,526 @@ templateList.addEventListener("click", e => {
     renderSessions();
     setTab("sessions");
     toast(`Session "${session.title}" created`);
+  } else if (act === "schedule") {
+    openPlanAddModal(dateKey(new Date()));
+  } else if (act === "res") {
+    openAttachModal("template", tplId);
   } else if (act === "del") {
     if (!confirm(`Delete template "${t.title}"?`)) return;
-    state.templates = state.templates.filter(x => x.id !== id);
+    group.templates = group.templates.filter(x => x.id !== tplId);
     save();
     renderTemplates();
   }
 });
 
+$("#addGroupBtn").addEventListener("click", () => {
+  openModal("New section", `
+    <label class="fld">Section name
+      <input id="grpName" placeholder="e.g. Morning routine" autocomplete="off">
+    </label>
+    <button class="btn primary wide" id="grpCreate">Create section</button>
+  `);
+  const input = document.getElementById("grpName");
+  input.focus();
+  const submit = () => {
+    const name = input.value.trim() || "Untitled section";
+    state.templateGroups.push({ id: uid(), name, templates: [] });
+    save();
+    closeModal();
+    renderTemplates();
+    toast("Section created");
+  };
+  document.getElementById("grpCreate").addEventListener("click", submit);
+  input.addEventListener("keydown", e => { if (e.key === "Enter") submit(); });
+});
+
 /* =====================================================
-   RESOURCES
+   DASHBOARD
+   ===================================================== */
+const dashBody = $("#dashBody");
+const dashSeg  = $("#dashSeg");
+
+function startOfToday() {
+  const d = new Date(); d.setHours(0, 0, 0, 0); return d.getTime();
+}
+function dayKey(t) {
+  const d = new Date(t);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+function fmtDur(mins) {
+  const m = Math.round(mins);
+  if (m < 60) return `${m}m`;
+  const h = Math.floor(m / 60), r = m % 60;
+  return r ? `${h}h ${r}m` : `${h}h`;
+}
+
+function rangeBounds(range) {
+  const t0 = startOfToday();
+  if (range === "day")   return [t0, t0 + DAY];
+  if (range === "week")  return [t0 - 6 * DAY, t0 + DAY];
+  if (range === "month") return [t0 - 29 * DAY, t0 + DAY];
+  return [0, Infinity];
+}
+
+function buildBuckets(range) {
+  const t0 = startOfToday();
+  const out = [];
+
+  if (range === "day") {
+    for (let h = 0; h < 24; h++) {
+      const s = t0 + h * 3600000;
+      out.push({
+        start: s, end: s + 3600000,
+        label: h % 3 === 0 ? String(h).padStart(2, "0") : "",
+        tip: `${String(h).padStart(2, "0")}:00`
+      });
+    }
+  } else if (range === "week") {
+    for (let i = 6; i >= 0; i--) {
+      const s = t0 - i * DAY, d = new Date(s);
+      out.push({
+        start: s, end: s + DAY,
+        label: d.toLocaleDateString(undefined, { weekday: "short" }).slice(0, 2),
+        tip: d.toLocaleDateString(undefined, { month: "short", day: "numeric" })
+      });
+    }
+  } else if (range === "month") {
+    for (let i = 29; i >= 0; i--) {
+      const s = t0 - i * DAY, d = new Date(s);
+      out.push({
+        start: s, end: s + DAY,
+        label: (i % 5 === 0 || i === 0) ? String(d.getDate()) : "",
+        tip: d.toLocaleDateString(undefined, { month: "short", day: "numeric" })
+      });
+    }
+  } else {
+    const now = new Date();
+    for (let i = 11; i >= 0; i--) {
+      const s = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const e = new Date(now.getFullYear(), now.getMonth() - i + 1, 1);
+      out.push({
+        start: s.getTime(), end: e.getTime(),
+        label: s.toLocaleDateString(undefined, { month: "short" }),
+        tip: s.toLocaleDateString(undefined, { month: "long", year: "numeric" })
+      });
+    }
+  }
+  return out;
+}
+
+function computeStreak() {
+  const keys = new Set(state.history.map(h => dayKey(h.ts)));
+  let streak = 0;
+  const cur = new Date(); cur.setHours(0, 0, 0, 0);
+  if (!keys.has(dayKey(cur.getTime()))) cur.setDate(cur.getDate() - 1);
+  while (keys.has(dayKey(cur.getTime()))) { streak++; cur.setDate(cur.getDate() - 1); }
+  return streak;
+}
+
+function renderDashboard() {
+  const range = state.ui.dashRange;
+  [...dashSeg.children].forEach(b => b.classList.toggle("on", b.dataset.range === range));
+
+  if (!state.history.length) {
+    dashBody.innerHTML =
+      `<div class="empty">No study data yet.<br>Finish a focus block and your stats will appear here.</div>`;
+    return;
+  }
+
+  const [start, end] = rangeBounds(range);
+  const entries = state.history.filter(h => h.ts >= start && h.ts < end);
+
+  const total    = entries.reduce((a, h) => a + h.minutes, 0);
+  const blocks   = entries.length;
+  const sessions = new Set(entries.map(h => h.sessionId)).size;
+  const days     = new Set(entries.map(h => dayKey(h.ts))).size;
+
+  const spanDays = range === "day"   ? 1
+                 : range === "week"  ? 7
+                 : range === "month" ? 30
+                 : Math.max(1, Math.ceil((Date.now() - (state.history[0] ? state.history[0].ts : Date.now())) / DAY));
+  const avg = total / spanDays;
+
+  const streak = computeStreak();
+
+  const buckets = buildBuckets(range);
+  const values  = buckets.map(b =>
+    entries.filter(h => h.ts >= b.start && h.ts < b.end)
+           .reduce((a, h) => a + h.minutes, 0));
+  const maxV    = Math.max(...values, 1);
+  const bestIdx = values.indexOf(Math.max(...values));
+
+  const byS = new Map();
+  entries.forEach(h => {
+    const k = h.sessionTitle || "Untitled";
+    const o = byS.get(k) || { minutes: 0, count: 0 };
+    o.minutes += h.minutes; o.count++;
+    byS.set(k, o);
+  });
+  const bySList = [...byS.entries()].sort((a, b) => b[1].minutes - a[1].minutes).slice(0, 8);
+  const maxS = bySList.length ? bySList[0][1].minutes : 1;
+
+  const byT = new Map();
+  entries.forEach(h => {
+    const k = (h.topic || "").trim();
+    if (!k) return;
+    byT.set(k, (byT.get(k) || 0) + h.minutes);
+  });
+  const byTList = [...byT.entries()].sort((a, b) => b[1] - a[1]).slice(0, 6);
+  const maxT = byTList.length ? byTList[0][1] : 1;
+
+  dashBody.innerHTML = `
+    <div class="stat-grid">
+      <div class="stat"><div class="stat-v">${total > 0 ? fmtDur(total) : "0m"}</div><div class="stat-l">Focus time</div></div>
+      <div class="stat"><div class="stat-v">${blocks}</div><div class="stat-l">Blocks</div></div>
+      <div class="stat"><div class="stat-v">${sessions}</div><div class="stat-l">Sessions</div></div>
+      <div class="stat"><div class="stat-v">${days}</div><div class="stat-l">Active days</div></div>
+      <div class="stat"><div class="stat-v">${avg >= 1 ? fmtDur(avg) : "0m"}</div><div class="stat-l">Avg / day</div></div>
+      <div class="stat"><div class="stat-v">${streak}d</div><div class="stat-l">Streak</div></div>
+    </div>
+
+    <div class="dash-block">
+      <div class="dash-head">
+        <h3>Activity</h3>
+        <span>${total > 0
+          ? `Best ${esc(buckets[bestIdx].tip)} · ${fmtDur(values[bestIdx])}`
+          : "No activity in this range"}</span>
+      </div>
+      <div class="chart">
+        ${buckets.map((b, i) => {
+          const v = values[i];
+          const h = v > 0 ? Math.max(3, (v / maxV) * 100) : 0;
+          return `<div class="bar-col" title="${esc(b.tip)} · ${fmtDur(v)}">
+                    <div class="bar-track"><div class="bar-fill" style="height:${h}%"></div></div>
+                    <div class="bar-lbl">${esc(b.label)}</div>
+                  </div>`;
+        }).join("")}
+      </div>
+    </div>
+
+    <div class="dash-block">
+      <div class="dash-head">
+        <h3>By session</h3>
+        <span>${sessions} session${sessions !== 1 ? "s" : ""}</span>
+      </div>
+      ${bySList.length ? bySList.map(([name, o]) => `
+        <div class="brk-row">
+          <div class="brk-name">${esc(name)}</div>
+          <div class="brk-val">${fmtDur(o.minutes)} · ${o.count} block${o.count !== 1 ? "s" : ""}</div>
+          <div class="brk-bar"><i style="width:${(o.minutes / maxS) * 100}%"></i></div>
+        </div>`).join("")
+        : `<div class="empty" style="padding:14px">No sessions in this range.</div>`}
+    </div>
+
+    ${byTList.length ? `
+    <div class="dash-block">
+      <div class="dash-head"><h3>By topic</h3><span>top ${byTList.length}</span></div>
+      ${byTList.map(([name, m]) => `
+        <div class="brk-row">
+          <div class="brk-name">${esc(name)}</div>
+          <div class="brk-val">${fmtDur(m)}</div>
+          <div class="brk-bar"><i style="width:${(m / maxT) * 100}%"></i></div>
+        </div>`).join("")}
+    </div>` : ""}
+  `;
+}
+
+dashSeg.addEventListener("click", e => {
+  const b = e.target.closest("button[data-range]");
+  if (!b) return;
+  if (state.ui.dashRange === b.dataset.range) return;
+  state.ui.dashRange = b.dataset.range;
+  save();
+  renderDashboard();
+});
+
+/* =====================================================
+   IMPORT PARSER
+   ===================================================== */
+function parseSessions(text) {
+  const out = [];
+
+  text.split(/\r?\n/).map(l => l.trim()).filter(Boolean).forEach(line => {
+    let title = "", spec = line;
+
+    const m = line.match(/^(.*)\s*[-–—]\s*(.+)$/);
+    if (m && /\d/.test(m[2])) {
+      title = m[1].trim();
+      spec  = m[2].trim();
+    }
+
+    const blocks = [];
+    spec.split(/[,;]/).map(p => p.trim()).filter(Boolean).forEach(part => {
+      const pair = part.match(/(\d+)\s*(?:x|\*|×|X)\s*(\d+)/);
+      if (pair) {
+        let a = +pair[1], b = +pair[2], count, minutes;
+        if (a <= 12 && b > 12) { count = a; minutes = b; }
+        else                   { minutes = a; count = b; }
+        count   = Math.max(1, Math.min(50, count));
+        minutes = Math.max(1, Math.min(300, minutes));
+        for (let i = 0; i < count; i++) blocks.push({ topic: "", minutes, done: false });
+      } else {
+        const single = part.match(/(\d+)/);
+        if (single) blocks.push({ topic: "", minutes: Math.min(300, +single[1]), done: false });
+      }
+    });
+
+    if (!blocks.length) return;
+
+    const topics = title ? title.split(",").map(t => t.trim()).filter(Boolean) : [];
+    if (topics.length === blocks.length && topics.length > 1) {
+      blocks.forEach((b, i) => (b.topic = topics[i]));
+    } else {
+      blocks.forEach((b, i) => (b.topic = "Topic " + (i + 1)));
+    }
+
+    out.push({ title: title || "Session", blocks });
+  });
+
+  return out;
+}
+
+/* =====================================================
+   MODAL
+   ===================================================== */
+const overlay    = $("#overlay");
+const modalTitle = $("#modalTitle");
+const modalBody  = $("#modalBody");
+
+/* PERF: single reusable click handler, swapped per modal */
+let modalClickHandler = null;
+
+function openModal(title, html, onClick) {
+  // detach any previous handler
+  if (modalClickHandler) {
+    modalBody.removeEventListener("click", modalClickHandler);
+    modalClickHandler = null;
+  }
+  modalTitle.textContent = title;
+  modalBody.innerHTML = html;
+  overlay.hidden = false;
+  if (typeof onClick === "function") {
+    modalClickHandler = onClick;
+    modalBody.addEventListener("click", modalClickHandler);
+  }
+}
+
+function closeModal() {
+  if (modalClickHandler) {
+    modalBody.removeEventListener("click", modalClickHandler);
+    modalClickHandler = null;
+  }
+  overlay.hidden = true;
+  modalBody.innerHTML = "";
+  pickerEl = null;
+}
+
+$("#modalClose").addEventListener("click", closeModal);
+overlay.addEventListener("click", e => { if (e.target === overlay) closeModal(); });
+document.addEventListener("keydown", e => {
+  if (e.key === "Escape" && !overlay.hidden) closeModal();
+});
+
+/* =====================================================
+   CREATE MODAL
+   ===================================================== */
+function openCreateModal(kind, groupId) {
+  const isTpl = kind === "template";
+
+  if (isTpl && !state.templateGroups.length) {
+    state.templateGroups.push({ id: uid(), name: "General", templates: [] });
+    save();
+    renderTemplates();
+  }
+
+  const groupSelect = isTpl ? `
+    <label class="fld">Section
+      <select id="bGroup">
+        ${state.templateGroups.map(g => `
+          <option value="${g.id}" ${g.id === groupId ? "selected" : ""}>${esc(g.name)}</option>
+        `).join("")}
+      </select>
+    </label>` : "";
+
+  openModal(isTpl ? "New template" : "New session", `
+    <label class="fld">Title
+      <input id="bTitle" placeholder="${isTpl ? "e.g. Deep work 3h" : "e.g. Calculus"}" autocomplete="off">
+    </label>
+    ${groupSelect}
+    <div class="two">
+      <label class="fld">Minutes / block
+        <input id="bMins" type="number" min="1" max="300" value="${state.settings.focus}">
+      </label>
+      <label class="fld">Blocks
+        <input id="bCount" type="number" min="1" max="50" value="4">
+      </label>
+    </div>
+    <label class="fld">Topics <span class="opt">— optional, comma separated</span>
+      <input id="bTopics" placeholder="Limits, Derivatives, Integrals, Series" autocomplete="off">
+    </label>
+    <div class="fld" style="margin-bottom:6px">Resources <span class="opt">— optional</span></div>
+    ${pickerMarkup([])}
+    <button class="btn primary wide" id="bCreate">
+      ${isTpl ? "Create template" : "Create session"}
+    </button>
+  `);
+
+  initPicker();
+
+  const titleIn = document.getElementById("bTitle");
+  titleIn.focus();
+
+  document.getElementById("bCreate").addEventListener("click", () => {
+    const title    = titleIn.value.trim() || (isTpl ? "Untitled template" : "Untitled session");
+    const mins     = Math.max(1, Math.min(300, +document.getElementById("bMins").value || 25));
+    const count    = Math.max(1, Math.min(50, +document.getElementById("bCount").value || 1));
+    const topics   = document.getElementById("bTopics").value.split(",").map(t => t.trim()).filter(Boolean);
+    const resources = getPicked();
+
+    const blocks = Array.from({ length: count }, (_, i) => ({
+      topic: topics[i] || "",
+      minutes: mins
+    }));
+
+    if (isTpl) {
+      const gid = document.getElementById("bGroup").value;
+      const group = state.templateGroups.find(g => g.id === gid) || state.templateGroups[0];
+      group.templates.push({ id: uid(), title, blocks, resources, created: Date.now() });
+      save(); closeModal(); renderTemplates();
+      toast(`Template added to "${group.name}"`);
+    } else {
+      state.sessions.push({
+        id: uid(), title,
+        blocks: blocks.map(b => ({ ...b, done: false })),
+        resources,
+        created: Date.now()
+      });
+      save(); closeModal(); renderSessions();
+    }
+  });
+}
+
+$("#addBtn").addEventListener("click", () => openCreateModal("session"));
+$("#addTplBtn").addEventListener("click", () => openCreateModal("template"));
+
+/* =====================================================
+   IMPORT MODAL
+   ===================================================== */
+function openImportModal(kind) {
+  const isTpl = kind === "template";
+
+  if (isTpl && !state.templateGroups.length) {
+    state.templateGroups.push({ id: uid(), name: "General", templates: [] });
+    save();
+  }
+
+  const groupSelect = isTpl ? `
+    <label class="fld">Add to section
+      <select id="impGroup">
+        ${state.templateGroups.map(g => `<option value="${g.id}">${esc(g.name)}</option>`).join("")}
+      </select>
+    </label>` : "";
+
+  openModal(isTpl ? "Import templates" : "Import session", `
+    <p class="hint">
+      One ${isTpl ? "template" : "session"} per line. Format: <code>Title - 50x4</code> = 4 blocks of 50 min.<br>
+      Name the blocks with commas: <code>Limits, Derivatives - 50x2</code>
+    </p>
+    ${groupSelect}
+    <textarea id="impText" rows="5" spellcheck="false"
+      placeholder="4 topics - 50x4&#10;Calculus - 25x2, 50x1"></textarea>
+    <div class="preview" id="impPreview"></div>
+    <button class="btn primary wide" id="impGo">Import</button>
+  `);
+
+  const ta   = document.getElementById("impText");
+  const prev = document.getElementById("impPreview");
+
+  // PERF: debounce refresh and cap preview to 30 rows
+  let previewTimer = null;
+
+  const doRefresh = () => {
+    const list = parseSessions(ta.value);
+    if (!list.length) {
+      prev.innerHTML = `<div class="prev-empty">Nothing to import yet</div>`;
+      return;
+    }
+    const shown = list.slice(0, 30);
+    let html = shown.map(s => {
+      const mins = s.blocks.reduce((a, b) => a + b.minutes, 0);
+      return `<div class="prev-item">
+                <b>${esc(s.title)}</b>
+                <span>${s.blocks.length} block${s.blocks.length !== 1 ? "s" : ""} · ${mins} min</span>
+              </div>`;
+    }).join("");
+    if (list.length > shown.length) {
+      html += `<div class="prev-more">… and ${list.length - shown.length} more</div>`;
+    }
+    prev.innerHTML = html;
+  };
+
+  ta.addEventListener("input", () => {
+    clearTimeout(previewTimer);
+    previewTimer = setTimeout(doRefresh, 90);
+  });
+  doRefresh();
+  ta.focus();
+
+  document.getElementById("impGo").addEventListener("click", () => {
+    const list = parseSessions(ta.value);
+    if (!list.length) return;
+
+    if (isTpl) {
+      const gid = document.getElementById("impGroup").value;
+      const group = state.templateGroups.find(g => g.id === gid) || state.templateGroups[0];
+      list.forEach(s => {
+        group.templates.push({
+          id: uid(),
+          title: s.title,
+          blocks: s.blocks.map(b => ({ topic: b.topic, minutes: b.minutes })),
+          resources: [],
+          created: Date.now()
+        });
+      });
+    } else {
+      list.forEach(s => {
+        state.sessions.push({
+          id: uid(), title: s.title, blocks: s.blocks, resources: [], created: Date.now()
+        });
+      });
+    }
+
+    save();
+    closeModal();
+    if (isTpl) renderTemplates(); else renderSessions();
+    toast(`Imported ${list.length} ${isTpl ? "template" : "session"}${list.length !== 1 ? "s" : ""}`);
+  });
+}
+
+$("#importBtn").addEventListener("click", () => openImportModal("session"));
+$("#importTplBtn").addEventListener("click", () => openImportModal("template"));
+
+/* =====================================================
+   SETTINGS INPUTS
+   ===================================================== */
+function bindSetting(id, key, min, max) {
+  const el = $(id);
+  el.value = state.settings[key];
+  el.addEventListener("change", () => {
+    let v = +el.value || min;
+    v = Math.max(min, Math.min(max, v));
+    el.value = v;
+    state.settings[key] = v;
+    save();
+    if (!timer.running && !timer.finished && !timer.sessionId) updateTimerUI();
+  });
+}
+
+/* =====================================================
+   RESOURCES PANEL
    ===================================================== */
 const resList = $("#resList");
 const resForm = $("#resForm");
-
-function safeUrl(u) {
-  if (!u) return "";
-  try {
-    const url = new URL(u.trim());
-    return (url.protocol === "http:" || url.protocol === "https:") ? url.href : "";
-  } catch (e) { return ""; }
-}
 
 function renderResources() {
   if (!state.resources.length) {
@@ -1016,224 +2452,23 @@ resList.addEventListener("click", e => {
   const btn = e.target.closest("[data-act='del']");
   if (!btn) return;
   const row = e.target.closest(".res");
-  state.resources = state.resources.filter(r => r.id !== row.dataset.id);
-  save(); renderResources();
-});
+  const rid = row.dataset.id;
 
-/* =====================================================
-   IMPORT PARSER
-   -----------------------------------------------------
-   "4 topics - 50x4"            → 4 blocks × 50 min
-   "Calculus - 25x2, 50x1"      → 2×25 + 1×50
-   "Limits, Derivatives - 50x2" → named blocks
-   "45"                         → one 45 min block
-   ===================================================== */
-function parseSessions(text) {
-  const out = [];
-
-  text.split(/\r?\n/).map(l => l.trim()).filter(Boolean).forEach(line => {
-    let title = "", spec = line;
-
-    const m = line.match(/^(.*)\s*[-–—]\s*(.+)$/);
-    if (m && /\d/.test(m[2])) {
-      title = m[1].trim();
-      spec  = m[2].trim();
-    }
-
-    const blocks = [];
-    spec.split(/[,;]/).map(p => p.trim()).filter(Boolean).forEach(part => {
-      const pair = part.match(/(\d+)\s*(?:x|\*|×|X)\s*(\d+)/);
-      if (pair) {
-        let a = +pair[1], b = +pair[2], count, minutes;
-        if (a <= 12 && b > 12) { count = a; minutes = b; }   // 4x50
-        else                   { minutes = a; count = b; }   // 50x4
-        count   = Math.max(1, Math.min(50, count));
-        minutes = Math.max(1, Math.min(300, minutes));
-        for (let i = 0; i < count; i++) blocks.push({ topic: "", minutes, done: false });
-      } else {
-        const single = part.match(/(\d+)/);
-        if (single) blocks.push({ topic: "", minutes: Math.min(300, +single[1]), done: false });
-      }
+  state.resources = state.resources.filter(r => r.id !== rid);
+  state.sessions.forEach(s => {
+    if (Array.isArray(s.resources)) s.resources = s.resources.filter(x => x !== rid);
+  });
+  state.templateGroups.forEach(g => {
+    g.templates.forEach(t => {
+      if (Array.isArray(t.resources)) t.resources = t.resources.filter(x => x !== rid);
     });
-
-    if (!blocks.length) return;
-
-    const topics = title ? title.split(",").map(t => t.trim()).filter(Boolean) : [];
-    if (topics.length === blocks.length && topics.length > 1) {
-      blocks.forEach((b, i) => (b.topic = topics[i]));
-    } else {
-      blocks.forEach((b, i) => (b.topic = "Topic " + (i + 1)));
-    }
-
-    out.push({ title: title || "Session", blocks });
   });
 
-  return out;
-}
-
-/* =====================================================
-   MODAL
-   ===================================================== */
-const overlay    = $("#overlay");
-const modalTitle = $("#modalTitle");
-const modalBody  = $("#modalBody");
-
-function openModal(title, html) {
-  modalTitle.textContent = title;
-  modalBody.innerHTML = html;
-  overlay.hidden = false;
-}
-
-function closeModal() {
-  overlay.hidden = true;
-  modalBody.innerHTML = "";
-}
-
-$("#modalClose").addEventListener("click", closeModal);
-overlay.addEventListener("click", e => { if (e.target === overlay) closeModal(); });
-document.addEventListener("keydown", e => {
-  if (e.key === "Escape" && !overlay.hidden) closeModal();
+  save();
+  renderResources();
+  renderSessions();
+  renderTemplates();
 });
-
-/* =====================================================
-   CREATE MODAL (shared by sessions & templates)
-   ===================================================== */
-function openCreateModal(kind) {
-  const isTpl = kind === "template";
-
-  openModal(isTpl ? "New template" : "New session", `
-    <label class="fld">Title
-      <input id="bTitle" placeholder="${isTpl ? "e.g. Deep work 3h" : "e.g. Calculus"}" autocomplete="off">
-    </label>
-    <div class="two">
-      <label class="fld">Minutes / block
-        <input id="bMins" type="number" min="1" max="300" value="${state.settings.focus}">
-      </label>
-      <label class="fld">Blocks
-        <input id="bCount" type="number" min="1" max="50" value="4">
-      </label>
-    </div>
-    <label class="fld">Topics <span class="opt">— optional, comma separated</span>
-      <input id="bTopics" placeholder="Limits, Derivatives, Integrals, Series" autocomplete="off">
-    </label>
-    <button class="btn primary wide" id="bCreate">
-      ${isTpl ? "Create template" : "Create session"}
-    </button>
-  `);
-
-  const titleIn = $("#bTitle");
-  titleIn.focus();
-
-  $("#bCreate").addEventListener("click", () => {
-    const title  = titleIn.value.trim() || (isTpl ? "Untitled template" : "Untitled session");
-    const mins   = Math.max(1, Math.min(300, +$("#bMins").value || 25));
-    const count  = Math.max(1, Math.min(50, +$("#bCount").value || 1));
-    const topics = $("#bTopics").value.split(",").map(t => t.trim()).filter(Boolean);
-
-    const blocks = Array.from({ length: count }, (_, i) => ({
-      topic: topics[i] || "",
-      minutes: mins
-    }));
-
-    if (isTpl) {
-      state.templates.push({ id: uid(), title, blocks, created: Date.now() });
-      save(); closeModal(); renderTemplates();
-      toast("Template created");
-    } else {
-      state.sessions.push({
-        id: uid(), title,
-        blocks: blocks.map(b => ({ ...b, done: false })),
-        created: Date.now()
-      });
-      save(); closeModal(); renderSessions();
-    }
-  });
-}
-
-$("#addBtn").addEventListener("click", () => openCreateModal("session"));
-$("#addTplBtn").addEventListener("click", () => openCreateModal("template"));
-
-/* =====================================================
-   IMPORT MODAL (shared by sessions & templates)
-   ===================================================== */
-function openImportModal(kind) {
-  const isTpl = kind === "template";
-
-  openModal(isTpl ? "Import templates" : "Import session", `
-    <p class="hint">
-      One ${isTpl ? "template" : "session"} per line. Format: <code>Title - 50x4</code> = 4 blocks of 50 min.<br>
-      Name the blocks with commas: <code>Limits, Derivatives - 50x2</code>
-    </p>
-    <textarea id="impText" rows="5" spellcheck="false"
-      placeholder="4 topics - 50x4&#10;Calculus - 25x2, 50x1"></textarea>
-    <div class="preview" id="impPreview"></div>
-    <button class="btn primary wide" id="impGo">Import</button>
-  `);
-
-  const ta   = $("#impText");
-  const prev = $("#impPreview");
-
-  const refresh = () => {
-    const list = parseSessions(ta.value);
-    prev.innerHTML = list.length
-      ? list.map(s => {
-          const mins = s.blocks.reduce((a, b) => a + b.minutes, 0);
-          return `<div class="prev-item">
-                    <b>${esc(s.title)}</b>
-                    <span>${s.blocks.length} block${s.blocks.length !== 1 ? "s" : ""} · ${mins} min</span>
-                  </div>`;
-        }).join("")
-      : `<div class="prev-empty">Nothing to import yet</div>`;
-  };
-
-  ta.addEventListener("input", refresh);
-  refresh();
-  ta.focus();
-
-  $("#impGo").addEventListener("click", () => {
-    const list = parseSessions(ta.value);
-    if (!list.length) return;
-
-    list.forEach(s => {
-      if (isTpl) {
-        state.templates.push({
-          id: uid(),
-          title: s.title,
-          blocks: s.blocks.map(b => ({ topic: b.topic, minutes: b.minutes })),
-          created: Date.now()
-        });
-      } else {
-        state.sessions.push({
-          id: uid(), title: s.title, blocks: s.blocks, created: Date.now()
-        });
-      }
-    });
-
-    save();
-    closeModal();
-    if (isTpl) renderTemplates(); else renderSessions();
-    toast(`Imported ${list.length} ${isTpl ? "template" : "session"}${list.length !== 1 ? "s" : ""}`);
-  });
-}
-
-$("#importBtn").addEventListener("click", () => openImportModal("session"));
-$("#importTplBtn").addEventListener("click", () => openImportModal("template"));
-
-/* =====================================================
-   SETTINGS INPUTS
-   ===================================================== */
-function bindSetting(id, key, min, max) {
-  const el = $(id);
-  el.value = state.settings[key];
-  el.addEventListener("change", () => {
-    let v = +el.value || min;
-    v = Math.max(min, Math.min(max, v));
-    el.value = v;
-    state.settings[key] = v;
-    save();
-    if (!timer.running && !timer.finished && !timer.sessionId) updateTimerUI();
-  });
-}
 
 /* =====================================================
    BOOT
@@ -1251,6 +2486,8 @@ applyResFormToggle();
 renderSessions();
 renderResources();
 renderTemplates();
+renderDashboard();
+renderPlan();
 updateTimerUI();
 
 })();
