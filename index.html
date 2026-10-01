@@ -10,6 +10,8 @@
     --text:#18181b; --muted:#71717a; --border:#e6e6e9;
     --accent:#5b5bd6; --accent-soft:rgba(91,91,214,.12); --on-accent:#fff;
     --break:#0f9d76;
+    --warn:#d97706;
+    --danger:#dc2626;
     --seg-track:#efeff1; --seg-active:#ffffff;
   }
   [data-theme="dark"]{
@@ -17,6 +19,8 @@
     --text:#f2f2f4; --muted:#8c8c96; --border:#26262c;
     --accent:#8b87ff; --accent-soft:rgba(139,135,255,.16); --on-accent:#0a0a0c;
     --break:#3ddc9a;
+    --warn:#fbbf24;
+    --danger:#f87171;
     --seg-track:#1b1b1f; --seg-active:#2c2c34;
   }
 
@@ -33,7 +37,6 @@
 
   .app{max-width:1020px;margin:0 auto;padding:26px 20px 60px}
 
-  /* ---------- header ---------- */
   .top{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px}
   .brand{font-size:17px;font-weight:600;letter-spacing:-.02em}
   .brand span{color:var(--accent)}
@@ -48,7 +51,6 @@
   .icon-btn.sm{width:28px;height:28px;border-radius:8px;font-size:12px;background:transparent;border-color:transparent;color:var(--muted)}
   .icon-btn.sm:hover{background:var(--surface-2);color:var(--text)}
 
-  /* ---------- layout ---------- */
   .layout{display:grid;grid-template-columns:330px 1fr;gap:18px;align-items:start}
   @media(max-width:860px){ .layout{grid-template-columns:1fr} }
 
@@ -63,7 +65,6 @@
   .sec-head h2{margin:0;font-size:13px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
   .sec-actions{display:flex;gap:8px;flex-wrap:wrap}
 
-  /* ---------- tabs ---------- */
   .tabs{
     display:flex;gap:4px;background:var(--surface);border:1px solid var(--border);
     border-radius:13px;padding:4px;margin-bottom:18px;
@@ -78,7 +79,6 @@
   @media(max-width:620px){ .tabs button{font-size:11.5px;padding:8px 3px} }
   .tab-panel[hidden]{display:none}
 
-  /* ---------- toggle switch ---------- */
   .switch{
     display:inline-flex;align-items:center;gap:8px;
     background:transparent;border:0;padding:2px;cursor:pointer;
@@ -97,7 +97,6 @@
   .switch.on .track{background:var(--accent-soft);border-color:var(--accent)}
   .switch.on .track::after{transform:translateX(14px);background:var(--accent)}
 
-  /* ---------- buttons ---------- */
   .btn{
     background:var(--surface-2);border:1px solid var(--border);color:var(--text);
     padding:8px 14px;border-radius:10px;font-size:13.5px;cursor:pointer;
@@ -111,7 +110,6 @@
   .btn:disabled{opacity:.4;cursor:not-allowed}
   .btn:disabled:hover{border-color:var(--border)}
 
-  /* ---------- timer ---------- */
   .timer-top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px}
   .pill{
     font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;
@@ -152,7 +150,6 @@
   .seg.sm{margin-top:0;flex:0 0 auto}
   .seg.sm button{padding:6px 11px;font-size:12.5px;flex:0 0 auto}
 
-  /* ---------- settings ---------- */
   details.settings{margin-top:14px;border-top:1px solid var(--border);padding-top:12px}
   details.settings summary{
     cursor:pointer;font-size:12px;color:var(--muted);list-style:none;
@@ -163,7 +160,6 @@
   details.settings[open] summary::before{transform:rotate(90deg)}
   details.settings .inner{padding-top:12px}
 
-  /* ---------- form fields ---------- */
   .fld{display:block;margin-bottom:12px;font-size:12px;font-weight:500;color:var(--muted)}
   .fld .opt{font-weight:400;opacity:.7}
   input,textarea,select{
@@ -176,13 +172,13 @@
   textarea{resize:vertical;font-family:inherit}
   .two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 
-  /* ---------- sessions / templates ---------- */
   .empty{color:var(--muted);font-size:13.5px;text-align:center;padding:22px 10px}
   .session{
     border:1px solid var(--border);border-radius:13px;padding:14px;margin-bottom:10px;
     transition:.18s;
   }
   .session.active{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+  .session.windowed{border-left:3px solid var(--accent)}
   .session-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
   .session-title{font-weight:550;font-size:14.5px;letter-spacing:-.01em}
   .session-meta{font-size:12px;color:var(--muted);margin-top:2px}
@@ -205,7 +201,49 @@
 
   .res-mini{display:flex;flex-wrap:wrap;gap:5px;margin-top:10px;padding-top:10px;border-top:1px dashed var(--border)}
 
-  /* ---------- resources panel ---------- */
+  /* window session bar */
+  .window-bar{
+    display:flex;flex-direction:column;gap:6px;
+    border-radius:11px;padding:10px 12px;margin-top:11px;
+    background:var(--surface-2);border:1px solid var(--border);
+    font-size:12.5px;color:var(--muted);
+  }
+  .window-bar.ok{border-color:rgba(15,157,118,.35);background:rgba(15,157,118,.07);color:var(--text)}
+  .window-bar.tight{border-color:rgba(217,119,6,.35);background:rgba(217,119,6,.07);color:var(--text)}
+  .window-bar.over{border-color:rgba(220,38,38,.35);background:rgba(220,38,38,.07);color:var(--text)}
+
+  .window-line{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+  .window-range{
+    display:inline-flex;align-items:center;gap:6px;
+    font-variant-numeric:tabular-nums;color:var(--text);font-weight:500;
+  }
+  .window-range svg{color:var(--accent);flex-shrink:0}
+  .window-countdown{font-variant-numeric:tabular-nums;font-weight:600}
+  .window-countdown.active{color:var(--accent)}
+  .window-countdown.upcoming{color:var(--muted)}
+  .window-countdown.ended{color:var(--break)}
+
+  .window-line-2{font-size:11.5px;gap:10px}
+  .window-line-2 b{color:var(--text);font-weight:600;font-variant-numeric:tabular-nums}
+  .window-status{
+    margin-left:auto;font-weight:600;padding:2px 8px;border-radius:99px;
+    font-size:10.5px;letter-spacing:.03em;text-transform:uppercase;
+    font-variant-numeric:tabular-nums;white-space:nowrap;
+  }
+  .window-bar.ok .window-status{background:rgba(15,157,118,.16);color:var(--break)}
+  .window-bar.tight .window-status{background:rgba(217,119,6,.16);color:var(--warn)}
+  .window-bar.over .window-status{background:rgba(220,38,38,.16);color:var(--danger)}
+
+  .window-pace{
+    font-size:11px;font-weight:600;padding:2px 8px;border-radius:99px;
+    font-variant-numeric:tabular-nums;white-space:nowrap;
+    letter-spacing:.02em;
+  }
+  .window-pace.ahead{background:rgba(15,157,118,.16);color:var(--break)}
+  .window-pace.behind{background:rgba(217,119,6,.16);color:var(--warn)}
+  .window-pace.even{background:rgba(139,139,150,.16);color:var(--muted)}
+  .window-pace:empty{display:none}
+
   .res-form{display:grid;grid-template-columns:1fr 1fr auto;gap:8px;margin-bottom:14px}
   .res-form input{margin-top:0}
   @media(max-width:560px){ .res-form{grid-template-columns:1fr} }
@@ -217,11 +255,9 @@
   .res-name a{text-decoration:none}
   .res-name a:hover{text-decoration:underline}
 
-  /* ---------- resource picker ---------- */
   .pick-list{max-height:190px;overflow:auto;border:1px solid var(--border);border-radius:11px;padding:6px;overscroll-behavior:contain}
   .pick{
     display:flex;align-items:center;gap:9px;padding:7px 9px;border-radius:8px;cursor:pointer;font-size:13.5px;
-    /* PERF: skip rendering offscreen rows */
     content-visibility: auto;
     contain-intrinsic-size: auto 34px;
   }
@@ -233,8 +269,80 @@
   .pick-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .pick-url{font-size:11px;color:var(--muted);max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .pick-empty{font-size:12.5px;color:var(--muted);text-align:center;padding:16px}
+  .pick-head{
+    font-size:10.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;
+    color:var(--muted);padding:9px 9px 4px;
+  }
+  .pick-head:first-child{padding-top:2px}
 
-  /* ---------- dashboard ---------- */
+  .window-preview{
+    background:var(--surface-2);border:1px solid var(--border);
+    border-radius:11px;padding:11px 13px;margin:12px 0;
+    display:flex;flex-direction:column;gap:6px;
+  }
+  .window-preview.ok{border-color:rgba(15,157,118,.4)}
+  .window-preview.tight{border-color:rgba(217,119,6,.4)}
+  .window-preview.over{border-color:rgba(220,38,38,.4)}
+  .wp-row{display:flex;justify-content:space-between;gap:10px;font-size:12.5px;color:var(--muted)}
+  .wp-row b{color:var(--text);font-weight:600;font-variant-numeric:tabular-nums}
+  .wp-status{
+    color:var(--text);font-weight:500;padding-top:7px;
+    border-top:1px solid var(--border);margin-top:2px;
+  }
+  .wp-status.ok{color:var(--break)}
+  .wp-status.tight{color:var(--warn)}
+  .wp-status.over{color:var(--danger)}
+
+  .block-editor{display:flex;flex-direction:column;gap:6px;max-height:220px;overflow:auto;padding:2px;overscroll-behavior:contain}
+  .block-row{display:grid;grid-template-columns:1fr 78px 30px;gap:6px;align-items:center}
+  .block-row input{margin-top:0;padding:7px 9px;font-size:13.5px}
+  .block-row .icon-btn{width:28px;height:28px}
+
+
+  /* time window overview */
+  .modal.wide{max-width:580px}
+  .ov-top{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+  .ov-title{font-size:15px;font-weight:600;letter-spacing:-.01em;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .ov-when{font-size:12.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+  .ov-top select{margin-top:0;width:auto;max-width:100%;padding:6px 9px;font-size:13px}
+  .ov-tl{position:relative;display:flex;height:28px;border-radius:8px;background:var(--surface-2);overflow:hidden}
+  .ov-seg{height:100%;min-width:1px}
+  .ov-seg.brk{background:var(--border)}
+  .ov-seg.late{opacity:.45;background-image:repeating-linear-gradient(135deg,rgba(0,0,0,.28) 0 3px,transparent 3px 7px)}
+  .ov-endline{position:absolute;top:0;bottom:0;width:2px;margin-left:-1px;background:var(--text);opacity:.7;pointer-events:none}
+  .ov-now{position:absolute;top:0;bottom:0;width:2px;margin-left:-1px;background:var(--accent);pointer-events:none}
+  .ov-axis{display:flex;justify-content:space-between;gap:10px;font-size:11px;color:var(--muted);margin-top:5px;font-variant-numeric:tabular-nums}
+  .ov-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin:18px 0 8px}
+  .ov-head h3{margin:0;font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+  .ov-head span{font-size:11.5px;color:var(--muted)}
+  .ov-group{border:1px solid var(--border);border-radius:12px;margin-bottom:8px;overflow:hidden}
+  .ov-group.flash{animation:ovflash 1.1s ease-out}
+  @keyframes ovflash{
+    0%{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+    100%{border-color:var(--border);box-shadow:0 0 0 3px transparent}
+  }
+  @media(prefers-reduced-motion:reduce){ .ov-group.flash{animation:none;border-color:var(--accent)} }
+  .ov-row{display:flex;align-items:center;gap:10px;padding:9px 8px 9px 12px}
+  .ov-dot{width:10px;height:10px;border-radius:3px;flex:0 0 auto}
+  .ov-info{flex:1;min-width:0}
+  .ov-name{font-size:14px;font-weight:550;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .ov-sub{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+  .ov-sub.late{color:var(--danger)}
+  .ov-move{display:flex;gap:1px;flex-shrink:0;align-items:center}
+  .ov-move .icon-btn.sm:disabled{opacity:.3;cursor:not-allowed}
+  .ov-move .icon-btn.sm:disabled:hover{background:transparent;color:var(--muted)}
+  .ov-chev{display:inline-block;transition:transform .18s ease}
+  .ov-group.open .ov-chev{transform:rotate(90deg)}
+  .ov-blocks{border-top:1px dashed var(--border);background:var(--surface-2);padding:4px 8px 6px 32px}
+  .ov-blk{display:flex;align-items:center;gap:8px;padding:3px 0;font-size:12.5px}
+  .ov-blk .t{color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+  .ov-blk .n{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .ov-blk.done .n{text-decoration:line-through;opacity:.6}
+  .ov-blk .m{color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+  .ov-blk .icon-btn.sm{width:24px;height:24px;font-size:10px}
+  .ov-blk .icon-btn.sm:disabled{opacity:.3;cursor:not-allowed}
+  .ov-brk{font-size:11px;color:var(--muted);padding:1px 0 1px 2px;font-variant-numeric:tabular-nums}
+
   .stat-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:20px}
   @media(max-width:560px){ .stat-grid{grid-template-columns:repeat(2,minmax(0,1fr))} }
   .stat{background:var(--surface-2);border-radius:12px;padding:12px 14px}
@@ -260,7 +368,6 @@
   .brk-bar{grid-column:1/-1;height:4px;background:var(--surface-2);border-radius:99px;overflow:hidden}
   .brk-bar i{display:block;height:100%;background:var(--accent);border-radius:99px}
 
-  /* ---------- plan ---------- */
   .plan-nav{display:flex;align-items:center;gap:8px;margin-bottom:14px}
   .plan-nav .lbl{flex:1;font-size:14px;font-weight:600;letter-spacing:-.01em;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .plan-day{display:flex;gap:12px;padding:12px 0;border-bottom:1px solid var(--border)}
@@ -300,16 +407,29 @@
   .cal-item.done{opacity:.5;text-decoration:line-through}
   @media(max-width:560px){ .cal-cell{min-height:58px;padding:4px} .cal-item{display:none} }
 
-  /* ---------- template groups ---------- */
-  .tpl-group{margin-bottom:22px}
-  .tpl-group:last-child{margin-bottom:0}
-  .tpl-group-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:6px 0 10px;border-bottom:1px solid var(--border);margin-bottom:12px}
-  .tpl-group-head h3{margin:0;font-size:12.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
-  .tpl-group-head h3 span{color:var(--muted);font-weight:400;letter-spacing:0;text-transform:none;font-size:12px}
-  .tpl-group-head .actions{display:flex;gap:6px}
+  .section-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(232px,1fr));gap:12px}
+  .section-card{
+    display:flex;flex-direction:column;gap:10px;
+    border:1px solid var(--border);border-radius:14px;padding:14px;
+    background:var(--surface);cursor:pointer;transition:.15s;
+  }
+  .section-card:hover{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+  .section-card-top{display:flex;align-items:center;justify-content:space-between;gap:8px}
+  .section-icon{
+    width:32px;height:32px;border-radius:9px;display:grid;place-items:center;
+    background:var(--accent-soft);color:var(--accent);flex-shrink:0;
+  }
+  .section-card-actions{display:flex;gap:2px;opacity:0;transition:opacity .15s}
+  .section-card:hover .section-card-actions,
+  .section-card:focus-within .section-card-actions{opacity:1}
+  @media(hover:none){ .section-card-actions{opacity:1} }
+  .section-info{display:flex;flex-direction:column;gap:2px;min-width:0}
+  .section-name{font-size:15px;font-weight:600;letter-spacing:-.01em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .section-meta{font-size:12px;color:var(--muted)}
+  .section-card-foot{display:flex;gap:6px;margin-top:auto}
+  .section-card-foot .btn{flex:1;text-align:center}
   .tpl-empty{font-size:12.5px;color:var(--muted);padding:14px;text-align:center;border:1px dashed var(--border);border-radius:10px}
 
-  /* ---------- backup modal ---------- */
   .backup-stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px}
   @media(max-width:480px){ .backup-stat-grid{grid-template-columns:repeat(2,1fr)} }
   .backup-stat{background:var(--surface-2);border-radius:10px;padding:9px 11px;text-align:center}
@@ -326,8 +446,6 @@
   }
   .backup-warn svg{flex-shrink:0;margin-top:1px;color:var(--accent)}
 
-  /* ---------- modal ---------- */
-  /* PERF: no backdrop-filter, no overlay animation, containment added */
   .overlay{
     position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;
     padding:20px;background:rgba(0,0,0,.55);
@@ -358,7 +476,6 @@
   .prev-empty{font-size:12.5px;color:var(--muted);text-align:center;padding:10px}
   .prev-more{font-size:11.5px;color:var(--muted);text-align:center;padding:8px}
 
-  /* toast */
   .toast{
     position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(8px);
     background:var(--text);color:var(--bg);
@@ -388,7 +505,6 @@
   </header>
 
   <div class="layout">
-    <!-- ============ TIMER ============ -->
     <aside class="col-left">
       <div class="card">
         <div class="timer-top">
@@ -435,7 +551,6 @@
       </div>
     </aside>
 
-    <!-- ============ MAIN ============ -->
     <main class="col-right">
 
       <div class="tabs" id="tabBar" role="tablist">
@@ -446,19 +561,19 @@
         <button data-tab="templates" role="tab">Templates</button>
       </div>
 
-      <!-- ---- Sessions panel ---- -->
       <section class="card tab-panel" data-panel="sessions" role="tabpanel">
         <div class="sec-head">
           <h2>Sessions</h2>
           <div class="sec-actions">
             <button class="btn" id="importBtn">Import</button>
+            <button class="btn" id="overviewBtn" hidden>Overview</button>
+            <button class="btn" id="addWindowBtn">Time window</button>
             <button class="btn primary" id="addBtn">+ New</button>
           </div>
         </div>
         <div id="sessionList"></div>
       </section>
 
-      <!-- ---- Plan panel ---- -->
       <section class="card tab-panel" data-panel="plan" role="tabpanel" hidden>
         <div class="sec-head">
           <h2>Plan</h2>
@@ -477,7 +592,6 @@
         <div id="planBody"></div>
       </section>
 
-      <!-- ---- Dashboard panel ---- -->
       <section class="card tab-panel" data-panel="dashboard" role="tabpanel" hidden>
         <div class="sec-head">
           <h2>Dashboard</h2>
@@ -491,7 +605,6 @@
         <div id="dashBody"></div>
       </section>
 
-      <!-- ---- Resources panel ---- -->
       <section class="card tab-panel" data-panel="resources" role="tabpanel" hidden>
         <div class="sec-head">
           <h2>Resources</h2>
@@ -513,7 +626,6 @@
         <div id="resList"></div>
       </section>
 
-      <!-- ---- Templates panel ---- -->
       <section class="card tab-panel" data-panel="templates" role="tabpanel" hidden>
         <div class="sec-head">
           <h2>Templates</h2>
@@ -524,8 +636,8 @@
           </div>
         </div>
         <p class="hint" style="margin-top:-4px">
-          Group reusable layouts into sections. Each template can be used to
-          <b>create a session</b>, <b>schedule</b> a plan, or attach resources.
+          Sections are shown as cards. Click a card to open its templates — each one can
+          <b>create a session</b>, be <b>added to your plan</b>, be <b>edited</b>, or hold resources.
         </p>
         <div id="templateList"></div>
       </section>
@@ -534,7 +646,6 @@
   </div>
 </div>
 
-<!-- ============ MODAL ============ -->
 <div class="overlay" id="overlay" hidden>
   <div class="modal" role="dialog" aria-modal="true">
     <div class="modal-head">
@@ -551,9 +662,6 @@
 (() => {
 "use strict";
 
-/* =====================================================
-   STATE
-   ===================================================== */
 const KEY = "studyplan.v1";
 const BASE_TITLE = "Study Plan";
 const TABS = ["sessions", "plan", "dashboard", "resources", "templates"];
@@ -583,7 +691,8 @@ let state = {
 let timer = {
   sessionId: null, blockIndex: 0, phase: "work",
   running: false, remaining: 0, elapsed: 0, total: 0,
-  lastTick: 0, longBreak: false, notified: false, finished: false
+  lastTick: 0, longBreak: false, notified: false, finished: false,
+  skippedBreaks: 0
 };
 
 const uid = () => Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4);
@@ -593,8 +702,10 @@ const esc = s => String(s).replace(/[&<>"']/g, c =>
 const RING_C = 2 * Math.PI * 92;
 
 const ICON_LINK = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>`;
+const ICON_SECTION = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16a1 1 0 0 0 1-1V8a1 1 0 0 0-1-1h-7.5l-2-2H4a1 1 0 0 0-1 1v13a1 1 0 0 0 1 1z"/></svg>`;
+const ICON_TIMELINE = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="14" y2="12"/><line x1="4" y1="18" x2="18" y2="18"/></svg>`;
+const ICON_CLOCK = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`;
 
-/* ---- date helpers ---- */
 function dateKey(d) {
   const x = d instanceof Date ? d : new Date(d);
   return `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, "0")}-${String(x.getDate()).padStart(2, "0")}`;
@@ -608,9 +719,7 @@ function startOfWeek(d) {
 }
 function addDays(d, n) { const x = new Date(d); x.setDate(x.getDate() + n); return x; }
 
-/* =====================================================
-   PERSISTENCE
-   ===================================================== */
+/* ---------- PERSISTENCE ---------- */
 function load() {
   try {
     const raw = localStorage.getItem(KEY);
@@ -635,7 +744,7 @@ function load() {
       }
       state.templates = [];
     }
-  } catch (e) { /* ignore corrupt storage */ }
+  } catch (e) {}
 
   if (!state.theme) {
     state.theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
@@ -655,6 +764,13 @@ function normalise() {
     if (!Array.isArray(s.blocks)) s.blocks = [];
     if (!Array.isArray(s.resources)) s.resources = [];
     s.blocks.forEach(b => { if (typeof b.done !== "boolean") b.done = false; });
+    if (s.window) {
+      if (typeof s.window.start !== "string" || typeof s.window.end !== "string") {
+        s.window = null;
+      } else if (!Array.isArray(s.window.templateIds)) {
+        s.window.templateIds = [];
+      }
+    }
   });
   state.templateGroups.forEach(g => {
     if (!Array.isArray(g.templates)) g.templates = [];
@@ -663,6 +779,7 @@ function normalise() {
       if (!Array.isArray(t.resources)) t.resources = [];
     });
   });
+  state.sessions.forEach(tagLegacyWindowBlocks);
   state.plans.forEach(p => {
     if (!Array.isArray(p.blocks)) p.blocks = [];
     if (!Array.isArray(p.resources)) p.resources = [];
@@ -670,13 +787,28 @@ function normalise() {
   });
 }
 
+/* Older window sessions don't know which template each block came from.
+   Rebuild that link when the block count still matches the chosen templates. */
+function tagLegacyWindowBlocks(s) {
+  if (!s.window || !s.blocks.length) return;
+  if (s.blocks.some(b => b.tpl)) return;
+  const tpls = (s.window.templateIds || []).map(findTemplate);
+  if (!tpls.length || tpls.some(t => !t)) return;
+  if (tpls.reduce((a, t) => a + t.blocks.length, 0) !== s.blocks.length) return;
+  let i = 0;
+  tpls.forEach(t => {
+    for (let k = 0; k < t.blocks.length; k++, i++) {
+      s.blocks[i].tpl = t.id;
+      s.blocks[i].tplTitle = t.title;
+    }
+  });
+}
+
 function save() {
   try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {}
 }
 
-/* =====================================================
-   TOAST
-   ===================================================== */
+/* ---------- TOAST ---------- */
 const toastEl = $("#toast");
 let toastTimer = null;
 
@@ -687,9 +819,7 @@ function toast(msg) {
   toastTimer = setTimeout(() => toastEl.classList.remove("show"), 1800);
 }
 
-/* =====================================================
-   THEME
-   ===================================================== */
+/* ---------- THEME ---------- */
 const themeBtn = $("#themeBtn");
 
 function applyTheme() {
@@ -705,9 +835,7 @@ themeBtn.addEventListener("click", () => {
   save();
 });
 
-/* =====================================================
-   TABS
-   ===================================================== */
+/* ---------- TABS ---------- */
 const tabBar = $("#tabBar");
 
 function setTab(tab) {
@@ -734,9 +862,7 @@ tabBar.addEventListener("click", e => {
   if (b) setTab(b.dataset.tab);
 });
 
-/* =====================================================
-   RESOURCE FORM TOGGLE
-   ===================================================== */
+/* ---------- RESOURCE FORM TOGGLE ---------- */
 const formToggle  = $("#formToggle");
 const resFormWrap = $("#resFormWrap");
 
@@ -753,9 +879,7 @@ formToggle.addEventListener("click", () => {
   applyResFormToggle();
 });
 
-/* =====================================================
-   AUDIO CUE
-   ===================================================== */
+/* ---------- AUDIO ---------- */
 let actx = null;
 function beep(freq = 660, dur = 0.45) {
   try {
@@ -771,9 +895,7 @@ function beep(freq = 660, dur = 0.45) {
   } catch (e) {}
 }
 
-/* =====================================================
-   HISTORY
-   ===================================================== */
+/* ---------- HISTORY ---------- */
 function logStudy(minutes, session, block) {
   if (!minutes || minutes < 0.05) return;
   state.history.push({
@@ -788,9 +910,7 @@ function logStudy(minutes, session, block) {
   if (state.ui.tab === "dashboard") renderDashboard();
 }
 
-/* =====================================================
-   TIMER CORE
-   ===================================================== */
+/* ---------- TIMER CORE ---------- */
 const ringFg   = $("#ringFg");
 const timeEl   = $("#timeEl");
 const subEl    = $("#subEl");
@@ -818,6 +938,40 @@ function fmtTime(sec) {
   const s = sec % 60;
   const p = n => String(n).padStart(2, "0");
   return h ? `${h}:${p(m)}:${p(s)}` : `${p(m)}:${p(s)}`;
+}
+
+/* --- Effective time helpers (account for breaks) --- */
+function effectiveMinutes(workMinutes, blockCount, mode) {
+  if (mode !== "pomodoro" || blockCount <= 1) return workMinutes;
+  const short = state.settings.short;
+  const longB = state.settings.long;
+  const every = state.settings.longEvery;
+  let total = workMinutes;
+  for (let i = 1; i <= blockCount - 1; i++) {
+    total += (i % every === 0) ? longB : short;
+  }
+  return total;
+}
+
+/* Effective time still to do for a (partially done) session */
+function remainingEffective(s, mode) {
+  const firstUndone = s.blocks.findIndex(b => !b.done);
+  if (firstUndone === -1) return 0;
+
+  const remainWork = s.blocks.slice(firstUndone).reduce((a, b) => a + b.minutes, 0);
+  if (mode !== "pomodoro") return remainWork;
+
+  const n = s.blocks.length;
+  const every = state.settings.longEvery;
+  const short = state.settings.short;
+  const longB = state.settings.long;
+
+  const startGap = Math.max(0, firstUndone - 1);
+  let breakMin = 0;
+  for (let i = startGap; i <= n - 2; i++) {
+    breakMin += ((i + 1) % every === 0) ? longB : short;
+  }
+  return remainWork + breakMin;
 }
 
 function loadPhase() {
@@ -859,6 +1013,7 @@ function startSession(id) {
   timer.longBreak  = false;
   timer.finished   = false;
   timer.notified   = false;
+  timer.skippedBreaks = 0;
 
   loadPhase();
   timer.running  = true;
@@ -872,6 +1027,7 @@ function resetPhase() {
   if (!timer.sessionId) return;
   timer.finished = false;
   timer.running  = false;
+  timer.skippedBreaks = 0;
   loadPhase();
   updateTimerUI();
 }
@@ -882,6 +1038,40 @@ function finishSession(s) {
   beep(880, 0.35);
   setTimeout(() => beep(1046, 0.5), 170);
   renderSessions();
+}
+
+/* Should we skip the upcoming break because it doesn't fit in the window? */
+function shouldSkipBreak(s, nextBlockIndex) {
+  if (!s.window) return false;
+  if (state.settings.mode !== "pomodoro") return false;
+
+  const wb = windowBounds(s.window);
+  if (!wb) return false;
+
+  const nowSec = Date.now() / 1000;
+  const startSec = wb[0] / 1000;
+  const endSec   = wb[1] / 1000;
+
+  // Only apply the skip logic while we're inside the window
+  if (nowSec < startSec || nowSec >= endSec) return false;
+
+  const isLong = ((nextBlockIndex) % state.settings.longEvery === 0);
+  const breakSecs = (isLong ? state.settings.long : state.settings.short) * 60;
+
+  // Remaining work from nextBlockIndex onward
+  const remainWorkSecs = s.blocks.slice(nextBlockIndex)
+    .reduce((a, x) => a + x.minutes * 60, 0);
+
+  // Future breaks after blocks [nextBlockIndex .. n-2]
+  let futureBreakSecs = 0;
+  const n = s.blocks.length;
+  for (let i = nextBlockIndex; i <= n - 2; i++) {
+    const lng = ((i + 1) % state.settings.longEvery === 0);
+    futureBreakSecs += (lng ? state.settings.long : state.settings.short) * 60;
+  }
+
+  // If taking this break pushes us past the end, skip it
+  return (nowSec + breakSecs + remainWorkSecs + futureBreakSecs) > endSec;
 }
 
 function endPhase() {
@@ -908,12 +1098,27 @@ function endPhase() {
     if (timer.blockIndex >= s.blocks.length - 1) {
       finishSession(s);
     } else {
-      timer.longBreak = ((timer.blockIndex + 1) % state.settings.longEvery === 0);
-      timer.phase = "break";
-      loadPhase();
-      timer.running  = wasRunning;
-      timer.lastTick = Date.now();
-      beep(520, 0.4);
+      const nextIdx = timer.blockIndex + 1;
+      const isLong = ((nextIdx) % state.settings.longEvery === 0);
+
+      // Auto-skip if the break wouldn't fit inside the window
+      if (shouldSkipBreak(s, nextIdx)) {
+        timer.blockIndex = nextIdx;
+        timer.phase = "work";
+        timer.longBreak = false;
+        timer.skippedBreaks = (timer.skippedBreaks || 0) + 1;
+        loadPhase();
+        timer.running  = wasRunning;
+        timer.lastTick = Date.now();
+        toast("Break skipped — no time to spare");
+      } else {
+        timer.longBreak = isLong;
+        timer.phase = "break";
+        loadPhase();
+        timer.running  = wasRunning;
+        timer.lastTick = Date.now();
+        beep(520, 0.4);
+      }
     }
   } else {
     timer.blockIndex++;
@@ -958,9 +1163,7 @@ setInterval(() => {
   updateTimerUI();
 }, 250);
 
-/* =====================================================
-   TIMER UI
-   ===================================================== */
+/* ---------- TIMER UI ---------- */
 function updateTimerUI() {
   const s    = getSession(timer.sessionId);
   const mode = state.settings.mode;
@@ -1063,9 +1266,137 @@ modeSeg.addEventListener("click", e => {
   updateTimerUI();
 });
 
-/* =====================================================
-   RESOURCES — shared helpers
-   ===================================================== */
+/* ---------- WINDOW SESSIONS ---------- */
+function windowBounds(w) {
+  if (!w || !w.start || !w.end) return null;
+  const start = new Date(`${w.date}T${w.start}:00`);
+  let end     = new Date(`${w.date}T${w.end}:00`);
+  if (isNaN(start) || isNaN(end)) return null;
+  if (end <= start) end = new Date(end.getTime() + DAY);
+  return [start.getTime(), end.getTime()];
+}
+
+function windowStatus(s) {
+  const b = windowBounds(s.window);
+  if (!b) return null;
+
+  const [startMs, endMs] = b;
+  const now = Date.now();
+  const mode = state.settings.mode;
+
+  const workMin    = s.blocks.reduce((a, x) => a + x.minutes, 0);
+  const doneWorkMin= s.blocks.filter(x => x.done).reduce((a, x) => a + x.minutes, 0);
+
+  // Total effective (as if starting fresh) — work + breaks
+  const plannedMin = effectiveMinutes(workMin, s.blocks.length, mode);
+  // Remaining effective from current progress
+  const toDoMin    = remainingEffective(s, mode);
+
+  const leftMs    = Math.max(0, endMs - now);
+  const remainMin = leftMs / 60000;
+  const spareMin  = remainMin - toDoMin;
+
+  return {
+    startMs, endMs, now,
+    totalMin: (endMs - startMs) / 60000,
+    workMin, doneWorkMin,
+    plannedMin, toDoMin, remainMin, spareMin,
+    started: now >= startMs,
+    ended:   now >= endMs
+  };
+}
+
+function renderWindowBar(s) {
+  const w = windowStatus(s);
+  if (!w) return "";
+
+  let cls = "ok", label;
+  if (w.toDoMin <= 0)       { cls = "ok";    label = "Done"; }
+  else if (!w.started)      { cls = "ok";    label = "Upcoming"; }
+  else if (w.ended)         { cls = "over";  label = "Time up"; }
+  else if (w.spareMin < 0)  { cls = "over";  label = `Over by ${fmtDur(-w.spareMin)}`; }
+  else if (w.spareMin < 30) { cls = "tight"; label = `Tight · ${fmtDur(w.spareMin)} spare`; }
+  else                      { cls = "ok";    label = `Fits · ${fmtDur(w.spareMin)} spare`; }
+
+  // Planned tooltip breakdown
+  const breakMin = Math.max(0, w.plannedMin - w.workMin);
+  const planTitle = breakMin > 0
+    ? `${fmtDur(w.workMin)} work + ${fmtDur(breakMin)} breaks`
+    : `${fmtDur(w.workMin)} work`;
+
+  // Pace badge is rendered empty and filled in by the ticker
+  const showPace = w.started && !w.ended && (w.doneWorkMin > 0 || timer.sessionId === s.id);
+  const paceHtml = showPace
+    ? `<span class="window-pace" data-pstart="${w.startMs}" data-pend="${w.endMs}" data-pplanned="${w.workMin}" data-pdone="${w.doneWorkMin}"></span>`
+    : "";
+
+  return `
+    <div class="window-bar ${cls}">
+      <div class="window-line">
+        <span class="window-range">${ICON_CLOCK}${esc(s.window.start)} – ${esc(s.window.end)}</span>
+        <span class="window-countdown" data-wstart="${w.startMs}" data-wend="${w.endMs}">…</span>
+      </div>
+      <div class="window-line window-line-2">
+        <span title="${esc(planTitle)}">Planned <b>${fmtDur(w.plannedMin)}</b></span>
+        <span>To go <b>${fmtDur(w.toDoMin)}</b></span>
+        ${paceHtml}
+        <span class="window-status">${esc(label)}</span>
+      </div>
+    </div>`;
+}
+
+function updateWindowCountdowns() {
+  const now = Date.now();
+
+  document.querySelectorAll("[data-wend]").forEach(el => {
+    const startMs = +el.dataset.wstart;
+    const endMs   = +el.dataset.wend;
+    let text, cls;
+    if (now < startMs) {
+      const mins = (startMs - now) / 60000;
+      text = `starts in ${fmtDur(mins)}`;
+      cls  = "upcoming";
+    } else if (now >= endMs) {
+      text = "window ended";
+      cls  = "ended";
+    } else {
+      text = `${fmtDur((endMs - now) / 60000)} left`;
+      cls  = "active";
+    }
+    el.textContent = text;
+    el.className = "window-countdown " + cls;
+  });
+
+  document.querySelectorAll("[data-pstart]").forEach(el => {
+    const ps      = +el.dataset.pstart;
+    const pe      = +el.dataset.pend;
+    const planned = +el.dataset.pplanned;
+    const done    = +el.dataset.pdone;
+    if (now < ps || now >= pe || planned <= 0) {
+      el.textContent = "";
+      el.className = "window-pace";
+      return;
+    }
+    const frac = Math.min(1, (now - ps) / (pe - ps));
+    const expected = planned * frac;
+    const pace = done - expected;
+
+    if (Math.abs(pace) < 5) {
+      el.textContent = "On pace";
+      el.className = "window-pace even";
+    } else if (pace > 0) {
+      el.textContent = `${fmtDur(pace)} ahead`;
+      el.className = "window-pace ahead";
+    } else {
+      el.textContent = `${fmtDur(-pace)} behind`;
+      el.className = "window-pace behind";
+    }
+  });
+}
+
+setInterval(updateWindowCountdowns, 1000);
+
+/* ---------- RESOURCES HELPERS ---------- */
 function safeUrl(u) {
   if (!u) return "";
   try {
@@ -1088,7 +1419,6 @@ function resChipsMarkup(ids) {
   }).join("")}</div>`;
 }
 
-/* ---- Picker (used inside modals) ---- */
 let pickerEl = null;
 
 function pickItemsMarkup(selected) {
@@ -1118,7 +1448,6 @@ function getPicked() {
     .filter(i => i.checked).map(i => i.value);
 }
 
-/* PERF: append only the new row instead of re-rendering the whole picker */
 function appendPickItem(r, checked) {
   if (!pickerEl) return;
   const empty = pickerEl.querySelector(".pick-empty");
@@ -1164,11 +1493,9 @@ function initPicker() {
     save();
 
     appendPickItem(r, true);
-
     nameEl.value = "";
     urlEl.value = "";
     nameEl.focus();
-
     renderResources();
   });
 }
@@ -1199,17 +1526,21 @@ function openAttachModal(kind, id) {
   document.getElementById("pickSave").addEventListener("click", () => {
     item.resources = getPicked();
     save();
+    const backToSection = (kind === "template") ? openSectionId : null;
     closeModal();
-    if (kind === "template") renderTemplates();
-    else if (kind === "plan") renderPlan();
-    else renderSessions();
+    if (kind === "template") {
+      renderTemplates();
+      if (backToSection) openSectionModal(backToSection);
+    } else if (kind === "plan") {
+      renderPlan();
+    } else {
+      renderSessions();
+    }
     toast("Resources updated");
   });
 }
 
-/* =====================================================
-   BACKUP (Export / Import)
-   ===================================================== */
+/* ---------- BACKUP ---------- */
 function backupCounts() {
   return {
     sessions: state.sessions.length,
@@ -1420,15 +1751,15 @@ function openBackupModal() {
 
 $("#backupBtn").addEventListener("click", openBackupModal);
 
-/* =====================================================
-   SESSIONS
-   ===================================================== */
+/* ---------- SESSIONS ---------- */
 const sessionList = $("#sessionList");
+const overviewBtn = $("#overviewBtn");
 
 function renderSessions() {
+  overviewBtn.hidden = !state.sessions.some(s => s.window && windowBounds(s.window));
   if (!state.sessions.length) {
     sessionList.innerHTML =
-      `<div class="empty">No sessions yet.<br>Create one, import one, or start from a <b>template</b>.</div>`;
+      `<div class="empty">No sessions yet.<br>Create one, import one, start from a <b>template</b>, or use <b>Time window</b>.</div>`;
     return;
   }
 
@@ -1438,9 +1769,10 @@ function renderSessions() {
     const mins  = s.blocks.reduce((a, b) => a + b.minutes, 0);
     const pct   = total ? (done / total) * 100 : 0;
     const active = timer.sessionId === s.id;
+    const isWindow = !!s.window;
 
     return `
-      <div class="session${active ? " active" : ""}" data-id="${s.id}">
+      <div class="session${active ? " active" : ""}${isWindow ? " windowed" : ""}" data-id="${s.id}">
         <div class="session-head">
           <div>
             <div class="session-title">${esc(s.title)}</div>
@@ -1448,11 +1780,14 @@ function renderSessions() {
           </div>
           <div class="session-actions">
             <button class="btn" data-act="start">${active ? "Restart" : "Start"}</button>
+            ${isWindow ? `<button class="icon-btn sm" data-act="overview" title="Overview &amp; study order">${ICON_TIMELINE}</button>` : ""}
+            ${isWindow ? `<button class="icon-btn sm" data-act="editWin" title="Edit window">✎</button>` : ""}
             <button class="icon-btn sm" data-act="res" title="Resources">${ICON_LINK}</button>
             <button class="icon-btn sm" data-act="tmpl" title="Save as template">★</button>
             <button class="icon-btn sm" data-act="del" title="Delete">✕</button>
           </div>
         </div>
+        ${isWindow ? renderWindowBar(s) : ""}
         <div class="bar"><i style="width:${pct}%"></i></div>
         <div class="blocks">
           ${s.blocks.map((b, i) => `
@@ -1463,6 +1798,8 @@ function renderSessions() {
         ${resChipsMarkup(s.resources)}
       </div>`;
   }).join("");
+
+  updateWindowCountdowns();
 }
 
 sessionList.addEventListener("click", e => {
@@ -1478,6 +1815,10 @@ sessionList.addEventListener("click", e => {
 
   if (act === "start") {
     startSession(id);
+  } else if (act === "overview") {
+    openWindowOverview(id);
+  } else if (act === "editWin") {
+    openWindowModal(id);
   } else if (act === "res") {
     openAttachModal("session", id);
   } else if (act === "del") {
@@ -1514,9 +1855,519 @@ sessionList.addEventListener("click", e => {
   }
 });
 
-/* =====================================================
-   PLAN
-   ===================================================== */
+/* ---------- WINDOW MODAL (create + edit) ---------- */
+function openWindowModal(editId) {
+  const editing = editId ? getSession(editId) : null;
+
+  const today = dateKey(new Date());
+  const dateVal  = editing && editing.window ? editing.window.date  : today;
+  const startVal = editing && editing.window ? editing.window.start : "07:00";
+  const endVal   = editing && editing.window ? editing.window.end   : "14:00";
+  const titleVal = editing ? editing.title : "";
+  const picked   = editing && editing.window ? (editing.window.templateIds || []) : [];
+
+  const hasTemplates = state.templateGroups.some(g => g.templates.length);
+
+  const tplListHtml = hasTemplates
+    ? state.templateGroups.map(g => {
+        if (!g.templates.length) return "";
+        return `<div class="pick-head">${esc(g.name)}</div>` +
+          g.templates.map(t => `
+            <label class="pick">
+              <input type="checkbox" value="${t.id}" ${picked.includes(t.id) ? "checked" : ""}>
+              <span class="pick-name">${esc(t.title)}</span>
+              <span class="pick-url">${t.blocks.length}b · ${planTotal(t.blocks)}m</span>
+            </label>`).join("");
+      }).join("")
+    : `<div class="pick-empty">No templates yet — create one in the Templates tab first.</div>`;
+
+  openModal(editing ? "Edit time window" : "Time window session", `
+    <p class="hint">
+      ${editing
+        ? "Update the frame, times, or templates. Blocks that are already done keep their state when the layout is unchanged."
+        : "Fit a set of templates inside a fixed time frame. The session tracks how much study time is planned versus what is left in the window."}
+    </p>
+
+    <label class="fld">Title
+      <input id="wTitle" placeholder="e.g. Saturday morning block" value="${esc(titleVal)}" autocomplete="off">
+    </label>
+
+    <div class="two">
+      <label class="fld">Date
+        <input id="wDate" type="date" value="${esc(dateVal)}">
+      </label>
+      <label class="fld">Start
+        <input id="wStart" type="time" value="${esc(startVal)}">
+      </label>
+    </div>
+
+    <label class="fld">End
+      <input id="wEnd" type="time" value="${esc(endVal)}">
+    </label>
+
+    <div class="fld" style="margin-bottom:6px;display:flex;align-items:center;justify-content:space-between;gap:10px">
+      <span>Templates to fit inside the window</span>
+      <button class="btn sm" type="button" id="wFit">Fit to window</button>
+    </div>
+    <div class="pick-list" id="wPick" style="max-height:200px">${tplListHtml}</div>
+
+    <div class="window-preview" id="wPreview"></div>
+
+    <button class="btn primary wide" id="wCreate" ${hasTemplates ? "" : "disabled"}>
+      ${editing ? "Save changes" : "Create window session"}
+    </button>
+  `);
+
+  const $title  = document.getElementById("wTitle");
+  const $date   = document.getElementById("wDate");
+  const $start  = document.getElementById("wStart");
+  const $end    = document.getElementById("wEnd");
+  const $pick   = document.getElementById("wPick");
+  const $prev   = document.getElementById("wPreview");
+  const $create = document.getElementById("wCreate");
+  const $fit    = document.getElementById("wFit");
+
+  $title.focus();
+
+  function pickedTemplates() {
+    return [...$pick.querySelectorAll("input[type=checkbox]")]
+      .filter(i => i.checked)
+      .map(i => i.value)
+      .map(findTemplate)
+      .filter(Boolean);
+  }
+
+  function windowMinutes() {
+    const s = $start.value, e = $end.value;
+    if (!s || !e) return 0;
+    const [sh, sm] = s.split(":").map(Number);
+    const [eh, em] = e.split(":").map(Number);
+    let diff = (eh * 60 + em) - (sh * 60 + sm);
+    if (diff <= 0) diff += 1440;
+    return diff;
+  }
+
+  function updatePreview() {
+    const winMin = windowMinutes();
+    const pk     = pickedTemplates();
+    const workMin = pk.reduce((a, t) => a + planTotal(t.blocks), 0);
+    const blockCnt = pk.reduce((a, t) => a + t.blocks.length, 0);
+    const mode = state.settings.mode;
+    const effMin = effectiveMinutes(workMin, blockCnt, mode);
+    const breakMin = effMin - workMin;
+    const delta = winMin - effMin;
+
+    let cls = "", status, statusCls = "";
+
+    if (!pk.length) {
+      cls = ""; statusCls = "";
+      status = "Pick at least one template";
+    } else if (delta < 0) {
+      cls = "over"; statusCls = "over";
+      status = `Doesn't fit — over by ${fmtDur(-delta)}`;
+    } else if (delta < 30) {
+      cls = "tight"; statusCls = "tight";
+      status = `Tight — only ${fmtDur(delta)} of spare time`;
+    } else {
+      cls = "ok"; statusCls = "ok";
+      status = `Fits with ${fmtDur(delta)} spare`;
+    }
+
+    $prev.className = "window-preview " + cls;
+    $prev.innerHTML = `
+      <div class="wp-row"><span>Window length</span><b>${winMin ? fmtDur(winMin) : "—"}</b></div>
+      <div class="wp-row"><span>Work time</span><b>${workMin ? fmtDur(workMin) : "—"}</b></div>
+      ${breakMin > 0 ? `<div class="wp-row"><span>Breaks</span><b>+${fmtDur(breakMin)}</b></div>` : ""}
+      ${breakMin > 0 ? `<div class="wp-row"><span>Effective total</span><b>${fmtDur(effMin)}</b></div>` : ""}
+      <div class="wp-row"><span>Templates picked</span><b>${pk.length}</b></div>
+      <div class="wp-row wp-status ${statusCls}">${esc(status)}</div>
+    `;
+  }
+
+  $pick.addEventListener("change", updatePreview);
+  ["input", "change"].forEach(evt => {
+    $start.addEventListener(evt, updatePreview);
+    $end.addEventListener(evt, updatePreview);
+  });
+  updatePreview();
+
+  // Fit to window
+  $fit.addEventListener("click", () => {
+    const winMin = windowMinutes();
+    if (!winMin) { toast("Set a start and end time"); return; }
+
+    const mode = state.settings.mode;
+    const all = [];
+    state.templateGroups.forEach(g => g.templates.forEach(t => all.push(t)));
+
+    if (!all.length) { toast("No templates available"); return; }
+
+    const fitIds = [];
+    let totalWork = 0;
+    let totalBlocks = 0;
+
+    for (const t of all) {
+      const tWork = t.blocks.reduce((a, b) => a + b.minutes, 0);
+      const tBlocks = t.blocks.length;
+      const nextWork = totalWork + tWork;
+      const nextBlocks = totalBlocks + tBlocks;
+      const eff = effectiveMinutes(nextWork, nextBlocks, mode);
+      if (eff <= winMin) {
+        totalWork = nextWork;
+        totalBlocks = nextBlocks;
+        fitIds.push(t.id);
+      }
+    }
+
+    [...$pick.querySelectorAll("input[type=checkbox]")].forEach(cb => {
+      cb.checked = fitIds.includes(cb.value);
+    });
+    updatePreview();
+
+    if (!fitIds.length) toast("Nothing fits — try a longer window");
+    else toast(`Fitted ${fitIds.length} template${fitIds.length !== 1 ? "s" : ""}`);
+  });
+
+  $create.addEventListener("click", () => {
+    const pk = pickedTemplates();
+    if (!pk.length) { toast("Pick at least one template"); return; }
+
+    const start = $start.value || "07:00";
+    const end   = $end.value   || "14:00";
+    const date  = $date.value  || today;
+
+    // Keep the current study order for templates that stay selected;
+    // newly picked templates go at the end.
+    const prevOrder = editing && editing.window ? (editing.window.templateIds || []) : [];
+    const ordered = [
+      ...prevOrder.map(id => pk.find(t => t.id === id)).filter(Boolean),
+      ...pk.filter(t => !prevOrder.includes(t.id))
+    ];
+
+    // Old blocks per template, so done state survives an edit
+    const oldByKey = new Map();
+    if (editing) blockGroups(editing).forEach(g => oldByKey.set(g.key, g.blocks));
+
+    const newBlocks = [];
+    ordered.forEach(t => {
+      const old = oldByKey.get(t.id) || [];
+      const used = new Set();
+      const fresh = t.blocks.map(b => {
+        const topic = b.topic || t.title;
+        const match = old.find(o => !used.has(o) && o.topic === topic && o.minutes === b.minutes);
+        if (match) used.add(match);
+        return { topic, minutes: b.minutes, match };
+      });
+
+      if (old.length && fresh.every(f => f.match) && old.length === fresh.length) {
+        // Same blocks as before: reuse them (keeps done state and any in-template order)
+        old.forEach(o => { o.tplTitle = t.title; newBlocks.push(o); });
+      } else {
+        fresh.forEach(f => newBlocks.push({
+          topic: f.topic,
+          minutes: f.minutes,
+          done: f.match ? !!f.match.done : false,
+          tpl: t.id,
+          tplTitle: t.title
+        }));
+      }
+    });
+
+    // Merge resources
+    const resSet = new Set();
+    pk.forEach(t => (t.resources || []).forEach(r => resSet.add(r)));
+
+    const title = $title.value.trim() || "Study window";
+    const templateIds = ordered.map(t => t.id);
+
+    if (editing) {
+      const current = timer.sessionId === editing.id ? editing.blocks[timer.blockIndex] : null;
+
+      editing.title = title;
+      editing.blocks = newBlocks;
+      editing.resources = [...resSet];
+      editing.window = { date, start, end, templateIds };
+
+      if (current) {
+        const ni = newBlocks.indexOf(current);
+        timer.blockIndex = ni >= 0 ? ni : Math.max(0, Math.min(timer.blockIndex, newBlocks.length - 1));
+        updateTimerUI();
+      }
+
+      save();
+      closeModal();
+      renderSessions();
+      toast("Window updated");
+    } else {
+      state.sessions.push({
+        id: uid(),
+        title,
+        blocks: newBlocks,
+        resources: [...resSet],
+        window: { date, start, end, templateIds },
+        created: Date.now()
+      });
+      save();
+      closeModal();
+      renderSessions();
+      toast("Window session created");
+    }
+  });
+}
+
+$("#addWindowBtn").addEventListener("click", () => openWindowModal(null));
+
+/* ---------- TIME WINDOW OVERVIEW ---------- */
+const OTHER = "__other";
+const ovOpen = new Set();   // template groups whose blocks are expanded
+
+const fmtClock = ms => {
+  const d = new Date(ms);
+  return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+};
+const ovColor = i => `hsl(${(i * 57 + 255) % 360} 62% 58%)`;
+
+/* Blocks grouped by the template they came from, in study order */
+function blockGroups(s) {
+  const map = new Map();
+  s.blocks.forEach(b => {
+    const key = b.tpl || OTHER;
+    if (!map.has(key)) map.set(key, { key, blocks: [] });
+    map.get(key).blocks.push(b);
+  });
+  return [...map.values()].map(g => {
+    const live = g.key !== OTHER ? findTemplate(g.key) : null;
+    g.title = g.key === OTHER ? "Other blocks"
+            : (live ? live.title : (g.blocks[0].tplTitle || "Template"));
+    return g;
+  });
+}
+
+/* Clock times for every block, following the planned breaks */
+function buildSchedule(s) {
+  const wb = windowBounds(s.window);
+  if (!wb) return null;
+  const pomodoro = state.settings.mode === "pomodoro";
+  const every = state.settings.longEvery;
+  const n = s.blocks.length;
+  let t = wb[0];
+  const items = s.blocks.map((b, i) => {
+    const start = t, end = t + b.minutes * 60000;
+    t = end;
+    let brk = 0;
+    if (pomodoro && i < n - 1) {
+      brk = ((i + 1) % every === 0 ? state.settings.long : state.settings.short) * 60000;
+      t += brk;
+    }
+    return { b, i, start, end, brk };
+  });
+  return {
+    startMs: wb[0],
+    endMs: wb[1],
+    items,
+    finish: items.length ? items[items.length - 1].end : wb[0]
+  };
+}
+
+function applyBlockOrder(s, groups, flashKey) {
+  const current = timer.sessionId === s.id ? s.blocks[timer.blockIndex] : null;
+  s.blocks = groups.flatMap(g => g.blocks);
+  s.window.templateIds = groups.map(g => g.key).filter(k => k !== OTHER);
+  if (current) {
+    const ni = s.blocks.indexOf(current);
+    if (ni >= 0) timer.blockIndex = ni;
+  }
+  save();
+  renderSessions();
+  updateTimerUI();
+  openWindowOverview(s.id, flashKey);
+}
+
+function moveGroup(s, key, dir) {
+  const groups = blockGroups(s);
+  const i = groups.findIndex(g => g.key === key);
+  const j = i + dir;
+  if (i < 0 || j < 0 || j >= groups.length) return;
+  [groups[i], groups[j]] = [groups[j], groups[i]];
+  applyBlockOrder(s, groups, key);
+}
+
+function moveBlock(s, key, bi, dir) {
+  const groups = blockGroups(s);
+  const g = groups.find(x => x.key === key);
+  if (!g) return;
+  const j = bi + dir;
+  if (j < 0 || j >= g.blocks.length) return;
+  [g.blocks[bi], g.blocks[j]] = [g.blocks[j], g.blocks[bi]];
+  applyBlockOrder(s, groups, key);
+}
+
+function defaultOverviewId() {
+  const wins = state.sessions.filter(x => x.window && windowBounds(x.window));
+  if (!wins.length) return null;
+  const now = Date.now();
+  const startOf = x => windowBounds(x.window)[0];
+  const endOf   = x => windowBounds(x.window)[1];
+  const live = wins.find(x => now >= startOf(x) && now < endOf(x));
+  if (live) return live.id;
+  const next = wins.filter(x => startOf(x) > now).sort((a, b) => startOf(a) - startOf(b))[0];
+  if (next) return next.id;
+  return wins.sort((a, b) => startOf(b) - startOf(a))[0].id;
+}
+
+function openWindowOverview(id, flashKey) {
+  const wins = state.sessions
+    .filter(x => x.window && windowBounds(x.window))
+    .sort((a, b) => windowBounds(a.window)[0] - windowBounds(b.window)[0]);
+  if (!wins.length) { toast("Create a time window first"); return; }
+
+  const s = wins.find(x => x.id === id) || getSession(defaultOverviewId());
+  if (!s) return;
+
+  const sched  = buildSchedule(s);
+  const groups = blockGroups(s);
+  const itemOf = new Map(sched.items.map(it => [it.b, it]));
+  const winMin = (sched.endMs - sched.startMs) / 60000;
+  const workMin = s.blocks.reduce((a, b) => a + b.minutes, 0);
+  const breakMin = sched.items.reduce((a, it) => a + it.brk, 0) / 60000;
+  const spare = (sched.endMs - sched.finish) / 60000;
+
+  let cls, status;
+  if (!s.blocks.length)  { cls = "";      status = "No blocks in this window"; }
+  else if (spare < 0)    { cls = "over";  status = `Doesn't fit — over by ${fmtDur(-spare)}`; }
+  else if (spare < 30)   { cls = "tight"; status = `Tight — only ${fmtDur(spare)} of spare time`; }
+  else                   { cls = "ok";    status = `Fits with ${fmtDur(spare)} spare`; }
+
+  /* timeline */
+  const spanMs = Math.max(sched.endMs - sched.startMs, sched.finish - sched.startMs, 1);
+  const pct = ms => (ms / spanMs) * 100;
+  const colorOf = new Map(groups.map((g, i) => [g.key, ovColor(i)]));
+  const now = Date.now();
+
+  const segs = sched.items.map(it => {
+    const key = it.b.tpl || OTHER;
+    const late = it.end > sched.endMs ? " late" : "";
+    const g = groups.find(x => x.key === key);
+    const tip = `${g.title} · ${it.b.topic || "Block"} · ${fmtClock(it.start)}–${fmtClock(it.end)}`;
+    return `<i class="ov-seg${late}" style="flex:0 0 ${pct(it.end - it.start)}%;background-color:${colorOf.get(key)}" title="${esc(tip)}"></i>`
+         + (it.brk ? `<i class="ov-seg brk" style="flex:0 0 ${pct(it.brk)}%" title="Break · ${fmtDur(it.brk / 60000)}"></i>` : "");
+  }).join("");
+
+  const endLine = spanMs > sched.endMs - sched.startMs
+    ? `<span class="ov-endline" style="left:${pct(sched.endMs - sched.startMs)}%" title="Window ends ${fmtClock(sched.endMs)}"></span>` : "";
+  const nowLine = (now >= sched.startMs && now <= sched.startMs + spanMs)
+    ? `<span class="ov-now" style="left:${pct(now - sched.startMs)}%" title="Now"></span>` : "";
+
+  /* study order rows */
+  const rows = groups.map((g, gi) => {
+    const its   = g.blocks.map(b => itemOf.get(b));
+    const gS    = its[0].start;
+    const gE    = its[its.length - 1].end;
+    const work  = g.blocks.reduce((a, b) => a + b.minutes, 0);
+    const done  = g.blocks.filter(b => b.done).length;
+    const over  = gS >= sched.endMs ? "Outside the window"
+                : gE > sched.endMs  ? `Runs ${fmtDur((gE - sched.endMs) / 60000)} over` : "";
+    const open  = ovOpen.has(g.key);
+    const lastBrk = its[its.length - 1].brk;
+
+    const blockRows = its.map((it, bi) => `
+      <div class="ov-blk${it.b.done ? " done" : ""}" data-bi="${bi}">
+        <span class="t">${fmtClock(it.start)}–${fmtClock(it.end)}</span>
+        <span class="n">${esc(it.b.topic || "Block")}</span>
+        <span class="m">${it.b.minutes}m</span>
+        <button class="icon-btn sm" data-act="ov-b-up" title="Move block earlier" aria-label="Move block earlier" ${bi === 0 ? "disabled" : ""}>▲</button>
+        <button class="icon-btn sm" data-act="ov-b-down" title="Move block later" aria-label="Move block later" ${bi === its.length - 1 ? "disabled" : ""}>▼</button>
+      </div>
+      ${it.brk && bi < its.length - 1 ? `<div class="ov-brk">${fmtClock(it.end)} · ${fmtDur(it.brk / 60000)} break</div>` : ""}
+    `).join("");
+
+    return `
+      <div class="ov-group${open ? " open" : ""}${g.key === flashKey ? " flash" : ""}" data-key="${esc(g.key)}">
+        <div class="ov-row">
+          <span class="ov-dot" style="background:${colorOf.get(g.key)}"></span>
+          <div class="ov-info">
+            <div class="ov-name">${gi + 1}. ${esc(g.title)}</div>
+            <div class="ov-sub${over ? " late" : ""}">${fmtClock(gS)} – ${fmtClock(gE)} · ${fmtDur(work)} · ${done}/${g.blocks.length} done${over ? ` · ${over}` : ""}</div>
+          </div>
+          <div class="ov-move">
+            <button class="icon-btn sm" data-act="ov-g-up" title="Study earlier" aria-label="Study earlier" ${gi === 0 ? "disabled" : ""}>▲</button>
+            <button class="icon-btn sm" data-act="ov-g-down" title="Study later" aria-label="Study later" ${gi === groups.length - 1 ? "disabled" : ""}>▼</button>
+            <button class="icon-btn sm" data-act="ov-toggle" title="Show blocks" aria-label="Show blocks" aria-expanded="${open}"><span class="ov-chev">›</span></button>
+          </div>
+        </div>
+        ${open ? `<div class="ov-blocks">${blockRows}${lastBrk && gi < groups.length - 1 ? `<div class="ov-brk">${fmtClock(its[its.length - 1].end)} · ${fmtDur(lastBrk / 60000)} break</div>` : ""}</div>` : ""}
+      </div>`;
+  }).join("");
+
+  const dateLabel = new Date(`${s.window.date}T00:00:00`)
+    .toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
+
+  const topHtml = wins.length > 1
+    ? `<select id="ovSel" aria-label="Choose time window">${wins.map(w => {
+        const d = new Date(`${w.window.date}T00:00:00`).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+        return `<option value="${w.id}" ${w.id === s.id ? "selected" : ""}>${esc(w.title)} · ${d} ${esc(w.window.start)}–${esc(w.window.end)}</option>`;
+      }).join("")}</select>`
+    : `<div class="ov-title">${esc(s.title)}</div>`;
+
+  const modalEl = overlay.querySelector(".modal");
+  const keepScroll = !overlay.hidden && modalEl.classList.contains("wide") ? modalEl.scrollTop : 0;
+
+  openModal("Time window overview", `
+    <div class="ov-top">
+      ${topHtml}
+      <div class="ov-when">${esc(dateLabel)} · ${esc(s.window.start)} – ${esc(s.window.end)}</div>
+    </div>
+
+    <div class="ov-tl" role="img" aria-label="Timeline of the window">${segs}${endLine}${nowLine}</div>
+    <div class="ov-axis"><span>${fmtClock(sched.startMs)}</span><span>${fmtClock(sched.startMs + spanMs)}</span></div>
+
+    <div class="window-preview ${cls}">
+      <div class="wp-row"><span>Window</span><b>${fmtDur(winMin)}</b></div>
+      <div class="wp-row"><span>Work</span><b>${workMin ? fmtDur(workMin) : "—"}</b></div>
+      ${breakMin > 0 ? `<div class="wp-row"><span>Breaks</span><b>+${fmtDur(breakMin)}</b></div>` : ""}
+      <div class="wp-row"><span>Planned finish</span><b>${s.blocks.length ? fmtClock(sched.finish) : "—"}</b></div>
+      <div class="wp-row wp-status ${cls}">${esc(status)}</div>
+    </div>
+
+    <div class="ov-head">
+      <h3>Study order</h3>
+      <span>${groups.length} template${groups.length !== 1 ? "s" : ""} · ▲▼ to move</span>
+    </div>
+    ${rows || `<div class="tpl-empty">Nothing in this window yet.</div>`}
+
+    <div class="backup-row" style="margin:14px 0 0">
+      <button class="btn" data-act="ov-edit">Edit window</button>
+      <button class="btn primary" data-act="ov-close">Done</button>
+    </div>
+  `, e => {
+    const btn = e.target.closest("[data-act]");
+    if (!btn || btn.disabled) return;
+    const act = btn.dataset.act;
+    const grp = btn.closest("[data-key]");
+    const key = grp ? grp.dataset.key : null;
+
+    if (act === "ov-g-up")        moveGroup(s, key, -1);
+    else if (act === "ov-g-down") moveGroup(s, key, 1);
+    else if (act === "ov-b-up")   moveBlock(s, key, +btn.closest("[data-bi]").dataset.bi, -1);
+    else if (act === "ov-b-down") moveBlock(s, key, +btn.closest("[data-bi]").dataset.bi, 1);
+    else if (act === "ov-toggle") {
+      if (ovOpen.has(key)) ovOpen.delete(key); else ovOpen.add(key);
+      openWindowOverview(s.id);
+    }
+    else if (act === "ov-edit")   openWindowModal(s.id);
+    else if (act === "ov-close")  closeModal();
+  });
+
+  modalEl.classList.add("wide");
+  modalEl.scrollTop = keepScroll;
+
+  const sel = document.getElementById("ovSel");
+  if (sel) sel.addEventListener("change", () => openWindowOverview(sel.value));
+}
+
+overviewBtn.addEventListener("click", () => openWindowOverview(defaultOverviewId()));
+
+/* ---------- PLAN ---------- */
 const planSeg   = $("#planSeg");
 const planLabel = $("#planLabel");
 const planBody  = $("#planBody");
@@ -1722,7 +2573,6 @@ function startPlanItem(planId) {
   setTab("sessions");
 }
 
-/* PERF: single delegated click handler, capped preview, no per-item listeners */
 function openPlanAddModal(dateStr) {
   const sessions = state.sessions;
   const allTemplates = state.templateGroups.flatMap(g =>
@@ -1788,10 +2638,17 @@ function addPlanFromSource(kind, id, dateStr) {
   save();
 }
 
-/* =====================================================
-   TEMPLATES
-   ===================================================== */
+/* ---------- TEMPLATES ---------- */
 const templateList = $("#templateList");
+
+function sectionStats(g) {
+  const tpls = g.templates || [];
+  return {
+    count:  tpls.length,
+    blocks: tpls.reduce((a, t) => a + (t.blocks ? t.blocks.length : 0), 0),
+    mins:   tpls.reduce((a, t) => a + planTotal(t.blocks), 0)
+  };
+}
 
 function renderTemplateCard(t, groupId) {
   const total = t.blocks.length;
@@ -1806,7 +2663,8 @@ function renderTemplateCard(t, groupId) {
         </div>
         <div class="session-actions">
           <button class="btn primary" data-act="use">Create session</button>
-          <button class="btn" data-act="schedule">Schedule</button>
+          <button class="btn" data-act="schedule" title="Add this template to your plan on a chosen date">Add to plan</button>
+          <button class="icon-btn sm" data-act="edit" title="Edit template">✎</button>
           <button class="icon-btn sm" data-act="res" title="Resources">${ICON_LINK}</button>
           <button class="icon-btn sm" data-act="del" title="Delete">✕</button>
         </div>
@@ -1827,38 +2685,242 @@ function renderTemplates() {
     return;
   }
 
-  templateList.innerHTML = state.templateGroups.map(g => `
-    <div class="tpl-group" data-group="${g.id}">
-      <div class="tpl-group-head">
-        <h3>${esc(g.name)} <span>· ${g.templates.length}</span></h3>
-        <div class="actions">
-          <button class="btn sm" data-act="add-tpl">+ Template</button>
-          <button class="icon-btn sm" data-act="rename-group" title="Rename section">✎</button>
-          <button class="icon-btn sm" data-act="del-group" title="Delete section">✕</button>
+  templateList.innerHTML = `<div class="section-grid">${
+    state.templateGroups.map(g => {
+      const st = sectionStats(g);
+
+      return `
+      <div class="section-card" data-group="${g.id}">
+        <div class="section-card-top">
+          <span class="section-icon">${ICON_SECTION}</span>
+          <span class="section-card-actions">
+            <button class="icon-btn sm" data-act="rename-group" title="Rename section">✎</button>
+            <button class="icon-btn sm" data-act="del-group" title="Delete section">✕</button>
+          </span>
         </div>
-      </div>
-      ${g.templates.length
-        ? g.templates.map(t => renderTemplateCard(t, g.id)).join("")
-        : `<div class="tpl-empty">No templates in this section yet.</div>`}
+        <div class="section-info">
+          <div class="section-name">${esc(g.name)}</div>
+          <div class="section-meta">${st.count} template${st.count !== 1 ? "s" : ""} · ${st.blocks} block${st.blocks !== 1 ? "s" : ""} · ${st.mins} min</div>
+        </div>
+        <div class="section-card-foot">
+          <button class="btn sm" data-act="add-tpl">+ Template</button>
+          <button class="btn sm primary" data-act="open">Open</button>
+        </div>
+      </div>`;
+    }).join("")
+  }</div>`;
+}
+
+function openSectionModal(groupId) {
+  const group = state.templateGroups.find(g => g.id === groupId);
+  if (!group) return;
+
+  const st = sectionStats(group);
+  const list = group.templates.length
+    ? group.templates.map(t => renderTemplateCard(t, group.id)).join("")
+    : `<div class="tpl-empty">No templates in this section yet.</div>`;
+
+  openModal(group.name, `
+    <p class="hint">
+      ${st.count} template${st.count !== 1 ? "s" : ""} ·
+      ${st.blocks} block${st.blocks !== 1 ? "s" : ""} ·
+      ${st.mins} min total
+    </p>
+    <div id="sectionTplList">${list}</div>
+    <button class="btn primary wide" data-act="add-tpl">+ New template</button>
+  `, e => {
+    const actEl = e.target.closest("[data-act]");
+    if (!actEl) return;
+    const act = actEl.dataset.act;
+
+    if (act === "add-tpl") { openCreateModal("template", groupId); return; }
+
+    const tplEl = e.target.closest("[data-tpl]");
+    if (!tplEl) return;
+    const tplId = tplEl.dataset.tpl;
+    const tpl   = findTemplate(tplId);
+    if (!tpl) return;
+
+    if (act === "use") {
+      const session = {
+        id: uid(),
+        title: tpl.title,
+        blocks: tpl.blocks.map(b => ({ topic: b.topic, minutes: b.minutes, done: false })),
+        resources: [...(tpl.resources || [])],
+        created: Date.now()
+      };
+      state.sessions.push(session);
+      save();
+      renderSessions();
+      closeModal();
+      setTab("sessions");
+      toast(`Session "${session.title}" created`);
+    } else if (act === "schedule") {
+      openScheduleModal(tplId);
+    } else if (act === "edit") {
+      openEditTemplateModal(tplId, group.id);
+    } else if (act === "res") {
+      openAttachModal("template", tplId);
+    } else if (act === "del") {
+      if (!confirm(`Delete template "${tpl.title}"?`)) return;
+      group.templates = group.templates.filter(x => x.id !== tplId);
+      save();
+      renderTemplates();
+      openSectionModal(groupId);
+      toast("Template deleted");
+    }
+  });
+
+  openSectionId = groupId;
+}
+
+function openScheduleModal(tplId) {
+  const tpl = findTemplate(tplId);
+  if (!tpl) return;
+
+  const total = tpl.blocks.reduce((a, b) => a + b.minutes, 0);
+
+  openModal("Add template to plan", `
+    <p class="hint">
+      Add <b>${esc(tpl.title)}</b> to your plan. It will show up as a
+      scheduled item you can start with one click.
+    </p>
+    <div class="window-preview" style="margin-top:0">
+      <div class="wp-row"><span>Blocks</span><b>${tpl.blocks.length}</b></div>
+      <div class="wp-row"><span>Total time</span><b>${fmtDur(total)}</b></div>
     </div>
-  `).join("");
+    <label class="fld">Date
+      <input id="schedDate" type="date" value="${dateKey(new Date())}">
+    </label>
+    <button class="btn primary wide" id="schedGo">Add to plan</button>
+  `);
+
+  document.getElementById("schedGo").addEventListener("click", () => {
+    const date = document.getElementById("schedDate").value || dateKey(new Date());
+
+    state.plans.push({
+      id: uid(),
+      date,
+      title: tpl.title,
+      blocks: tpl.blocks.map(b => ({ topic: b.topic, minutes: b.minutes, done: false })),
+      resources: [...(tpl.resources || [])],
+      done: false,
+      created: Date.now()
+    });
+    save();
+    closeModal();
+    setTab("plan");
+    toast(`Scheduled for ${date}`);
+  });
+}
+
+function openEditTemplateModal(tplId, groupId) {
+  const tpl = findTemplate(tplId);
+  if (!tpl) return;
+
+  const blockRowsHtml = tpl.blocks.map(b => `
+    <div class="block-row">
+      <input class="be-topic" placeholder="Topic" value="${esc(b.topic || "")}" autocomplete="off">
+      <input class="be-mins" type="number" min="1" max="300" value="${b.minutes}">
+      <button class="icon-btn sm" type="button" data-act="rm-block" title="Remove">✕</button>
+    </div>`).join("");
+
+  openModal("Edit template", `
+    <label class="fld">Title
+      <input id="eTitle" value="${esc(tpl.title)}" autocomplete="off">
+    </label>
+    <label class="fld">Section
+      <select id="eGroup">
+        ${state.templateGroups.map(g => `
+          <option value="${g.id}" ${g.id === groupId ? "selected" : ""}>${esc(g.name)}</option>
+        `).join("")}
+      </select>
+    </label>
+
+    <div class="fld" style="margin-bottom:6px">
+      Blocks <span class="opt">— topic and minutes per block</span>
+    </div>
+    <div class="block-editor" id="eBlocks">${blockRowsHtml}</div>
+    <button class="btn sm" type="button" id="eAddBlock" style="margin-top:8px">+ Add block</button>
+
+    <div class="fld" style="margin:14px 0 6px">Resources <span class="opt">— optional</span></div>
+    ${pickerMarkup(tpl.resources || [])}
+
+    <button class="btn primary wide" id="eSave">Save changes</button>
+  `);
+
+  initPicker();
+
+  const $blocks = document.getElementById("eBlocks");
+  const $title  = document.getElementById("eTitle");
+  $title.focus();
+
+  const addBlockRow = () => {
+    const row = document.createElement("div");
+    row.className = "block-row";
+    row.innerHTML = `
+      <input class="be-topic" placeholder="Topic" autocomplete="off">
+      <input class="be-mins" type="number" min="1" max="300" value="${state.settings.focus}">
+      <button class="icon-btn sm" type="button" data-act="rm-block" title="Remove">✕</button>`;
+    $blocks.appendChild(row);
+    row.querySelector(".be-topic").focus();
+  };
+
+  $blocks.addEventListener("click", e => {
+    const rm = e.target.closest("[data-act='rm-block']");
+    if (!rm) return;
+    if ($blocks.querySelectorAll(".block-row").length <= 1) {
+      toast("Keep at least one block");
+      return;
+    }
+    rm.closest(".block-row").remove();
+  });
+
+  document.getElementById("eAddBlock").addEventListener("click", addBlockRow);
+
+  document.getElementById("eSave").addEventListener("click", () => {
+    const title  = $title.value.trim() || "Untitled template";
+    const newGid = document.getElementById("eGroup").value;
+    const resources = getPicked();
+
+    const blocks = [...$blocks.querySelectorAll(".block-row")].map(r => ({
+      topic:   r.querySelector(".be-topic").value.trim(),
+      minutes: Math.max(1, Math.min(300, +r.querySelector(".be-mins").value || 25))
+    }));
+
+    if (!blocks.length) { toast("Add at least one block"); return; }
+
+    tpl.title     = title;
+    tpl.blocks    = blocks;
+    tpl.resources = resources;
+
+    if (newGid !== groupId) {
+      const from = state.templateGroups.find(g => g.id === groupId);
+      const to   = state.templateGroups.find(g => g.id === newGid);
+      if (from && to) {
+        from.templates = from.templates.filter(x => x.id !== tplId);
+        to.templates.push(tpl);
+      }
+    }
+
+    save();
+    closeModal();
+    renderTemplates();
+    openSectionModal(newGid);
+    toast("Template updated");
+  });
 }
 
 templateList.addEventListener("click", e => {
-  const groupEl = e.target.closest("[data-group]");
-  if (!groupEl) return;
-  const groupId = groupEl.dataset.group;
+  const card = e.target.closest("[data-group]");
+  if (!card) return;
+  const groupId = card.dataset.group;
   const group = state.templateGroups.find(x => x.id === groupId);
   if (!group) return;
 
   const actEl = e.target.closest("[data-act]");
-  if (!actEl) return;
-  const act = actEl.dataset.act;
+  const act = actEl ? actEl.dataset.act : "open";
 
-  if (act === "add-tpl") {
-    openCreateModal("template", groupId);
-    return;
-  }
   if (act === "rename-group") {
     const name = prompt("Section name:", group.name);
     if (name === null) return;
@@ -1869,6 +2931,7 @@ templateList.addEventListener("click", e => {
     renderTemplates();
     return;
   }
+
   if (act === "del-group") {
     if (!confirm(`Delete section "${group.name}" and all its templates?`)) return;
     state.templateGroups = state.templateGroups.filter(x => x.id !== groupId);
@@ -1877,35 +2940,12 @@ templateList.addEventListener("click", e => {
     return;
   }
 
-  const tplEl = e.target.closest("[data-tpl]");
-  if (!tplEl) return;
-  const tplId = tplEl.dataset.tpl;
-  const t = findTemplate(tplId);
-  if (!t) return;
-
-  if (act === "use") {
-    const session = {
-      id: uid(),
-      title: t.title,
-      blocks: t.blocks.map(b => ({ topic: b.topic, minutes: b.minutes, done: false })),
-      resources: [...(t.resources || [])],
-      created: Date.now()
-    };
-    state.sessions.push(session);
-    save();
-    renderSessions();
-    setTab("sessions");
-    toast(`Session "${session.title}" created`);
-  } else if (act === "schedule") {
-    openPlanAddModal(dateKey(new Date()));
-  } else if (act === "res") {
-    openAttachModal("template", tplId);
-  } else if (act === "del") {
-    if (!confirm(`Delete template "${t.title}"?`)) return;
-    group.templates = group.templates.filter(x => x.id !== tplId);
-    save();
-    renderTemplates();
+  if (act === "add-tpl") {
+    openCreateModal("template", groupId);
+    return;
   }
+
+  openSectionModal(groupId);
 });
 
 $("#addGroupBtn").addEventListener("click", () => {
@@ -1929,9 +2969,7 @@ $("#addGroupBtn").addEventListener("click", () => {
   input.addEventListener("keydown", e => { if (e.key === "Enter") submit(); });
 });
 
-/* =====================================================
-   DASHBOARD
-   ===================================================== */
+/* ---------- DASHBOARD ---------- */
 const dashBody = $("#dashBody");
 const dashSeg  = $("#dashSeg");
 
@@ -2129,9 +3167,7 @@ dashSeg.addEventListener("click", e => {
   renderDashboard();
 });
 
-/* =====================================================
-   IMPORT PARSER
-   ===================================================== */
+/* ---------- IMPORT PARSER ---------- */
 function parseSessions(text) {
   const out = [];
 
@@ -2175,22 +3211,21 @@ function parseSessions(text) {
   return out;
 }
 
-/* =====================================================
-   MODAL
-   ===================================================== */
+/* ---------- MODAL ---------- */
 const overlay    = $("#overlay");
 const modalTitle = $("#modalTitle");
 const modalBody  = $("#modalBody");
 
-/* PERF: single reusable click handler, swapped per modal */
 let modalClickHandler = null;
+let openSectionId = null;
 
 function openModal(title, html, onClick) {
-  // detach any previous handler
   if (modalClickHandler) {
     modalBody.removeEventListener("click", modalClickHandler);
     modalClickHandler = null;
   }
+  const modalEl = overlay.querySelector(".modal");
+  if (modalEl) modalEl.classList.remove("wide");
   modalTitle.textContent = title;
   modalBody.innerHTML = html;
   overlay.hidden = false;
@@ -2206,8 +3241,11 @@ function closeModal() {
     modalClickHandler = null;
   }
   overlay.hidden = true;
+  const modalEl = overlay.querySelector(".modal");
+  if (modalEl) modalEl.classList.remove("wide");
   modalBody.innerHTML = "";
   pickerEl = null;
+  openSectionId = null;
 }
 
 $("#modalClose").addEventListener("click", closeModal);
@@ -2216,11 +3254,10 @@ document.addEventListener("keydown", e => {
   if (e.key === "Escape" && !overlay.hidden) closeModal();
 });
 
-/* =====================================================
-   CREATE MODAL
-   ===================================================== */
+/* ---------- CREATE MODAL ---------- */
 function openCreateModal(kind, groupId) {
   const isTpl = kind === "template";
+  const backToSection = isTpl ? openSectionId : null;
 
   if (isTpl && !state.templateGroups.length) {
     state.templateGroups.push({ id: uid(), name: "General", templates: [] });
@@ -2282,6 +3319,7 @@ function openCreateModal(kind, groupId) {
       const group = state.templateGroups.find(g => g.id === gid) || state.templateGroups[0];
       group.templates.push({ id: uid(), title, blocks, resources, created: Date.now() });
       save(); closeModal(); renderTemplates();
+      if (backToSection) openSectionModal(group.id);
       toast(`Template added to "${group.name}"`);
     } else {
       state.sessions.push({
@@ -2298,9 +3336,7 @@ function openCreateModal(kind, groupId) {
 $("#addBtn").addEventListener("click", () => openCreateModal("session"));
 $("#addTplBtn").addEventListener("click", () => openCreateModal("template"));
 
-/* =====================================================
-   IMPORT MODAL
-   ===================================================== */
+/* ---------- IMPORT MODAL ---------- */
 function openImportModal(kind) {
   const isTpl = kind === "template";
 
@@ -2331,7 +3367,6 @@ function openImportModal(kind) {
   const ta   = document.getElementById("impText");
   const prev = document.getElementById("impPreview");
 
-  // PERF: debounce refresh and cap preview to 30 rows
   let previewTimer = null;
 
   const doRefresh = () => {
@@ -2395,9 +3430,7 @@ function openImportModal(kind) {
 $("#importBtn").addEventListener("click", () => openImportModal("session"));
 $("#importTplBtn").addEventListener("click", () => openImportModal("template"));
 
-/* =====================================================
-   SETTINGS INPUTS
-   ===================================================== */
+/* ---------- SETTINGS ---------- */
 function bindSetting(id, key, min, max) {
   const el = $(id);
   el.value = state.settings[key];
@@ -2408,12 +3441,12 @@ function bindSetting(id, key, min, max) {
     state.settings[key] = v;
     save();
     if (!timer.running && !timer.finished && !timer.sessionId) updateTimerUI();
+    // Window bars reflect effective minutes, so refresh them too
+    renderSessions();
   });
 }
 
-/* =====================================================
-   RESOURCES PANEL
-   ===================================================== */
+/* ---------- RESOURCES PANEL ---------- */
 const resList = $("#resList");
 const resForm = $("#resForm");
 
@@ -2470,9 +3503,7 @@ resList.addEventListener("click", e => {
   renderTemplates();
 });
 
-/* =====================================================
-   BOOT
-   ===================================================== */
+/* ---------- BOOT ---------- */
 load();
 
 bindSetting("#setFocus", "focus", 1, 180);
