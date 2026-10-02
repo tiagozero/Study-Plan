@@ -663,6 +663,7 @@
 "use strict";
 
 const KEY = "studyplan.v1";
+const TIMER_KEY = "studyplan.timer.v1";
 const BASE_TITLE = "Study Plan";
 const TABS = ["sessions", "plan", "dashboard", "resources", "templates"];
 const DAY = 86400000;
@@ -719,6 +720,18 @@ function startOfWeek(d) {
 }
 function addDays(d, n) { const x = new Date(d); x.setDate(x.getDate() + n); return x; }
 
+/* ---------- BREAK HELPERS ---------- */
+/* Per-window break override: if the session has window.breakMinutes set,
+   it is used for every break (short and long) inside that window.
+   Otherwise the global settings are used. */
+function getBreakMins(s, isLong, explicitOverride) {
+  if (typeof explicitOverride === "number" && explicitOverride > 0) return explicitOverride;
+  if (s && s.window && typeof s.window.breakMinutes === "number" && s.window.breakMinutes > 0) {
+    return s.window.breakMinutes;
+  }
+  return isLong ? state.settings.long : state.settings.short;
+}
+
 /* ---------- PERSISTENCE ---------- */
 function load() {
   try {
@@ -767,8 +780,11 @@ function normalise() {
     if (s.window) {
       if (typeof s.window.start !== "string" || typeof s.window.end !== "string") {
         s.window = null;
-      } else if (!Array.isArray(s.window.templateIds)) {
-        s.window.templateIds = [];
+      } else {
+        if (!Array.isArray(s.window.templateIds)) s.window.templateIds = [];
+        if (typeof s.window.breakMinutes !== "number" || !(s.window.breakMinutes > 0)) {
+          s.window.breakMinutes = null;
+        }
       }
     }
   });
@@ -806,6 +822,83 @@ function tagLegacyWindowBlocks(s) {
 
 function save() {
   try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {}
+}
+
+/* ---------- TIMER PERSISTENCE ---------- */
+function saveTimer() {
+  try {
+    localStorage.setItem(TIMER_KEY, JSON.stringify({
+      sessionId:     timer.sessionId,
+      blockIndex:    timer.blockIndex,
+      phase:         timer.phase,
+      longBreak:     timer.longBreak,
+      running:       timer.running,
+      remaining:     timer.remaining,
+      elapsed:       timer.elapsed,
+      total:         timer.total,
+      finished:      timer.finished,
+      notified:      timer.notified,
+      skippedBreaks: timer.skippedBreaks,
+      mode:          state.settings.mode,
+      savedAt:       Date.now()
+    }));
+  } catch (e) {}
+}
+
+function clearSavedTimer() {
+  try { localStorage.removeItem(TIMER_KEY); } catch (e) {}
+}
+
+let timerSaveAcc = 0;
+
+function restoreTimer() {
+  let snap = null;
+  try {
+    const raw = localStorage.getItem(TIMER_KEY);
+    if (raw) snap = JSON.parse(raw);
+  } catch (e) { snap = null; }
+  if (!snap || !snap.sessionId) return;
+
+  const s = getSession(snap.sessionId);
+  if (!s || !s.blocks.length) { clearSavedTimer(); return; }
+
+  timer.sessionId     = snap.sessionId;
+  timer.blockIndex    = Math.max(0, Math.min(snap.blockIndex || 0, s.blocks.length - 1));
+  timer.phase         = snap.phase === "break" ? "break" : "work";
+  timer.longBreak     = !!snap.longBreak;
+  timer.total         = +snap.total || 0;
+  timer.remaining     = Math.max(0, +snap.remaining || 0);
+  timer.elapsed       = Math.max(0, +snap.elapsed || 0);
+  timer.finished      = !!snap.finished;
+  timer.notified      = !!snap.notified;
+  timer.skippedBreaks = snap.skippedBreaks || 0;
+  timer.running       = !!snap.running && !timer.finished;
+
+  const awaySec = Math.max(0, (Date.now() - (+snap.savedAt || Date.now())) / 1000);
+  if (timer.running && awaySec > 0.5) catchUp(awaySec);
+
+  timer.lastTick = Date.now();
+  save();
+  saveTimer();
+}
+
+/* Replay the time that passed while the page was closed. */
+function catchUp(dt) {
+  const s = getSession(timer.sessionId);
+  if (!s) { timer.running = false; return; }
+
+  if (state.settings.mode === "freeflow") { timer.elapsed += dt; return; }
+
+  let guard = 0;
+  while (dt > 0.001 && guard++ < 200) {
+    if (timer.finished) { timer.running = false; break; }
+    if (dt < timer.remaining) { timer.remaining -= dt; dt = 0; break; }
+    dt -= timer.remaining;
+    timer.remaining = 0;
+    timer.running = true;
+    endPhase({ silent: true });
+  }
+  if (guard >= 200) timer.running = false;
 }
 
 /* ---------- TOAST ---------- */
@@ -940,15 +1033,13 @@ function fmtTime(sec) {
   return h ? `${h}:${p(m)}:${p(s)}` : `${p(m)}:${p(s)}`;
 }
 
-/* --- Effective time helpers (account for breaks) --- */
-function effectiveMinutes(workMinutes, blockCount, mode) {
+/* Effective time including breaks, using the session's own break override. */
+function effectiveMinutes(workMinutes, blockCount, mode, s, explicitOverride) {
   if (mode !== "pomodoro" || blockCount <= 1) return workMinutes;
-  const short = state.settings.short;
-  const longB = state.settings.long;
   const every = state.settings.longEvery;
   let total = workMinutes;
   for (let i = 1; i <= blockCount - 1; i++) {
-    total += (i % every === 0) ? longB : short;
+    total += getBreakMins(s, i % every === 0, explicitOverride);
   }
   return total;
 }
@@ -963,13 +1054,11 @@ function remainingEffective(s, mode) {
 
   const n = s.blocks.length;
   const every = state.settings.longEvery;
-  const short = state.settings.short;
-  const longB = state.settings.long;
 
   const startGap = Math.max(0, firstUndone - 1);
   let breakMin = 0;
   for (let i = startGap; i <= n - 2; i++) {
-    breakMin += ((i + 1) % every === 0) ? longB : short;
+    breakMin += getBreakMins(s, (i + 1) % every === 0);
   }
   return remainWork + breakMin;
 }
@@ -990,7 +1079,7 @@ function loadPhase() {
     if (timer.phase === "work") {
       timer.total = b.minutes * 60;
     } else {
-      timer.total = (timer.longBreak ? state.settings.long : state.settings.short) * 60;
+      timer.total = getBreakMins(s, timer.longBreak) * 60;
     }
     timer.remaining = timer.total;
   }
@@ -1021,6 +1110,7 @@ function startSession(id) {
 
   renderSessions();
   updateTimerUI();
+  saveTimer();
 }
 
 function resetPhase() {
@@ -1030,13 +1120,16 @@ function resetPhase() {
   timer.skippedBreaks = 0;
   loadPhase();
   updateTimerUI();
+  saveTimer();
 }
 
-function finishSession(s) {
+function finishSession(s, silent) {
   timer.running  = false;
   timer.finished = true;
-  beep(880, 0.35);
-  setTimeout(() => beep(1046, 0.5), 170);
+  if (!silent) {
+    beep(880, 0.35);
+    setTimeout(() => beep(1046, 0.5), 170);
+  }
   renderSessions();
 }
 
@@ -1052,29 +1145,26 @@ function shouldSkipBreak(s, nextBlockIndex) {
   const startSec = wb[0] / 1000;
   const endSec   = wb[1] / 1000;
 
-  // Only apply the skip logic while we're inside the window
   if (nowSec < startSec || nowSec >= endSec) return false;
 
   const isLong = ((nextBlockIndex) % state.settings.longEvery === 0);
-  const breakSecs = (isLong ? state.settings.long : state.settings.short) * 60;
+  const breakSecs = getBreakMins(s, isLong) * 60;
 
-  // Remaining work from nextBlockIndex onward
   const remainWorkSecs = s.blocks.slice(nextBlockIndex)
     .reduce((a, x) => a + x.minutes * 60, 0);
 
-  // Future breaks after blocks [nextBlockIndex .. n-2]
   let futureBreakSecs = 0;
   const n = s.blocks.length;
   for (let i = nextBlockIndex; i <= n - 2; i++) {
     const lng = ((i + 1) % state.settings.longEvery === 0);
-    futureBreakSecs += (lng ? state.settings.long : state.settings.short) * 60;
+    futureBreakSecs += getBreakMins(s, lng) * 60;
   }
 
-  // If taking this break pushes us past the end, skip it
   return (nowSec + breakSecs + remainWorkSecs + futureBreakSecs) > endSec;
 }
 
-function endPhase() {
+function endPhase(opts) {
+  const silent = !!(opts && opts.silent);
   const s = getSession(timer.sessionId);
   if (!s) return;
 
@@ -1090,18 +1180,17 @@ function endPhase() {
       timer.running  = wasRunning;
       timer.lastTick = Date.now();
     } else {
-      finishSession(s);
+      finishSession(s, silent);
     }
   } else if (timer.phase === "work") {
     logStudy((timer.total - timer.remaining) / 60, s, s.blocks[timer.blockIndex]);
     s.blocks[timer.blockIndex].done = true;
     if (timer.blockIndex >= s.blocks.length - 1) {
-      finishSession(s);
+      finishSession(s, silent);
     } else {
       const nextIdx = timer.blockIndex + 1;
       const isLong = ((nextIdx) % state.settings.longEvery === 0);
 
-      // Auto-skip if the break wouldn't fit inside the window
       if (shouldSkipBreak(s, nextIdx)) {
         timer.blockIndex = nextIdx;
         timer.phase = "work";
@@ -1110,14 +1199,14 @@ function endPhase() {
         loadPhase();
         timer.running  = wasRunning;
         timer.lastTick = Date.now();
-        toast("Break skipped — no time to spare");
+        if (!silent) toast("Break skipped — no time to spare");
       } else {
         timer.longBreak = isLong;
         timer.phase = "break";
         loadPhase();
         timer.running  = wasRunning;
         timer.lastTick = Date.now();
-        beep(520, 0.4);
+        if (!silent) beep(520, 0.4);
       }
     }
   } else {
@@ -1126,10 +1215,11 @@ function endPhase() {
     loadPhase();
     timer.running  = wasRunning;
     timer.lastTick = Date.now();
-    beep(760, 0.35);
+    if (!silent) beep(760, 0.35);
   }
 
   save();
+  if (!silent) saveTimer();
   renderSessions();
   updateTimerUI();
 }
@@ -1160,8 +1250,18 @@ setInterval(() => {
       return;
     }
   }
+
+  timerSaveAcc += dt;
+  if (timerSaveAcc >= 1) { timerSaveAcc = 0; saveTimer(); }
+
   updateTimerUI();
 }, 250);
+
+window.addEventListener("pagehide", saveTimer);
+window.addEventListener("beforeunload", saveTimer);
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden) saveTimer();
+});
 
 /* ---------- TIMER UI ---------- */
 function updateTimerUI() {
@@ -1243,6 +1343,7 @@ startBtn.addEventListener("click", () => {
   timer.running  = !timer.running;
   timer.lastTick = Date.now();
   updateTimerUI();
+  saveTimer();
 });
 
 resetBtn.addEventListener("click", resetPhase);
@@ -1264,6 +1365,7 @@ modeSeg.addEventListener("click", e => {
   }
   renderSessions();
   updateTimerUI();
+  saveTimer();
 });
 
 /* ---------- WINDOW SESSIONS ---------- */
@@ -1287,9 +1389,7 @@ function windowStatus(s) {
   const workMin    = s.blocks.reduce((a, x) => a + x.minutes, 0);
   const doneWorkMin= s.blocks.filter(x => x.done).reduce((a, x) => a + x.minutes, 0);
 
-  // Total effective (as if starting fresh) — work + breaks
-  const plannedMin = effectiveMinutes(workMin, s.blocks.length, mode);
-  // Remaining effective from current progress
+  const plannedMin = effectiveMinutes(workMin, s.blocks.length, mode, s);
   const toDoMin    = remainingEffective(s, mode);
 
   const leftMs    = Math.max(0, endMs - now);
@@ -1318,13 +1418,14 @@ function renderWindowBar(s) {
   else if (w.spareMin < 30) { cls = "tight"; label = `Tight · ${fmtDur(w.spareMin)} spare`; }
   else                      { cls = "ok";    label = `Fits · ${fmtDur(w.spareMin)} spare`; }
 
-  // Planned tooltip breakdown
   const breakMin = Math.max(0, w.plannedMin - w.workMin);
+  const breakTag = s.window && s.window.breakMinutes
+    ? `${s.window.breakMinutes}m break`
+    : `${fmtDur(breakMin)} breaks`;
   const planTitle = breakMin > 0
-    ? `${fmtDur(w.workMin)} work + ${fmtDur(breakMin)} breaks`
+    ? `${fmtDur(w.workMin)} work + ${breakTag}`
     : `${fmtDur(w.workMin)} work`;
 
-  // Pace badge is rendered empty and filled in by the ticker
   const showPace = w.started && !w.ended && (w.doneWorkMin > 0 || timer.sessionId === s.id);
   const paceHtml = showPace
     ? `<span class="window-pace" data-pstart="${w.startMs}" data-pend="${w.endMs}" data-pplanned="${w.workMin}" data-pdone="${w.doneWorkMin}"></span>`
@@ -1672,6 +1773,7 @@ function importBackupFile(file) {
     timer.sessionId = null;
     timer.running = false;
     timer.finished = false;
+    clearSavedTimer();
 
     save();
 
@@ -1828,6 +1930,7 @@ sessionList.addEventListener("click", e => {
       timer.sessionId = null;
       timer.running = false;
       timer.finished = false;
+      clearSavedTimer();
     }
     save(); renderSessions(); updateTimerUI();
   } else if (act === "tmpl") {
@@ -1866,6 +1969,12 @@ function openWindowModal(editId) {
   const titleVal = editing ? editing.title : "";
   const picked   = editing && editing.window ? (editing.window.templateIds || []) : [];
 
+  // "Default break" — per-window break override
+  const hasOverride = !!(editing && editing.window &&
+                         typeof editing.window.breakMinutes === "number" &&
+                         editing.window.breakMinutes > 0);
+  const breakVal = hasOverride ? editing.window.breakMinutes : "";
+
   const hasTemplates = state.templateGroups.some(g => g.templates.length);
 
   const tplListHtml = hasTemplates
@@ -1884,7 +1993,7 @@ function openWindowModal(editId) {
   openModal(editing ? "Edit time window" : "Time window session", `
     <p class="hint">
       ${editing
-        ? "Update the frame, times, or templates. Blocks that are already done keep their state when the layout is unchanged."
+        ? "Update the frame, times, break length, or templates. Blocks that are already done keep their state when the layout is unchanged."
         : "Fit a set of templates inside a fixed time frame. The session tracks how much study time is planned versus what is left in the window."}
     </p>
 
@@ -1901,9 +2010,19 @@ function openWindowModal(editId) {
       </label>
     </div>
 
-    <label class="fld">End
-      <input id="wEnd" type="time" value="${esc(endVal)}">
-    </label>
+    <div class="two">
+      <label class="fld">End
+        <input id="wEnd" type="time" value="${esc(endVal)}">
+      </label>
+      <label class="fld">Default break (min)
+        <input id="wBreak" type="number" min="1" max="60" placeholder="Auto"
+               value="${breakVal === "" ? "" : breakVal}">
+      </label>
+    </div>
+    <p class="hint" style="margin:-6px 0 12px">
+      Leave empty to use the global short/long break settings. A value here overrides
+      <b>every</b> break inside this window.
+    </p>
 
     <div class="fld" style="margin-bottom:6px;display:flex;align-items:center;justify-content:space-between;gap:10px">
       <span>Templates to fit inside the window</span>
@@ -1922,12 +2041,21 @@ function openWindowModal(editId) {
   const $date   = document.getElementById("wDate");
   const $start  = document.getElementById("wStart");
   const $end    = document.getElementById("wEnd");
+  const $break  = document.getElementById("wBreak");
   const $pick   = document.getElementById("wPick");
   const $prev   = document.getElementById("wPreview");
   const $create = document.getElementById("wCreate");
   const $fit    = document.getElementById("wFit");
 
   $title.focus();
+
+  function readBreakOverride() {
+    const raw = $break.value.trim();
+    if (!raw) return null;
+    const n = +raw;
+    if (!isFinite(n) || n <= 0) return null;
+    return Math.max(1, Math.min(60, Math.round(n)));
+  }
 
   function pickedTemplates() {
     return [...$pick.querySelectorAll("input[type=checkbox]")]
@@ -1953,7 +2081,8 @@ function openWindowModal(editId) {
     const workMin = pk.reduce((a, t) => a + planTotal(t.blocks), 0);
     const blockCnt = pk.reduce((a, t) => a + t.blocks.length, 0);
     const mode = state.settings.mode;
-    const effMin = effectiveMinutes(workMin, blockCnt, mode);
+    const override = readBreakOverride();
+    const effMin = effectiveMinutes(workMin, blockCnt, mode, editing, override);
     const breakMin = effMin - workMin;
     const delta = winMin - effMin;
 
@@ -1977,7 +2106,7 @@ function openWindowModal(editId) {
     $prev.innerHTML = `
       <div class="wp-row"><span>Window length</span><b>${winMin ? fmtDur(winMin) : "—"}</b></div>
       <div class="wp-row"><span>Work time</span><b>${workMin ? fmtDur(workMin) : "—"}</b></div>
-      ${breakMin > 0 ? `<div class="wp-row"><span>Breaks</span><b>+${fmtDur(breakMin)}</b></div>` : ""}
+      ${breakMin > 0 ? `<div class="wp-row"><span>Breaks${override ? ` (${override}m each)` : ""}</span><b>+${fmtDur(breakMin)}</b></div>` : ""}
       ${breakMin > 0 ? `<div class="wp-row"><span>Effective total</span><b>${fmtDur(effMin)}</b></div>` : ""}
       <div class="wp-row"><span>Templates picked</span><b>${pk.length}</b></div>
       <div class="wp-row wp-status ${statusCls}">${esc(status)}</div>
@@ -1988,6 +2117,7 @@ function openWindowModal(editId) {
   ["input", "change"].forEach(evt => {
     $start.addEventListener(evt, updatePreview);
     $end.addEventListener(evt, updatePreview);
+    $break.addEventListener(evt, updatePreview);
   });
   updatePreview();
 
@@ -1997,6 +2127,7 @@ function openWindowModal(editId) {
     if (!winMin) { toast("Set a start and end time"); return; }
 
     const mode = state.settings.mode;
+    const override = readBreakOverride();
     const all = [];
     state.templateGroups.forEach(g => g.templates.forEach(t => all.push(t)));
 
@@ -2011,7 +2142,7 @@ function openWindowModal(editId) {
       const tBlocks = t.blocks.length;
       const nextWork = totalWork + tWork;
       const nextBlocks = totalBlocks + tBlocks;
-      const eff = effectiveMinutes(nextWork, nextBlocks, mode);
+      const eff = effectiveMinutes(nextWork, nextBlocks, mode, editing, override);
       if (eff <= winMin) {
         totalWork = nextWork;
         totalBlocks = nextBlocks;
@@ -2035,6 +2166,7 @@ function openWindowModal(editId) {
     const start = $start.value || "07:00";
     const end   = $end.value   || "14:00";
     const date  = $date.value  || today;
+    const breakMinutes = readBreakOverride();
 
     // Keep the current study order for templates that stay selected;
     // newly picked templates go at the end.
@@ -2060,7 +2192,6 @@ function openWindowModal(editId) {
       });
 
       if (old.length && fresh.every(f => f.match) && old.length === fresh.length) {
-        // Same blocks as before: reuse them (keeps done state and any in-template order)
         old.forEach(o => { o.tplTitle = t.title; newBlocks.push(o); });
       } else {
         fresh.forEach(f => newBlocks.push({
@@ -2082,16 +2213,26 @@ function openWindowModal(editId) {
 
     if (editing) {
       const current = timer.sessionId === editing.id ? editing.blocks[timer.blockIndex] : null;
+      const breakChanged = (editing.window.breakMinutes || null) !== (breakMinutes || null);
 
       editing.title = title;
       editing.blocks = newBlocks;
       editing.resources = [...resSet];
-      editing.window = { date, start, end, templateIds };
+      editing.window = { date, start, end, templateIds, breakMinutes };
 
       if (current) {
         const ni = newBlocks.indexOf(current);
         timer.blockIndex = ni >= 0 ? ni : Math.max(0, Math.min(timer.blockIndex, newBlocks.length - 1));
         updateTimerUI();
+      }
+
+      // If the break length changed while the active session is on a break,
+      // reload the current break phase so the new duration takes effect.
+      if (breakChanged && timer.sessionId === editing.id && timer.phase === "break" && !timer.finished) {
+        timer.running = false;
+        loadPhase();
+        updateTimerUI();
+        saveTimer();
       }
 
       save();
@@ -2104,7 +2245,7 @@ function openWindowModal(editId) {
         title,
         blocks: newBlocks,
         resources: [...resSet],
-        window: { date, start, end, templateIds },
+        window: { date, start, end, templateIds, breakMinutes },
         created: Date.now()
       });
       save();
@@ -2156,7 +2297,7 @@ function buildSchedule(s) {
     t = end;
     let brk = 0;
     if (pomodoro && i < n - 1) {
-      brk = ((i + 1) % every === 0 ? state.settings.long : state.settings.short) * 60000;
+      brk = getBreakMins(s, (i + 1) % every === 0) * 60000;
       t += brk;
     }
     return { b, i, start, end, brk };
@@ -2324,7 +2465,7 @@ function openWindowOverview(id, flashKey) {
     <div class="window-preview ${cls}">
       <div class="wp-row"><span>Window</span><b>${fmtDur(winMin)}</b></div>
       <div class="wp-row"><span>Work</span><b>${workMin ? fmtDur(workMin) : "—"}</b></div>
-      ${breakMin > 0 ? `<div class="wp-row"><span>Breaks</span><b>+${fmtDur(breakMin)}</b></div>` : ""}
+      ${breakMin > 0 ? `<div class="wp-row"><span>Breaks${s.window.breakMinutes ? ` (${s.window.breakMinutes}m each)` : ""}</span><b>+${fmtDur(breakMin)}</b></div>` : ""}
       <div class="wp-row"><span>Planned finish</span><b>${s.blocks.length ? fmtClock(sched.finish) : "—"}</b></div>
       <div class="wp-row wp-status ${cls}">${esc(status)}</div>
     </div>
@@ -3441,7 +3582,6 @@ function bindSetting(id, key, min, max) {
     state.settings[key] = v;
     save();
     if (!timer.running && !timer.finished && !timer.sessionId) updateTimerUI();
-    // Window bars reflect effective minutes, so refresh them too
     renderSessions();
   });
 }
@@ -3505,6 +3645,7 @@ resList.addEventListener("click", e => {
 
 /* ---------- BOOT ---------- */
 load();
+restoreTimer();
 
 bindSetting("#setFocus", "focus", 1, 180);
 bindSetting("#setShort", "short", 1, 60);
