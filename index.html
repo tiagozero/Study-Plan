@@ -138,7 +138,10 @@
   .sub{font-size:12px;color:var(--muted);max-width:150px;text-align:center;
        overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
+  .adjust{display:flex;align-items:center;justify-content:center;gap:10px;margin-top:12px}
+  .adjust .btn{padding:5px 12px;font-size:12.5px;border-radius:99px;min-width:64px}
   .controls{display:flex;gap:8px;margin-top:18px}
+  .controls.second{margin-top:8px}
   .controls .btn{flex:1;text-align:center;padding:9px 8px}
 
   .seg{display:flex;background:var(--seg-track);border-radius:11px;padding:3px;gap:3px;margin-top:14px}
@@ -589,10 +592,18 @@
           </div>
         </div>
 
+        <div class="adjust">
+          <button class="btn" id="minusBtn" title="Remove 1 minute" aria-label="Remove 1 minute">− 1 min</button>
+          <button class="btn" id="plusBtn" title="Add 1 minute" aria-label="Add 1 minute">+ 1 min</button>
+        </div>
+
         <div class="controls">
           <button class="btn primary" id="startBtn" disabled>Start</button>
           <button class="btn" id="resetBtn">Reset</button>
           <button class="btn" id="skipBtn">Skip</button>
+        </div>
+        <div class="controls second">
+          <button class="btn" id="completeBtn" title="Mark this block as done now and move on">✓ Complete block</button>
         </div>
 
         <div class="seg" id="modeSeg">
@@ -1082,6 +1093,9 @@ const sessionEl= $("#sessionEl");
 const startBtn = $("#startBtn");
 const resetBtn = $("#resetBtn");
 const skipBtn  = $("#skipBtn");
+const plusBtn  = $("#plusBtn");
+const minusBtn = $("#minusBtn");
+const completeBtn = $("#completeBtn");
 const modeSeg  = $("#modeSeg");
 
 const getSession = id => state.sessions.find(s => s.id === id);
@@ -1388,6 +1402,13 @@ function updateTimerUI() {
   startBtn.disabled = !timer.sessionId;
   skipBtn.disabled  = !timer.sessionId || timer.finished;
   resetBtn.disabled = !timer.sessionId;
+  const active = !!timer.sessionId && !timer.finished;
+  const isWork = mode === "freeflow" || timer.phase === "work";
+  plusBtn.disabled  = !active;
+  minusBtn.disabled = !active || (mode === "freeflow"
+      ? ((s && s.blocks[timer.blockIndex] ? s.blocks[timer.blockIndex].minutes : 1) <= 1)
+      : timer.remaining <= 60);
+  completeBtn.disabled = !active || !isWork;
 
   startBtn.textContent = timer.finished ? "Restart"
                        : timer.running  ? "Pause"
@@ -1414,6 +1435,50 @@ startBtn.addEventListener("click", () => {
   timer.lastTick = Date.now();
   updateTimerUI();
   saveTimer();
+});
+
+function adjustTime(deltaMin) {
+  if (!timer.sessionId || timer.finished) return;
+  const s = getSession(timer.sessionId);
+  if (!s) return;
+  const b = s.blocks[timer.blockIndex];
+  const d = deltaMin * 60;
+
+  if (state.settings.mode === "freeflow") {
+    // free flow counts up toward the block's target, so move the target
+    if (!b) return;
+    b.minutes = Math.max(1, b.minutes + deltaMin);
+    timer.total = b.minutes * 60;
+    timer.notified = timer.elapsed >= b.minutes * 60;
+    save();
+    renderSessions();
+  } else {
+    if (d < 0 && timer.remaining <= 60) return;
+    timer.remaining = Math.max(1, timer.remaining + d);
+    timer.total     = Math.max(timer.remaining, timer.total + d);
+    if (timer.phase === "work" && b) {
+      // keep the planned block length in step with this change
+      b.minutes = Math.max(1, b.minutes + deltaMin);
+      save();
+      renderSessions();
+    }
+  }
+  updateTimerUI();
+  saveTimer();
+}
+
+plusBtn.addEventListener("click",  () => adjustTime(+1));
+minusBtn.addEventListener("click", () => adjustTime(-1));
+
+completeBtn.addEventListener("click", () => {
+  if (!timer.sessionId || timer.finished) return;
+  const s = getSession(timer.sessionId);
+  if (!s) return;
+  const isWork = state.settings.mode === "freeflow" || timer.phase === "work";
+  if (!isWork) return;
+  const name = (s.blocks[timer.blockIndex] || {}).topic || `Block ${timer.blockIndex + 1}`;
+  endPhase();               // logs time studied so far, marks block done, moves on
+  toast(`Completed "${name}"`);
 });
 
 resetBtn.addEventListener("click", resetPhase);
