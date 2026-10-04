@@ -221,6 +221,7 @@
     font-variant-numeric:tabular-nums;color:var(--text);font-weight:500;
   }
   .window-range svg{color:var(--accent);flex-shrink:0}
+  .window-delay{font-size:11.5px;font-weight:500;color:var(--muted);background:var(--surface-2);border-radius:6px;padding:1px 6px}
   .window-countdown{font-variant-numeric:tabular-nums;font-weight:600}
   .window-countdown.active{color:var(--accent)}
   .window-countdown.upcoming{color:var(--muted)}
@@ -439,6 +440,10 @@
 
 
   /* recurring-day picker */
+  .tw-on{display:flex;align-items:center;gap:8px;font-size:13px;margin:0 0 8px;cursor:pointer}
+  .tw-on input{width:auto;margin:0}
+  .tw-badge{white-space:nowrap}
+  #twFields[hidden]{display:none}
   .dp{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px;margin-bottom:8px}
   .dp label{position:relative;cursor:pointer}
   .dp input{position:absolute;opacity:0;pointer-events:none}
@@ -860,6 +865,7 @@ function normalise() {
         s.window = null;
       } else {
         if (!Array.isArray(s.window.templateIds)) s.window.templateIds = [];
+        if (typeof s.window.pausedMs !== "number" || !(s.window.pausedMs > 0)) s.window.pausedMs = 0;
         if (typeof s.window.breakMinutes !== "number" || !(s.window.breakMinutes > 0)) {
           s.window.breakMinutes = null;
         }
@@ -873,6 +879,12 @@ function normalise() {
       if (!Array.isArray(t.resources)) t.resources = [];
       t.days = Array.isArray(t.days) ? [...new Set(t.days.map(Number).filter(n => n >= 0 && n <= 6))] : [];
       if (typeof t.daysSince !== "string") t.daysSince = "";
+      const w = t.window;
+      if (!w || typeof w.start !== "string" || typeof w.end !== "string" || !w.start || !w.end) {
+        t.window = null;
+      } else if (typeof w.breakMinutes !== "number" || !(w.breakMinutes > 0)) {
+        w.breakMinutes = null;
+      }
     });
   });
   if (!state.recurLog || typeof state.recurLog !== "object") state.recurLog = {};
@@ -881,6 +893,9 @@ function normalise() {
     if (!Array.isArray(p.blocks)) p.blocks = [];
     if (!Array.isArray(p.resources)) p.resources = [];
     if (typeof p.done !== "boolean") p.done = false;
+    const w = p.window;
+    if (!w || typeof w.start !== "string" || typeof w.end !== "string" || !w.start || !w.end) p.window = null;
+    else if (typeof w.breakMinutes !== "number" || !(w.breakMinutes > 0)) w.breakMinutes = null;
   });
 }
 
@@ -957,6 +972,14 @@ function restoreTimer() {
 
   const awaySec = Math.max(0, (Date.now() - (+snap.savedAt || Date.now())) / 1000);
   if (timer.running && awaySec > 0.5) catchUp(awaySec);
+  else if (!timer.running && !timer.finished && s.window && awaySec > 0.5) {
+    const b = windowBounds(s.window);
+    if (b) {
+      const from = Math.max(+snap.savedAt || Date.now(), b[0]);
+      const to   = Math.min(Date.now(), b[1]);
+      if (to > from) s.window.pausedMs = (s.window.pausedMs || 0) + (to - from);
+    }
+  }
 
   timer.lastTick = Date.now();
   save();
@@ -1510,8 +1533,55 @@ function windowBounds(w) {
   let end     = new Date(`${w.date}T${w.end}:00`);
   if (isNaN(start) || isNaN(end)) return null;
   if (end <= start) end = new Date(end.getTime() + DAY);
-  return [start.getTime(), end.getTime()];
+  /* time spent paused during the window pushes the end later */
+  return [start.getTime(), end.getTime() + (w.pausedMs > 0 ? w.pausedMs : 0)];
 }
+
+/* End time as shown to the person: original end + paused time, e.g. 13:00 -> 13:20 */
+function windowEndLabel(w) {
+  const b = windowBounds(w);
+  if (!b || !(w.pausedMs > 0)) return w.end;
+  const d = new Date(b[1]);
+  return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+}
+function windowDelayTag(w) {
+  const m = Math.round((w.pausedMs || 0) / 60000);
+  return m > 0 ? `+${fmtDur(m)} paused` : "";
+}
+
+/* Pause tracking: while the timer of a window session is paused inside its window,
+   the window slides later by the same amount (paused 20 min -> 13:00 becomes 13:20). */
+let pauseLastTick = Date.now();
+let pauseShownLabel = "";
+setInterval(() => {
+  const now = Date.now();
+  const dt = now - pauseLastTick;
+  pauseLastTick = now;
+  if (!timer.sessionId || timer.running || timer.finished) return;
+  const s = getSession(timer.sessionId);
+  if (!s || !s.window) return;
+  const b = windowBounds(s.window);
+  if (!b || now < b[0] || now >= b[1]) return;
+  if (dt <= 0 || dt > 5000) return;                 // ignore sleep / throttled-tab gaps
+
+  s.window.pausedMs = (s.window.pausedMs || 0) + dt;
+  pauseSaveAcc += dt;
+  if (pauseSaveAcc >= 5000) { pauseSaveAcc = 0; save(); }
+
+  /* live-update the visible numbers without re-rendering the list */
+  const nb = windowBounds(s.window);
+  const card = document.querySelector(`.session[data-id="${s.id}"]`);
+  if (card) {
+    const cd = card.querySelector("[data-wend]");  if (cd) cd.dataset.wend = nb[1];
+    const pc = card.querySelector("[data-pend]");  if (pc) pc.dataset.pend = nb[1];
+  }
+  const label = windowEndLabel(s.window) + "|" + Math.round(s.window.pausedMs / 60000);
+  if (label !== pauseShownLabel) {                  // once a minute
+    pauseShownLabel = label;
+    renderSessions();
+  }
+}, 1000);
+let pauseSaveAcc = 0;
 
 function windowStatus(s) {
   const b = windowBounds(s.window);
@@ -1569,7 +1639,7 @@ function renderWindowBar(s) {
   return `
     <div class="window-bar ${cls}">
       <div class="window-line">
-        <span class="window-range">${ICON_CLOCK}${esc(s.window.start)} – ${esc(s.window.end)}</span>
+        <span class="window-range">${ICON_CLOCK}${esc(s.window.start)} – ${esc(windowEndLabel(s.window))}${s.window.pausedMs > 0 ? ` <span class="window-delay" title="The window end moved because the timer was paused (planned end ${esc(s.window.end)})">${esc(windowDelayTag(s.window))}</span>` : ""}</span>
         <span class="window-countdown" data-wstart="${w.startMs}" data-wend="${w.endMs}">…</span>
       </div>
       <div class="window-line window-line-2">
@@ -2356,7 +2426,10 @@ function openWindowModal(editId) {
       editing.title = title;
       editing.blocks = newBlocks;
       editing.resources = [...resSet];
-      editing.window = { date, start, end, templateIds, breakMinutes };
+      const o = editing.window;
+      const sameFrame = o.date === date && o.start === start && o.end === end;
+      editing.window = { date, start, end, templateIds, breakMinutes,
+                         pausedMs: sameFrame ? (o.pausedMs || 0) : 0 };
 
       if (current) {
         const ni = newBlocks.indexOf(current);
@@ -2584,7 +2657,7 @@ function openWindowOverview(id, flashKey) {
   const topHtml = wins.length > 1
     ? `<select id="ovSel" aria-label="Choose time window">${wins.map(w => {
         const d = new Date(`${w.window.date}T00:00:00`).toLocaleDateString(undefined, { month: "short", day: "numeric" });
-        return `<option value="${w.id}" ${w.id === s.id ? "selected" : ""}>${esc(w.title)} · ${d} ${esc(w.window.start)}–${esc(w.window.end)}</option>`;
+        return `<option value="${w.id}" ${w.id === s.id ? "selected" : ""}>${esc(w.title)} · ${d} ${esc(w.window.start)}–${esc(windowEndLabel(w.window))}</option>`;
       }).join("")}</select>`
     : `<div class="ov-title">${esc(s.title)}</div>`;
 
@@ -2594,7 +2667,7 @@ function openWindowOverview(id, flashKey) {
   openModal("Time window overview", `
     <div class="ov-top">
       ${topHtml}
-      <div class="ov-when">${esc(dateLabel)} · ${esc(s.window.start)} – ${esc(s.window.end)}</div>
+      <div class="ov-when">${esc(dateLabel)} · ${esc(s.window.start)} – ${esc(windowEndLabel(s.window))}${s.window.pausedMs > 0 ? ` (${esc(windowDelayTag(s.window))})` : ""}</div>
     </div>
 
     <div class="ov-tl" role="img" aria-label="Timeline of the window">${segs}${endLine}${nowLine}</div>
@@ -2646,6 +2719,155 @@ function openWindowOverview(id, flashKey) {
 
 overviewBtn.addEventListener("click", () => openWindowOverview(defaultOverviewId()));
 
+/* ---------- OVERVIEW & STUDY ORDER for plan items and templates ---------- */
+/* kind: "template" | "plan"; for templates opened from the Plan, date is the plan day;
+   backGroupId: template section to return to when closed */
+function openItemOverview(kind, id, date, backGroupId) {
+  const src = kind === "template" ? findTemplate(id) : state.plans.find(x => x.id === id);
+  if (!src) { toast("Item not found"); return; }
+
+  const blocks = src.blocks || [];
+  const total = blocks.reduce((a, b) => a + b.minutes, 0);
+  const isRec = kind === "template" && !!date;
+  const win = src.window || null;
+  const winDate = kind === "plan" ? src.date : (date || dateKey(new Date()));
+  const back = () => { if (backGroupId) openSectionModal(backGroupId); else closeModal(); };
+
+  /* with a time window we reuse the window scheduler (clock times + breaks) */
+  const sched = win ? buildSchedule({ blocks, window: { date: winDate, ...win } }) : null;
+  const itemOf = sched ? new Map(sched.items.map(it => [it.b, it])) : null;
+
+  let t = 0;
+  const rows = blocks.map((b, i) => {
+    const r = { b, i, from: t, to: t + b.minutes };
+    t += b.minutes;
+    return r;
+  });
+  const fmtOff = m => `${Math.floor(m / 60)}:${String(m % 60).padStart(2, "0")}`;
+  const span = r => {
+    if (!sched) return `${fmtOff(r.from)} – ${fmtOff(r.to)}`;
+    const it = itemOf.get(r.b);
+    return `${fmtClock(it.start)} – ${fmtClock(it.end)}`;
+  };
+
+  let segs, axis, statusHtml = "";
+  if (sched) {
+    const spanMs = Math.max(sched.endMs - sched.startMs, sched.finish - sched.startMs, 1);
+    const pct = ms => (ms / spanMs) * 100;
+    segs = sched.items.map(it => {
+      const late = it.end > sched.endMs ? " late" : "";
+      const tip = `${it.b.topic || "Block"} · ${fmtClock(it.start)}–${fmtClock(it.end)}`;
+      return `<i class="ov-seg${late}" style="flex:0 0 ${pct(it.end - it.start)}%;background-color:${ovColor(it.i)}" title="${esc(tip)}"></i>`
+           + (it.brk ? `<i class="ov-seg brk" style="flex:0 0 ${pct(it.brk)}%" title="Break · ${fmtDur(it.brk / 60000)}"></i>` : "");
+    }).join("");
+    const endLine = spanMs > sched.endMs - sched.startMs
+      ? `<span class="ov-endline" style="left:${pct(sched.endMs - sched.startMs)}%" title="Window ends ${fmtClock(sched.endMs)}"></span>` : "";
+    segs += endLine;
+    axis = `<span>${fmtClock(sched.startMs)}</span><span>${fmtClock(sched.startMs + spanMs)}</span>`;
+
+    const winMin = (sched.endMs - sched.startMs) / 60000;
+    const breakMin = sched.items.reduce((a, it) => a + it.brk, 0) / 60000;
+    const spare = (sched.endMs - sched.finish) / 60000;
+    let cls, status;
+    if (!blocks.length)  { cls = "";      status = "No blocks"; }
+    else if (spare < 0)  { cls = "over";  status = `Doesn't fit — over by ${fmtDur(-spare)}`; }
+    else if (spare < 30) { cls = "tight"; status = `Tight — only ${fmtDur(spare)} of spare time`; }
+    else                 { cls = "ok";    status = `Fits with ${fmtDur(spare)} spare`; }
+    statusHtml = `
+      <div class="window-preview ${cls}">
+        <div class="wp-row"><span>Window</span><b>${fmtDur(winMin)}</b></div>
+        <div class="wp-row"><span>Work</span><b>${total ? fmtDur(total) : "—"}</b></div>
+        ${breakMin > 0 ? `<div class="wp-row"><span>Breaks</span><b>+${fmtDur(breakMin)}</b></div>` : ""}
+        <div class="wp-row"><span>Planned finish</span><b>${blocks.length ? fmtClock(sched.finish) : "—"}</b></div>
+        <div class="wp-row wp-status ${cls}">${esc(status)}</div>
+      </div>`;
+  } else {
+    segs = rows.map(r =>
+      `<i class="ov-seg" style="flex:0 0 ${total ? (r.b.minutes / total) * 100 : 0}%;background-color:${ovColor(r.i)}"
+          title="${esc((r.b.topic || "Block") + " · " + r.b.minutes + "m")}"></i>`).join("");
+    axis = `<span>0:00</span><span>${fmtOff(total)}</span>`;
+    statusHtml = `
+      <div class="window-preview ${blocks.length ? "ok" : ""}">
+        <div class="wp-row"><span>Blocks</span><b>${blocks.length}</b></div>
+        <div class="wp-row"><span>Total study time</span><b>${total ? fmtDur(total) : "—"}</b></div>
+      </div>`;
+  }
+
+  const list = rows.map(r => {
+    const it = itemOf && itemOf.get(r.b);
+    const late = sched && it.end > sched.endMs;
+    return `
+    <div class="ov-group" data-bi="${r.i}">
+      <div class="ov-row">
+        <span class="ov-dot" style="background:${ovColor(r.i)}"></span>
+        <div class="ov-info">
+          <div class="ov-name">${r.i + 1}. ${esc(r.b.topic || "Block")}</div>
+          <div class="ov-sub${late ? " late" : ""}">${span(r)} · ${r.b.minutes}m${late ? " · past the window" : ""}${it && it.brk && r.i < rows.length - 1 ? ` · then ${fmtDur(it.brk / 60000)} break` : ""}</div>
+        </div>
+        <div class="ov-move">
+          <button class="icon-btn sm" data-act="ovi-up" title="Study earlier" aria-label="Study earlier" ${r.i === 0 ? "disabled" : ""}>▲</button>
+          <button class="icon-btn sm" data-act="ovi-down" title="Study later" aria-label="Study later" ${r.i === rows.length - 1 ? "disabled" : ""}>▼</button>
+        </div>
+      </div>
+    </div>`;
+  }).join("");
+
+  const sub = kind === "template"
+    ? (isRec ? `Repeats ${esc(daysLabel(src.days))} · ${esc(date)}` : (src.days && src.days.length ? `Repeats ${esc(daysLabel(src.days))}` : "Template"))
+    : `Planned for ${esc(src.date)}`;
+  const winLabel = win ? ` · 🕒 ${esc(win.start)} – ${esc(win.end)}` : "";
+
+  openModal("Overview & study order", `
+    <div class="ov-top">
+      <div class="ov-title">${esc(src.title)}</div>
+      <div class="ov-when">${sub}${winLabel}</div>
+    </div>
+
+    <div class="ov-tl" role="img" aria-label="Timeline of the blocks">${segs}</div>
+    <div class="ov-axis">${axis}</div>
+
+    ${statusHtml}
+
+    <div class="ov-head">
+      <h3>Study order</h3>
+      <span>${blocks.length} block${blocks.length !== 1 ? "s" : ""} · ▲▼ to move</span>
+    </div>
+    ${list || `<div class="tpl-empty">No blocks yet.</div>`}
+    ${isRec ? `<p class="hint" style="margin-top:10px">This is a repeating template, so reordering changes every day it repeats.</p>` : ""}
+
+    <div class="backup-row" style="margin:14px 0 0">
+      ${kind === "template" ? `<button class="btn" data-act="ovi-edit">${win ? "Edit window" : "Add time window"}</button>` : ""}
+      <button class="btn primary" data-act="ovi-close">Done</button>
+    </div>
+  `, e => {
+    const btn = e.target.closest("[data-act]");
+    if (!btn || btn.disabled) return;
+    const act = btn.dataset.act;
+    if (act === "ovi-close") { back(); return; }
+    if (act === "ovi-edit") {
+      let gid = backGroupId;
+      if (!gid) { const g = state.templateGroups.find(g => g.templates.some(x => x.id === id)); gid = g && g.id; }
+      if (gid) openEditTemplateModal(id, gid);
+      return;
+    }
+    const row = btn.closest("[data-bi]");
+    if (!row) return;
+    const i = +row.dataset.bi;
+    const j = act === "ovi-up" ? i - 1 : act === "ovi-down" ? i + 1 : -1;
+    if (j < 0 || j >= src.blocks.length) return;
+    [src.blocks[i], src.blocks[j]] = [src.blocks[j], src.blocks[i]];
+    save();
+    renderTemplates();
+    renderPlan();
+    openItemOverview(kind, id, date, backGroupId);
+    const g = overlay.querySelector(`[data-bi="${j}"]`);
+    if (g) g.classList.add("flash");
+  });
+
+  const modalEl = overlay.querySelector(".modal");
+  if (modalEl) modalEl.classList.add("wide");
+}
+
 /* ---------- PLAN ---------- */
 const planSeg   = $("#planSeg");
 const planLabel = $("#planLabel");
@@ -2670,6 +2892,74 @@ function shiftPlan(dir) {
   state.ui.planAnchor = dateKey(d);
   save();
   renderPlan();
+}
+
+/* ----- template time window (time-of-day frame, repeats with the template) ----- */
+const copyWindow = w => w ? { start: w.start, end: w.end, breakMinutes: w.breakMinutes || null } : null;
+
+function tplWindowMarkup(w) {
+  const on = !!w;
+  return `
+    <div class="fld" style="margin:0 0 6px">Time window <span class="opt">— optional, fit this template into a time frame</span></div>
+    <label class="tw-on"><input type="checkbox" id="twOn" ${on ? "checked" : ""}> Use a time window</label>
+    <div id="twFields" ${on ? "" : "hidden"}>
+      <div class="two">
+        <label class="fld">Start <input id="twStart" type="time" value="${esc(w ? w.start : "07:00")}"></label>
+        <label class="fld">End <input id="twEnd" type="time" value="${esc(w ? w.end : "10:00")}"></label>
+      </div>
+      <label class="fld">Break between blocks (min) <span class="opt">— empty = global setting</span>
+        <input id="twBreak" type="number" min="1" max="60" placeholder="Auto" value="${w && w.breakMinutes ? w.breakMinutes : ""}">
+      </label>
+      <div class="window-preview" id="twPreview"></div>
+    </div>`;
+}
+
+/* blocksFn returns the template's current blocks (the editor may have unsaved edits) */
+function initTplWindow(blocksFn) {
+  const on = document.getElementById("twOn");
+  if (!on) return;
+  const box = document.getElementById("twFields");
+  const prev = document.getElementById("twPreview");
+  const upd = () => {
+    box.hidden = !on.checked;
+    if (!on.checked) return;
+    const w = readTplWindow();
+    const blocks = blocksFn();
+    if (!w) { prev.className = "window-preview"; prev.innerHTML = `<div class="wp-row wp-status">Set a start and end time</div>`; return; }
+    const sched = buildSchedule({ blocks, window: { date: dateKey(new Date()), ...w } });
+    if (!sched) return;
+    const winMin = (sched.endMs - sched.startMs) / 60000;
+    const spare = (sched.endMs - sched.finish) / 60000;
+    let cls, status;
+    if (!blocks.length)  { cls = "";      status = "No blocks"; }
+    else if (spare < 0)  { cls = "over";  status = `Doesn't fit — over by ${fmtDur(-spare)}`; }
+    else if (spare < 30) { cls = "tight"; status = `Tight — only ${fmtDur(spare)} of spare time`; }
+    else                 { cls = "ok";    status = `Fits with ${fmtDur(spare)} spare`; }
+    prev.className = "window-preview " + cls;
+    prev.innerHTML = `
+      <div class="wp-row"><span>Window</span><b>${fmtDur(winMin)}</b></div>
+      <div class="wp-row"><span>Planned finish</span><b>${blocks.length ? fmtClock(sched.finish) : "—"}</b></div>
+      <div class="wp-row wp-status ${cls}">${esc(status)}</div>`;
+  };
+  ["twOn", "twStart", "twEnd", "twBreak"].forEach(id => {
+    const el = document.getElementById(id);
+    el.addEventListener("input", upd); el.addEventListener("change", upd);
+  });
+  const rows = document.getElementById("eBlocks") || document.querySelector(".block-editor");
+  const form = document.querySelector(".form-grid");
+  if (form) form.addEventListener("input", upd);
+  if (form) form.addEventListener("click", () => setTimeout(upd, 0));
+  upd();
+}
+
+function readTplWindow() {
+  const on = document.getElementById("twOn");
+  if (!on || !on.checked) return null;
+  const start = document.getElementById("twStart").value;
+  const end   = document.getElementById("twEnd").value;
+  if (!start || !end) return null;
+  const b = Math.round(+document.getElementById("twBreak").value);
+  return { start, end, breakMinutes: b > 0 ? Math.min(60, b) : null };
 }
 
 function planTotal(blocks) {
@@ -2741,7 +3031,7 @@ function planItemsFor(d, includeSkipped) {
     out.push({
       kind: "rec", id: t.id, date: key, title: t.title, blocks: t.blocks,
       resources: t.resources || [], done: !!log.done, skipped: !!log.skipped,
-      sessionId: log.sessionId || null
+      sessionId: log.sessionId || null, window: t.window || null, tplId: t.id
     });
   }));
 
@@ -2751,7 +3041,7 @@ function planItemsFor(d, includeSkipped) {
     .forEach(p => out.push({
       kind: "plan", id: p.id, date: key, title: p.title, blocks: p.blocks,
       resources: p.resources || [], done: !!p.done, skipped: false,
-      sessionId: p.sessionId || null
+      sessionId: p.sessionId || null, window: p.window || null, tplId: p.tplId || null
     }));
 
   return out;
@@ -2769,8 +3059,9 @@ function renderPlanItem(it) {
       <div class="plan-item">
         <input type="checkbox" data-act="toggle" ${it.done ? "checked" : ""}>
         <span class="plan-title">${it.kind === "rec" ? `<span class="rec-mark" title="Repeats weekly">↻</span>` : ""}${esc(it.title)}</span>
-        <span class="plan-meta">${it.blocks.length}b · ${total}m</span>
+        <span class="plan-meta">${it.window ? `<span class="tw-badge" title="Time window">🕒 ${esc(it.window.start)}–${esc(it.window.end)}</span> ` : ""}${it.blocks.length}b · ${total}m</span>
         <button class="btn sm" data-act="start">Start</button>
+        <button class="icon-btn sm" data-act="overview" title="Overview &amp; study order">${ICON_TIMELINE}</button>
         <button class="icon-btn sm" data-act="res" title="Resources">${ICON_LINK}</button>
         <button class="icon-btn sm" data-act="del" title="${it.kind === "rec" ? "Skip this day" : "Remove"}">✕</button>
       </div>
@@ -2983,6 +3274,8 @@ planBody.addEventListener("click", e => {
     else startPlanItem(id);
   } else if (action === "res") {
     openAttachModal(kind === "rec" ? "template" : "plan", id);
+  } else if (action === "overview") {
+    openItemOverview(kind === "rec" ? "template" : "plan", id, date);
   }
 });
 
@@ -2996,10 +3289,13 @@ function startRecItem(tplId, date) {
     s = {
       id: uid(),
       title: t.title,
-      blocks: t.blocks.map(b => ({ topic: b.topic, minutes: b.minutes, done: false })),
+      blocks: t.blocks.map(b => ({ topic: b.topic, minutes: b.minutes, done: false,
+        ...(t.window ? { tpl: t.id, tplTitle: t.title } : {}) })),
       resources: [...(t.resources || [])],
       created: Date.now()
     };
+    if (t.window) s.window = { date, start: t.window.start, end: t.window.end,
+                               templateIds: [t.id], breakMinutes: t.window.breakMinutes || null };
     state.sessions.push(s);
     ent.sessionId = s.id;
     save();
@@ -3019,10 +3315,14 @@ function startPlanItem(planId) {
     s = {
       id: uid(),
       title: p.title,
-      blocks: p.blocks.map(b => ({ topic: b.topic, minutes: b.minutes, done: false })),
+      blocks: p.blocks.map(b => ({ topic: b.topic, minutes: b.minutes, done: false,
+        ...(p.window ? { tpl: p.tplId || p.id, tplTitle: p.title } : {}) })),
       resources: [...(p.resources || [])],
       created: Date.now()
     };
+    if (p.window) s.window = { date: p.date, start: p.window.start, end: p.window.end,
+                               templateIds: p.tplId && findTemplate(p.tplId) ? [p.tplId] : [],
+                               breakMinutes: p.window.breakMinutes || null };
     state.sessions.push(s);
     p.sessionId = s.id;
     save();
@@ -3073,7 +3373,7 @@ function openPlanAddModal(dateStr) {
 }
 
 function addPlanFromSource(kind, id, dateStr) {
-  let title, blocks, resources;
+  let title, blocks, resources, win = null, tplId = null;
   if (kind === "session") {
     const s = getSession(id); if (!s) return;
     title = s.title;
@@ -3084,6 +3384,8 @@ function addPlanFromSource(kind, id, dateStr) {
     title = t.title;
     blocks = t.blocks.map(b => ({ topic: b.topic, minutes: b.minutes }));
     resources = [...(t.resources || [])];
+    win = copyWindow(t.window);
+    tplId = t.id;
   }
 
   state.plans.push({
@@ -3092,6 +3394,8 @@ function addPlanFromSource(kind, id, dateStr) {
     title,
     blocks: blocks.map(b => ({ ...b, done: false })),
     resources,
+    window: win,
+    tplId,
     done: false,
     created: Date.now()
   });
@@ -3121,7 +3425,7 @@ function renderTemplateCard(t, groupId) {
     <div class="session tpl-card" data-tpl="${t.id}" data-group="${groupId}">
       <div>
         <div class="session-title">${esc(t.title)}</div>
-        <div class="session-meta">${total} block${total !== 1 ? "s" : ""} · ${mins} min total${(t.days && t.days.length) ? `<span class="rec-badge" title="Repeats weekly">↻ ${esc(daysLabel(t.days))}</span>` : ""}</div>
+        <div class="session-meta">${total} block${total !== 1 ? "s" : ""} · ${mins} min total${(t.days && t.days.length) ? `<span class="rec-badge" title="Repeats weekly">↻ ${esc(daysLabel(t.days))}</span>` : ""}${t.window ? `<span class="rec-badge tw-badge" title="Time window">🕒 ${esc(t.window.start)}–${esc(t.window.end)}</span>` : ""}</div>
       </div>
       <div class="blocks" style="margin-top:11px">
         ${shown.map(b => `
@@ -3133,6 +3437,7 @@ function renderTemplateCard(t, groupId) {
       <div class="session-actions">
         <button class="btn primary" data-act="use">Create session</button>
         <button class="btn" data-act="schedule" title="Add this template to your plan on a chosen date">Add to plan</button>
+        <button class="icon-btn sm" data-act="overview" title="Overview &amp; study order">${ICON_TIMELINE}</button>
         <button class="icon-btn sm" data-act="edit" title="Edit template">✎</button>
         <button class="icon-btn sm" data-act="res" title="Resources">${ICON_LINK}</button>
         <button class="icon-btn sm" data-act="del" title="Delete">✕</button>
@@ -3221,6 +3526,8 @@ function openSectionModal(groupId) {
       toast(`Session "${session.title}" created`);
     } else if (act === "schedule") {
       openScheduleModal(tplId);
+    } else if (act === "overview") {
+      openItemOverview("template", tplId, null, group.id);
     } else if (act === "edit") {
       openEditTemplateModal(tplId, group.id);
     } else if (act === "res") {
@@ -3271,6 +3578,8 @@ function openScheduleModal(tplId) {
       title: tpl.title,
       blocks: tpl.blocks.map(b => ({ topic: b.topic, minutes: b.minutes, done: false })),
       resources: [...(tpl.resources || [])],
+      window: copyWindow(tpl.window),
+      tplId: tpl.id,
       done: false,
       created: Date.now()
     });
@@ -3314,7 +3623,8 @@ function openEditTemplateModal(tplId, groupId) {
       <div class="fg-col">
         <div class="fld" style="margin-bottom:6px">Repeat on <span class="opt">— optional, shows in your Plan every week</span></div>
         ${dayPickerMarkup(tpl.days || [])}
-        <div class="fld" style="margin:0 0 6px">Resources <span class="opt">— optional</span></div>
+        ${tplWindowMarkup(tpl.window)}
+        <div class="fld" style="margin:14px 0 6px">Resources <span class="opt">— optional</span></div>
         ${pickerMarkup(tpl.resources || [])}
       </div>
     </div>
@@ -3326,6 +3636,10 @@ function openEditTemplateModal(tplId, groupId) {
 
   initPicker();
   initDayPicker();
+  initTplWindow(() => [...document.querySelectorAll("#eBlocks .block-row")].map(r => ({
+    topic: r.querySelector(".be-topic").value.trim(),
+    minutes: Math.max(1, Math.min(300, +r.querySelector(".be-mins").value || 25))
+  })));
 
   const $blocks = document.getElementById("eBlocks");
   const $title  = document.getElementById("eTitle");
@@ -3369,6 +3683,7 @@ function openEditTemplateModal(tplId, groupId) {
     tpl.title     = title;
     tpl.blocks    = blocks;
     tpl.resources = resources;
+    tpl.window    = readTplWindow();
 
     const newDays = readDays();
     const oldKey = [...(tpl.days || [])].sort().join(",");
@@ -3778,7 +4093,7 @@ function openCreateModal(kind, groupId) {
         </label>
       </div>
       <div class="fg-col">
-        ${isTpl ? `<div class="fld" style="margin-bottom:6px">Repeat on <span class="opt">— optional, shows in your Plan every week</span></div>${dayPickerMarkup([])}` : ""}
+        ${isTpl ? `<div class="fld" style="margin-bottom:6px">Repeat on <span class="opt">— optional, shows in your Plan every week</span></div>${dayPickerMarkup([])}${tplWindowMarkup(null)}<div style="height:14px"></div>` : ""}
         <div class="fld" style="margin-bottom:6px">Resources <span class="opt">— optional</span></div>
         ${pickerMarkup([])}
       </div>
@@ -3792,7 +4107,14 @@ function openCreateModal(kind, groupId) {
   { const mEl = overlay.querySelector(".modal"); if (mEl) mEl.classList.add("form-wide"); }
 
   initPicker();
-  if (isTpl) initDayPicker();
+  if (isTpl) {
+    initDayPicker();
+    initTplWindow(() => {
+      const m = Math.max(1, Math.min(300, +document.getElementById("bMins").value || 25));
+      const c = Math.max(1, Math.min(50, +document.getElementById("bCount").value || 1));
+      return Array.from({ length: c }, () => ({ topic: "", minutes: m }));
+    });
+  }
 
   const titleIn = document.getElementById("bTitle");
   titleIn.focus();
@@ -3813,7 +4135,7 @@ function openCreateModal(kind, groupId) {
       const gid = document.getElementById("bGroup").value;
       const group = state.templateGroups.find(g => g.id === gid) || state.templateGroups[0];
       const days = readDays();
-      group.templates.push({ id: uid(), title, blocks, resources, days, daysSince: days.length ? dateKey(new Date()) : "", created: Date.now() });
+      group.templates.push({ id: uid(), title, blocks, resources, days, window: readTplWindow(), daysSince: days.length ? dateKey(new Date()) : "", created: Date.now() });
       save(); closeModal(); renderTemplates();
       if (backToSection) openSectionModal(group.id);
       toast(`Template added to "${group.name}"`);
