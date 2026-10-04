@@ -298,6 +298,53 @@
   .wp-status.over{color:var(--danger)}
 
   .block-editor{display:flex;flex-direction:column;gap:6px;max-height:340px;overflow:auto;padding:2px;overscroll-behavior:contain}
+  [hidden]{display:none!important}
+  /* plan checklist */
+  .plan-view{margin:0 0 14px}
+  .ck-top{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+  .ck-prog{flex:1;min-width:160px;font-size:12.5px;color:var(--muted)}
+  .ck-prog b{color:var(--text);font-weight:600}
+  .ck-bar{height:5px;margin-top:5px;border-radius:99px;background:var(--surface-2);overflow:hidden}
+  .ck-bar i{display:block;height:100%;background:var(--accent);border-radius:99px;transition:width .2s}
+  .ck-sec{border:1px solid var(--border);border-radius:12px;margin-bottom:12px;background:var(--surface)}
+  .ck-head{display:flex;align-items:center;gap:6px;padding:8px 8px 8px 10px}
+  .ck-fold{border:0;background:transparent;color:var(--muted);cursor:pointer;width:22px;height:22px;padding:0;font-size:12px}
+  .ck-name{flex:1;min-width:0;font-weight:600;font-size:14px;cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .ck-count{font-size:12px;color:var(--muted);margin-right:4px;white-space:nowrap}
+  .ck-body{border-top:1px solid var(--border);padding:2px 10px 10px}
+  .ck-row{display:grid;grid-template-columns:20px minmax(0,1fr) auto auto auto;gap:6px;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)}
+  .ck-row input[type=checkbox]{display:block;width:17px;height:17px;margin:0;padding:0;accent-color:var(--accent);cursor:pointer}
+  .ck-title{font-size:14px;word-break:break-word}
+  .ck-row.done .ck-title{text-decoration:line-through;color:var(--muted)}
+  .ck-meta{display:flex;gap:6px;flex-wrap:wrap;margin-top:2px}
+  .ck-meta:empty{display:none}
+  .ck-chip{font-size:11px;padding:1px 8px;border-radius:99px;background:var(--surface-2);color:var(--muted);white-space:nowrap}
+  .ck-chip.tpl{background:var(--accent-soft);color:var(--accent)}
+  .ck-chip.over{background:rgba(220,38,38,.12);color:var(--danger)}
+  .ck-chip.today{background:rgba(217,119,6,.14);color:var(--warn)}
+  .ck-addrow{display:flex;gap:8px;margin-top:10px}
+  .ck-addrow input{margin-top:0}
+  .ck-pick{max-height:230px;overflow:auto;border:1px solid var(--border);border-radius:10px;padding:4px;margin-bottom:12px}
+  .ck-pk{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:8px;cursor:pointer;font-size:13.5px}
+  .ck-pk:hover{background:var(--surface-2)}
+  .ck-pk input{display:block;width:15px;height:15px;margin:0;padding:0;flex:0 0 auto;accent-color:var(--accent)}
+  .ck-sech{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;font-weight:600;padding:8px 8px 2px}
+  .ck-tplbox{border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin:10px 0 12px}
+  .ck-tplbox pre{background:var(--surface-2);border:1px solid var(--border);border-radius:9px;padding:10px;font-size:11.5px;line-height:1.5;overflow:auto;max-height:170px;margin:6px 0 8px;white-space:pre}
+  .ck-tplbox h4{margin:10px 0 0;font-size:12.5px}
+  .ck-tplbox h4:first-child{margin-top:0}
+  .ck-tplrow{display:flex;gap:8px;flex-wrap:wrap}
+  .ck-ioacts{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;padding-top:12px;border-top:1px solid var(--border)}
+  /* template editor: link block to task */
+  .bt{grid-column:1/-1;display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:11.5px;color:var(--muted)}
+  .bt .btn{padding:3px 9px;font-size:11px;border-radius:7px}
+  .bt-state b{color:var(--accent);font-weight:500}
+  .bt-unlink{border:0;background:transparent;color:var(--muted);cursor:pointer;font-size:11px;text-decoration:underline;padding:0 2px}
+  .bt-list{grid-column:1/-1;max-height:150px;overflow:auto;border:1px solid var(--border);border-radius:9px;padding:3px;background:var(--surface)}
+  .bt-item{display:block;width:100%;text-align:left;border:0;background:transparent;color:var(--text);padding:6px 8px;border-radius:7px;font-size:13px;cursor:pointer}
+  .bt-item:hover{background:var(--surface-2)}
+  #backupBtn{position:relative}
+  #backupBtn.nudge::after{content:"";position:absolute;top:6px;right:6px;width:8px;height:8px;border-radius:50%;background:var(--warn);box-shadow:0 0 0 2px var(--surface)}
   /* history */
   .tabs{overflow-x:auto;scrollbar-width:none}
   .tabs::-webkit-scrollbar{display:none}
@@ -534,7 +581,17 @@
   .section-card-foot .btn{flex:1;text-align:center}
   .tpl-empty{font-size:12.5px;color:var(--muted);padding:14px;text-align:center;border:1px dashed var(--border);border-radius:10px}
 
-  .backup-stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px}
+  .bk-file{margin:0 0 12px}
+  .bk-file-lbl{font-size:12.5px;color:var(--muted);margin-bottom:6px}
+  .bk-file-row{display:flex;align-items:center;gap:10px;min-width:0}
+  .bk-browse{cursor:pointer;padding:9px 16px;flex:0 0 auto}
+  .bk-fname{font-size:12.5px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+  .bk-file-in{position:absolute;width:1px;height:1px;opacity:0;overflow:hidden;pointer-events:none}
+  .bk-file:focus-within .bk-browse{outline:2px solid var(--accent);outline-offset:2px}
+  .bk-alt{margin:0 0 12px;font-size:12.5px}
+  .bk-alt summary{cursor:pointer;color:var(--muted);padding:4px 0}
+  .bk-alt textarea{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11.5px}
+  .backup-stat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px}
   @media(max-width:480px){ .backup-stat-grid{grid-template-columns:repeat(2,1fr)} }
   .backup-stat{background:var(--surface-2);border-radius:10px;padding:9px 11px;text-align:center}
   .backup-stat b{display:block;font-size:16px;font-weight:600;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
@@ -697,13 +754,20 @@
             <button data-range="month">Month</button>
           </div>
         </div>
-        <div class="plan-nav">
-          <button class="icon-btn sm" id="planPrev" title="Previous">‹</button>
-          <span class="lbl" id="planLabel"></span>
-          <button class="icon-btn sm" id="planNext" title="Next">›</button>
-          <button class="btn sm" id="planToday">Today</button>
+        <div class="seg plan-view" id="planViewSeg">
+          <button data-view="calendar" class="on">Schedule</button>
+          <button data-view="checklist">Checklist</button>
         </div>
-        <div id="planBody"></div>
+        <div id="planCal">
+          <div class="plan-nav">
+            <button class="icon-btn sm" id="planPrev" title="Previous">‹</button>
+            <span class="lbl" id="planLabel"></span>
+            <button class="icon-btn sm" id="planNext" title="Next">›</button>
+            <button class="btn sm" id="planToday">Today</button>
+          </div>
+          <div id="planBody"></div>
+        </div>
+        <div id="planChecklist" hidden></div>
       </section>
 
       <section class="card tab-panel" data-panel="dashboard" role="tabpanel" hidden>
@@ -805,7 +869,7 @@ const TIMER_KEY = "studyplan.timer.v1";
 const BASE_TITLE = "Study Plan";
 const TABS = ["sessions", "plan", "dashboard", "history", "resources", "templates"];
 const DAY = 86400000;
-const BACKUP_VERSION = 1;
+const BACKUP_VERSION = 2;
 const $ = (s, r = document) => r.querySelector(s);
 
 let state = {
@@ -817,6 +881,8 @@ let state = {
     dashRange: "week",
     planRange: "week",
     histRange: "week",
+    planView: "calendar",
+    ckHideDone: false,
     planAnchor: null
   },
   settings: { mode: "pomodoro", focus: 25, short: 5, long: 15, longEvery: 4 },
@@ -824,6 +890,7 @@ let state = {
   resources: [],
   templates: [],
   templateGroups: [],
+  checklist: [],
   plans: [],
   recurLog: {},
   history: []
@@ -907,6 +974,8 @@ function load() {
   if (!["day", "week", "month", "all"].includes(state.ui.dashRange)) state.ui.dashRange = "week";
   if (!["day", "week", "month"].includes(state.ui.planRange)) state.ui.planRange = "week";
   if (!["day", "week", "month", "all"].includes(state.ui.histRange)) state.ui.histRange = "week";
+  if (!["calendar", "checklist"].includes(state.ui.planView)) state.ui.planView = "calendar";
+  state.ui.ckHideDone = !!state.ui.ckHideDone;
   if (!state.ui.planAnchor) state.ui.planAnchor = dateKey(new Date());
   if (typeof state.lastBackup !== "number") state.lastBackup = null;
 
@@ -948,6 +1017,24 @@ function normalise() {
     });
   });
   if (!state.recurLog || typeof state.recurLog !== "object") state.recurLog = {};
+  if (!Array.isArray(state.checklist)) state.checklist = [];
+  state.checklist = state.checklist.filter(g => g && typeof g === "object");
+  state.checklist.forEach(g => {
+    if (!g.id) g.id = uid();
+    if (typeof g.name !== "string" || !g.name.trim()) g.name = "Section";
+    g.collapsed = !!g.collapsed;
+    if (!Array.isArray(g.tasks)) g.tasks = [];
+    g.tasks = g.tasks.filter(t => t && typeof t.title === "string");
+    g.tasks.forEach(t => {
+      if (!t.id) t.id = uid();
+      t.done = !!t.done;
+      if (typeof t.due !== "string") t.due = "";
+      if (typeof t.created !== "number") t.created = Date.now();
+    });
+  });
+  state.templateGroups.forEach(g => g.templates.forEach(t => t.blocks.forEach(b => {
+    if (b.taskId && !findTask(b.taskId)) delete b.taskId;
+  })));
   state.history = state.history.filter(h => h && typeof h.ts === "number" && isFinite(h.ts) && typeof h.minutes === "number" && h.minutes > 0);
   state.history.forEach(h => {
     if (!h.id) h.id = uid();
@@ -1353,6 +1440,7 @@ function endPhase(opts) {
   if (mode === "freeflow") {
     logStudy(timer.elapsed / 60, s, s.blocks[timer.blockIndex]);
     s.blocks[timer.blockIndex].done = true;
+    completeTaskFromBlock(s.blocks[timer.blockIndex]);
     if (timer.blockIndex < s.blocks.length - 1) {
       timer.blockIndex++;
       loadPhase();
@@ -1364,6 +1452,7 @@ function endPhase(opts) {
   } else if (timer.phase === "work") {
     logStudy((timer.total - timer.remaining) / 60, s, s.blocks[timer.blockIndex]);
     s.blocks[timer.blockIndex].done = true;
+    completeTaskFromBlock(s.blocks[timer.blockIndex]);
     if (timer.blockIndex >= s.blocks.length - 1) {
       finishSession(s, silent);
     } else {
@@ -1920,6 +2009,8 @@ function openAttachModal(kind, id) {
 }
 
 /* ---------- BACKUP ---------- */
+const PRE_KEY = "studyplan.prerestore.v1";
+
 function backupCounts() {
   return {
     sessions: state.sessions.length,
@@ -1927,8 +2018,52 @@ function backupCounts() {
     sections: state.templateGroups.length,
     plans: state.plans.length,
     resources: state.resources.length,
-    history: state.history.length
+    history: state.history.length,
+    tasks: state.checklist.reduce((a, g) => a + g.tasks.length, 0)
   };
+}
+
+function storageOk() {
+  try {
+    localStorage.setItem("studyplan.test", "1");
+    localStorage.removeItem("studyplan.test");
+    return true;
+  } catch (e) { return false; }
+}
+
+function backupText() {
+  return JSON.stringify({ app: "studyplan", version: BACKUP_VERSION, exportedAt: new Date().toISOString(), data: backupData() }, null, 2);
+}
+
+function backupData() {
+  return {
+    theme: state.theme,
+    ui: state.ui,
+    settings: state.settings,
+    sessions: state.sessions,
+    resources: state.resources,
+    templateGroups: state.templateGroups,
+    checklist: state.checklist,
+    plans: state.plans,
+    recurLog: state.recurLog,
+    history: state.history
+  };
+}
+
+/* ----- backup reminder: a dot on the backup button when data is unsaved for 7+ days ----- */
+const BACKUP_NUDGE_DAYS = 7;
+function backupAgeDays() {
+  return state.lastBackup ? (Date.now() - state.lastBackup) / DAY : Infinity;
+}
+function updateBackupNudge() {
+  const c = backupCounts();
+  const hasData = c.sessions + c.templates + c.plans + c.resources + c.history + c.tasks > 0;
+  const stale = hasData && backupAgeDays() >= BACKUP_NUDGE_DAYS;
+  const btn = $("#backupBtn");
+  btn.classList.toggle("nudge", stale);
+  btn.title = stale
+    ? (state.lastBackup ? `Backup & restore — last backup ${Math.floor(backupAgeDays())} days ago` : "Backup & restore — you haven't backed up yet")
+    : "Backup & restore";
 }
 
 function exportBackup() {
@@ -1936,24 +2071,15 @@ function exportBackup() {
     app: "studyplan",
     version: BACKUP_VERSION,
     exportedAt: new Date().toISOString(),
-    data: {
-      theme: state.theme,
-      ui: state.ui,
-      settings: state.settings,
-      sessions: state.sessions,
-      resources: state.resources,
-      templateGroups: state.templateGroups,
-      plans: state.plans,
-      recurLog: state.recurLog,
-      history: state.history
-    }
+    data: backupData()
   };
 
   try {
     const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const d = new Date();
-    const stamp = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    const pad = n => String(n).padStart(2, "0");
+    const stamp = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
     const a = document.createElement("a");
     a.href = url;
     a.download = `studyplan-backup-${stamp}.json`;
@@ -1964,20 +2090,109 @@ function exportBackup() {
 
     state.lastBackup = Date.now();
     save();
+    updateBackupNudge();
     closeModal();
     toast("Backup exported");
   } catch (e) {
-    alert("Could not export backup: " + e.message);
+    toast("Download blocked — use “Copy backup text” instead");
+    const box = document.getElementById("pasteBox");
+    if (box) { box.value = backupText(); const det = box.closest("details"); if (det) det.open = true; }
   }
+}
+
+/* Clean a parsed backup so a malformed file can't break the app */
+function sanitizeBackup(data) {
+  const objs = a => Array.isArray(a) ? a.filter(x => x && typeof x === "object") : [];
+  let groups = [];
+  if (Array.isArray(data.templateGroups)) {
+    groups = data.templateGroups;
+  } else if (Array.isArray(data.templates) && data.templates.length) {
+    groups = [{ id: uid(), name: "Imported", templates: data.templates }];
+  }
+  groups = objs(groups).map(g => ({ ...g, templates: objs(g.templates) }));
+  return {
+    sessions:  objs(data.sessions),
+    resources: objs(data.resources),
+    templateGroups: groups,
+    plans:     objs(data.plans),
+    recurLog:  (data.recurLog && typeof data.recurLog === "object" && !Array.isArray(data.recurLog)) ? data.recurLog : {},
+    history:   objs(data.history),
+    checklist: Array.isArray(data.checklist) ? objs(data.checklist).map(g => ({ ...g, tasks: objs(g.tasks) })) : null,
+    settings:  (data.settings && typeof data.settings === "object") ? data.settings : null,
+    ui:        (data.ui && typeof data.ui === "object") ? data.ui : null
+  };
+}
+
+function applyBackupData(c) {
+  state.sessions       = c.sessions;
+  state.resources      = c.resources;
+  state.templateGroups = c.templateGroups;
+  state.plans          = c.plans;
+  state.recurLog       = c.recurLog;
+  state.history        = c.history;
+  if (c.checklist) state.checklist = c.checklist;
+  if (c.settings) state.settings = { ...state.settings, ...c.settings };
+  if (c.ui) {
+    const { tab, hideResForm, dashRange, planRange, histRange } = c.ui;
+    if (["day", "week", "month", "all"].includes(histRange)) state.ui.histRange = histRange;
+    if (TABS.includes(tab)) state.ui.tab = tab;
+    if (typeof hideResForm === "boolean") state.ui.hideResForm = hideResForm;
+    if (["day", "week", "month", "all"].includes(dashRange)) state.ui.dashRange = dashRange;
+    if (["day", "week", "month"].includes(planRange)) state.ui.planRange = planRange;
+  }
+
+  normalise();
+
+  timer.sessionId = null;
+  timer.running = false;
+  timer.finished = false;
+  clearSavedTimer();
+
+  save();
+
+  $("#setFocus").value = state.settings.focus;
+  $("#setShort").value = state.settings.short;
+  $("#setLong").value  = state.settings.long;
+  $("#setEvery").value = state.settings.longEvery;
+
+  setTab(state.ui.tab);
+  applyResFormToggle();
+  renderSessions();
+  renderResources();
+  renderTemplates();
+  renderDashboard();
+  renderPlan();
+  renderHistory();
+  updateTimerUI();
+  updateBackupNudge();
+}
+
+/* One-step safety net: what was stored right before the last restore */
+function saveSafetySnapshot() {
+  try { localStorage.setItem(PRE_KEY, JSON.stringify({ at: Date.now(), data: backupData() })); return true; }
+  catch (e) { return false; }
+}
+function readSafetySnapshot() {
+  try {
+    const raw = localStorage.getItem(PRE_KEY);
+    const o = raw && JSON.parse(raw);
+    return o && o.data && typeof o.data === "object" ? o : null;
+  } catch (e) { return null; }
 }
 
 function importBackupFile(file) {
   if (!file) return;
   const reader = new FileReader();
-  reader.onload = () => {
+  reader.onload = () => importBackupText(String(reader.result || ""));
+  reader.onerror = () => alert("Could not read that file. Try \"Paste backup text\" in the Backup window instead.");
+  reader.readAsText(file);
+}
+
+function importBackupText(text) {
+  {
     let parsed;
     try {
-      parsed = JSON.parse(reader.result);
+      parsed = JSON.parse(String(text).replace(/^\uFEFF/, "").trim());
     } catch (e) {
       alert("That file is not valid JSON.");
       return;
@@ -1992,122 +2207,106 @@ function importBackupFile(file) {
       return;
     }
 
-    const hasAny =
-      Array.isArray(data.sessions) ||
-      Array.isArray(data.plans) ||
-      Array.isArray(data.templateGroups) ||
-      Array.isArray(data.templates) ||
-      Array.isArray(data.resources);
+    const hasAny = ["sessions", "plans", "templateGroups", "templates", "resources", "history", "checklist"]
+      .some(k => Array.isArray(data[k]));
     if (!hasAny) {
       alert("This file doesn't look like a Study Plan backup.");
       return;
     }
 
-    let groups = [];
-    if (Array.isArray(data.templateGroups)) {
-      groups = data.templateGroups;
-    } else if (Array.isArray(data.templates) && data.templates.length) {
-      groups = [{ id: uid(), name: "Imported", templates: data.templates }];
-    }
-
-    const counts = {
-      sessions: (data.sessions || []).length,
-      sections: groups.length,
-      templates: groups.reduce((a, g) => a + ((g && g.templates) || []).length, 0),
-      plans: (data.plans || []).length,
-      resources: (data.resources || []).length,
-      history: (data.history || []).length
-    };
+    const c = sanitizeBackup(data);
+    const taskCount = c.checklist ? c.checklist.reduce((a, g) => a + g.tasks.length, 0) : null;
+    const exported = parsed && parsed.exportedAt ? new Date(parsed.exportedAt) : null;
 
     const ok = confirm(
-      "Import this backup?\n\n" +
-      `Sessions:  ${counts.sessions}\n` +
-      `Sections:  ${counts.sections}\n` +
-      `Templates: ${counts.templates}\n` +
-      `Plans:     ${counts.plans}\n` +
-      `Resources: ${counts.resources}\n` +
-      `History:   ${counts.history}\n\n` +
-      "This will REPLACE all current data. Continue?"
+      "Restore this backup?\n\n" +
+      (exported && !isNaN(exported) ? `Exported:   ${exported.toLocaleString()}\n\n` : "") +
+      `Sessions:   ${c.sessions.length}\n` +
+      `Sections:   ${c.templateGroups.length}\n` +
+      `Templates:  ${c.templateGroups.reduce((a, g) => a + g.templates.length, 0)}\n` +
+      `Plans:      ${c.plans.length}\n` +
+      `Resources:  ${c.resources.length}\n` +
+      `History:    ${c.history.length}\n` +
+      `Checklist:  ${taskCount === null ? "not in this file (kept as is)" : taskCount + " tasks"}\n\n` +
+      "This REPLACES your current data. A safety copy of what you have now is kept so you can undo."
     );
     if (!ok) return;
 
-    state.sessions       = Array.isArray(data.sessions) ? data.sessions : [];
-    state.resources      = Array.isArray(data.resources) ? data.resources : [];
-    state.templateGroups = groups;
-    state.plans          = Array.isArray(data.plans) ? data.plans : [];
-    state.recurLog       = (data.recurLog && typeof data.recurLog === "object" && !Array.isArray(data.recurLog)) ? data.recurLog : {};
-    state.history        = Array.isArray(data.history) ? data.history : [];
-    if (data.settings && typeof data.settings === "object") {
-      state.settings = { ...state.settings, ...data.settings };
-    }
-    if (data.ui && typeof data.ui === "object") {
-      const { tab, hideResForm, dashRange, planRange, histRange } = data.ui;
-      if (["day", "week", "month", "all"].includes(histRange)) state.ui.histRange = histRange;
-      if (TABS.includes(tab)) state.ui.tab = tab;
-      if (typeof hideResForm === "boolean") state.ui.hideResForm = hideResForm;
-      if (["day", "week", "month", "all"].includes(dashRange)) state.ui.dashRange = dashRange;
-      if (["day", "week", "month"].includes(planRange)) state.ui.planRange = planRange;
-    }
-
-    normalise();
-
-    timer.sessionId = null;
-    timer.running = false;
-    timer.finished = false;
-    clearSavedTimer();
-
-    save();
-
-    $("#setFocus").value = state.settings.focus;
-    $("#setShort").value = state.settings.short;
-    $("#setLong").value  = state.settings.long;
-    $("#setEvery").value = state.settings.longEvery;
-
-    setTab(state.ui.tab);
-    applyResFormToggle();
-    renderSessions();
-    renderResources();
-    renderTemplates();
-    renderDashboard();
-    renderPlan();
-    updateTimerUI();
-
+    const saved = saveSafetySnapshot();
+    applyBackupData(c);
     closeModal();
-    toast("Backup imported");
-  };
-  reader.onerror = () => alert("Could not read that file.");
-  reader.readAsText(file);
+    toast(saved ? "Backup restored — you can undo from Backup & Restore" : "Backup restored");
+  }
+}
+
+function undoRestore() {
+  const snap = readSafetySnapshot();
+  if (!snap) { toast("Nothing to undo"); return; }
+  if (!confirm(`Go back to the data you had before the last restore (${new Date(snap.at).toLocaleString()})?\n\nYour current data will be kept as a new safety copy.`)) return;
+  const current = { at: Date.now(), data: backupData() };
+  applyBackupData(sanitizeBackup(snap.data));
+  try { localStorage.setItem(PRE_KEY, JSON.stringify(current)); } catch (e) {}
+  closeModal();
+  toast("Previous data restored");
 }
 
 function openBackupModal() {
   const c = backupCounts();
+  const age = backupAgeDays();
   const lastBackup = state.lastBackup
-    ? new Date(state.lastBackup).toLocaleString()
+    ? `${new Date(state.lastBackup).toLocaleString()} (${age < 1 ? "today" : Math.floor(age) + " day" + (Math.floor(age) !== 1 ? "s" : "") + " ago"})`
     : "Never";
+  const total = c.sessions + c.templates + c.plans + c.resources + c.history + c.tasks;
+  const snap = readSafetySnapshot();
 
   openModal("Backup & Restore", `
-    <p class="hint">Save all your data as a JSON file, or restore from a previous backup.</p>
+    <p class="hint">Save all your data as a JSON file, or restore from a previous backup. Data lives only in this browser, so export regularly.</p>
 
     <div class="backup-stat-grid">
       <div class="backup-stat"><b>${c.sessions}</b><span>Sessions</span></div>
       <div class="backup-stat"><b>${c.templates}</b><span>Templates</span></div>
       <div class="backup-stat"><b>${c.plans}</b><span>Plans</span></div>
+      <div class="backup-stat"><b>${c.tasks}</b><span>Tasks</span></div>
+      <div class="backup-stat"><b>${c.history}</b><span>History</span></div>
       <div class="backup-stat"><b>${c.resources}</b><span>Resources</span></div>
     </div>
 
     <div class="backup-row">
-      <button class="btn primary" id="exportBtn" ${c.sessions + c.templates + c.plans + c.resources === 0 ? "disabled" : ""}>
+      <button class="btn primary" id="exportBtn" ${total === 0 ? "disabled" : ""}>
         Export backup
       </button>
-      <button class="btn" id="importBtn">Import backup</button>
     </div>
 
-    <input type="file" id="importFile" accept=".json,application/json" hidden>
+    <div class="bk-file">
+      <div class="bk-file-lbl">Restore from a backup file</div>
+      <div class="bk-file-row">
+        <label class="btn bk-browse" for="importFile">Browse…</label>
+        <span class="bk-fname" id="importName">No file selected</span>
+      </div>
+      <input type="file" id="importFile" class="bk-file-in" accept=".json,.txt,application/json,text/plain,*/*">
+    </div>
+
+    ${storageOk() ? "" : `<div class="backup-warn" style="margin-bottom:12px"><span><b>Storage is blocked</b> in this window (private mode or a preview frame), so changes won't survive a reload. Open the file directly in your browser, and use <b>Export</b> to keep a copy.</span></div>`}
+
+    <details class="bk-alt">
+      <summary>Having trouble? Copy / paste backup text</summary>
+      <p class="hint" style="margin:8px 0">If downloads or the file picker don't work here, copy your backup as text, or paste a backup below and restore from it.</p>
+      <textarea id="pasteBox" rows="4" spellcheck="false" placeholder="Paste backup text here to restore, or press Copy to fill it with your current data"></textarea>
+      <div class="backup-row" style="margin-top:8px">
+        <button class="btn" id="copyBkBtn" type="button">Copy backup text</button>
+        <button class="btn" id="pasteBkBtn" type="button">Restore from text</button>
+      </div>
+    </details>
 
     <p class="backup-meta">
       Last export: <b>${esc(lastBackup)}</b><br>
-      File includes sessions, plans, templates, resources, history, and settings.
+      File includes sessions, plans, templates, checklist, resources, history, and settings.
     </p>
+
+    ${snap ? `
+    <div class="backup-row" style="margin-top:0">
+      <button class="btn" id="undoRestoreBtn">Undo last restore <span style="opacity:.6;font-weight:400">· ${esc(new Date(snap.at).toLocaleDateString())}</span></button>
+    </div>` : ""}
 
     <div class="backup-warn">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -2115,18 +2314,35 @@ function openBackupModal() {
         <line x1="12" y1="9" x2="12" y2="13"/>
         <line x1="12" y1="17" x2="12.01" y2="17"/>
       </svg>
-      <span>Importing <b>replaces</b> everything currently stored. Export a fresh backup first if you want a safety net.</span>
+      <span>Importing <b>replaces</b> everything currently stored. The data you had just before is kept once, so a mistaken restore can be undone.</span>
     </div>
   `);
 
   const exportBtn = document.getElementById("exportBtn");
-  const importBtn = document.getElementById("importBtn");
   const fileInput = document.getElementById("importFile");
 
   if (exportBtn) exportBtn.addEventListener("click", exportBackup);
-  importBtn.addEventListener("click", () => fileInput.click());
+  const undoBtn = document.getElementById("undoRestoreBtn");
+  if (undoBtn) undoBtn.addEventListener("click", undoRestore);
+
+  const pasteBox = document.getElementById("pasteBox");
+  document.getElementById("copyBkBtn").addEventListener("click", async () => {
+    const text = backupText();
+    pasteBox.value = text;
+    let ok = false;
+    try { await navigator.clipboard.writeText(text); ok = true; } catch (e) {}
+    if (!ok) { pasteBox.focus(); pasteBox.select(); try { ok = document.execCommand("copy"); } catch (e) {} }
+    if (ok) { state.lastBackup = Date.now(); save(); updateBackupNudge(); }
+    toast(ok ? "Backup copied — paste it somewhere safe" : "Select the text and copy it manually");
+  });
+  document.getElementById("pasteBkBtn").addEventListener("click", () => {
+    if (!pasteBox.value.trim()) { toast("Paste your backup text first"); return; }
+    importBackupText(pasteBox.value);
+  });
   fileInput.addEventListener("change", e => {
     const f = e.target.files && e.target.files[0];
+    const nm = document.getElementById("importName");
+    if (nm) nm.textContent = f ? f.name : "No file selected";
     if (f) importBackupFile(f);
     e.target.value = "";
   });
@@ -2222,7 +2438,7 @@ sessionList.addEventListener("click", e => {
     targetGroup.templates.push({
       id: uid(),
       title: s.title,
-      blocks: s.blocks.map(b => ({ topic: b.topic, minutes: b.minutes })),
+      blocks: s.blocks.map(b => cpBlock(b)),
       resources: [...(s.resources || [])],
       created: Date.now()
     });
@@ -2235,6 +2451,7 @@ sessionList.addEventListener("click", e => {
   } else if (act === "toggle") {
     const i = +el.dataset.i;
     s.blocks[i].done = !s.blocks[i].done;
+    if (s.blocks[i].done) completeTaskFromBlock(s.blocks[i]);
     save(); renderSessions();
   }
 });
@@ -2472,7 +2689,7 @@ function openWindowModal(editId) {
         const topic = b.topic || t.title;
         const match = old.find(o => !used.has(o) && o.topic === topic && o.minutes === b.minutes);
         if (match) used.add(match);
-        return { topic, minutes: b.minutes, match };
+        return { topic, minutes: b.minutes, taskId: b.taskId, match };
       });
 
       if (old.length && fresh.every(f => f.match) && old.length === fresh.length) {
@@ -2481,6 +2698,7 @@ function openWindowModal(editId) {
         fresh.forEach(f => newBlocks.push({
           topic: f.topic,
           minutes: f.minutes,
+          ...(f.taskId ? { taskId: f.taskId } : {}),
           done: f.match ? !!f.match.done : false,
           tpl: t.id,
           tplTitle: t.title
@@ -2952,6 +3170,9 @@ function openItemOverview(kind, id, date, backGroupId) {
 const planSeg   = $("#planSeg");
 const planLabel = $("#planLabel");
 const planBody  = $("#planBody");
+const planCal   = $("#planCal");
+const planViewSeg = $("#planViewSeg");
+const ckBody    = $("#planChecklist");
 const planPrev  = $("#planPrev");
 const planNext  = $("#planNext");
 const planToday = $("#planToday");
@@ -3078,7 +3299,8 @@ function readBlockDays(row) {
   return [...row.querySelectorAll(".be-day:checked")].map(i => +i.value);
 }
 function blockChipDays(b) {
-  return b.days && b.days.length ? `<span class="chip-days">${esc(daysLabel(b.days))}</span>` : "";
+  return (b.days && b.days.length ? `<span class="chip-days">${esc(daysLabel(b.days))}</span>` : "")
+       + (b.taskId ? `<span class="chip-days" title="Linked to a checklist task">☑</span>` : "");
 }
 
 function dayPickerMarkup(days) {
@@ -3263,7 +3485,26 @@ function renderMonthGrid(anchor) {
     </div>`;
 }
 
+function applyPlanView() {
+  const v = state.ui.planView;
+  [...planViewSeg.children].forEach(b => b.classList.toggle("on", b.dataset.view === v));
+  const open = state.checklist.reduce((a, g) => a + g.tasks.filter(t => !t.done).length, 0);
+  planViewSeg.querySelector('[data-view="checklist"]').textContent = open ? `Checklist · ${open}` : "Checklist";
+  planCal.hidden = v !== "calendar";
+  ckBody.hidden  = v !== "checklist";
+  planSeg.hidden = v !== "calendar";
+}
+
+planViewSeg.addEventListener("click", e => {
+  const b = e.target.closest("button[data-view]");
+  if (!b || state.ui.planView === b.dataset.view) return;
+  state.ui.planView = b.dataset.view;
+  save(); renderPlan();
+});
+
 function renderPlan() {
+  applyPlanView();
+  if (state.ui.planView === "checklist") { renderChecklist(); return; }
   const range = state.ui.planRange;
   [...planSeg.children].forEach(b => b.classList.toggle("on", b.dataset.range === range));
 
@@ -3394,7 +3635,7 @@ function startRecItem(tplId, date) {
     s = {
       id: uid(),
       title: t.title,
-      blocks: blocksForDay(t.blocks, dowOfKey(date)).map(b => ({ topic: b.topic, minutes: b.minutes, done: false,
+      blocks: blocksForDay(t.blocks, dowOfKey(date)).map(b => ({ ...cpBlock(b), done: false,
         ...(t.window ? { tpl: t.id, tplTitle: t.title } : {}) })),
       resources: [...(t.resources || [])],
       created: Date.now()
@@ -3420,7 +3661,7 @@ function startPlanItem(planId) {
     s = {
       id: uid(),
       title: p.title,
-      blocks: p.blocks.map(b => ({ topic: b.topic, minutes: b.minutes, done: false,
+      blocks: p.blocks.map(b => ({ ...cpBlock(b), done: false,
         ...(p.window ? { tpl: p.tplId || p.id, tplTitle: p.title } : {}) })),
       resources: [...(p.resources || [])],
       created: Date.now()
@@ -3482,13 +3723,13 @@ function addPlanFromSource(kind, id, dateStr) {
   if (kind === "session") {
     const s = getSession(id); if (!s) return;
     title = s.title;
-    blocks = s.blocks.map(b => ({ topic: b.topic, minutes: b.minutes }));
+    blocks = s.blocks.map(b => cpBlock(b));
     resources = [...(s.resources || [])];
   } else {
     const t = findTemplate(id); if (!t) return;
     title = t.title;
     const dayBlocks = blocksForDay(t.blocks, dowOfKey(dateStr));
-    blocks = (dayBlocks.length ? dayBlocks : t.blocks).map(b => ({ topic: b.topic, minutes: b.minutes }));
+    blocks = (dayBlocks.length ? dayBlocks : t.blocks).map(b => cpBlock(b));
     resources = [...(t.resources || [])];
     win = copyWindow(t.window);
     tplId = t.id;
@@ -3620,7 +3861,7 @@ function openSectionModal(groupId) {
       const session = {
         id: uid(),
         title: tpl.title,
-        blocks: tpl.blocks.map(b => ({ topic: b.topic, minutes: b.minutes, done: false })),
+        blocks: tpl.blocks.map(b => ({ ...cpBlock(b), done: false })),
         resources: [...(tpl.resources || [])],
         created: Date.now()
       };
@@ -3686,7 +3927,7 @@ function openScheduleModal(tplId) {
       id: uid(),
       date,
       title: tpl.title,
-      blocks: dayBlocks.map(b => ({ topic: b.topic, minutes: b.minutes, done: false })),
+      blocks: dayBlocks.map(b => ({ ...cpBlock(b), done: false })),
       resources: [...(tpl.resources || [])],
       window: copyWindow(tpl.window),
       tplId: tpl.id,
@@ -3705,11 +3946,12 @@ function openEditTemplateModal(tplId, groupId) {
   if (!tpl) return;
 
   const blockRowsHtml = tpl.blocks.map(b => `
-    <div class="block-row">
+    <div class="block-row" ${b.taskId ? `data-task-id="${esc(b.taskId)}"` : ""}>
       <input class="be-topic" placeholder="Topic" value="${esc(b.topic || "")}" autocomplete="off">
       <input class="be-mins" type="number" min="1" max="300" value="${b.minutes}">
       <button class="icon-btn sm" type="button" data-act="rm-block" title="Remove">✕</button>
       ${blockDaysMarkup(b.days)}
+      ${blockLinkMarkup(b.taskId)}
     </div>`).join("");
 
   openModal("Edit template", `
@@ -3726,7 +3968,7 @@ function openEditTemplateModal(tplId, groupId) {
           </select>
         </label>
         <div class="fld" style="margin-bottom:6px">
-          Blocks <span class="opt">— topic, minutes, and the days each block runs (none selected = every day)</span>
+          Blocks <span class="opt">— topic, minutes, days (none = every day), and an optional checklist task</span>
         </div>
         <div class="block-editor" id="eBlocks">${blockRowsHtml}</div>
         <button class="btn sm" type="button" id="eAddBlock" style="margin-top:8px">+ Add block</button>
@@ -3763,12 +4005,24 @@ function openEditTemplateModal(tplId, groupId) {
       <input class="be-topic" placeholder="Topic" autocomplete="off">
       <input class="be-mins" type="number" min="1" max="300" value="${state.settings.focus}">
       <button class="icon-btn sm" type="button" data-act="rm-block" title="Remove">✕</button>
-      ${blockDaysMarkup([])}`;
+      ${blockDaysMarkup([])}
+      ${blockLinkMarkup(null)}`;
     $blocks.appendChild(row);
     row.querySelector(".be-topic").focus();
   };
 
   $blocks.addEventListener("click", e => {
+    const pick = e.target.closest("[data-act='bt-pick']");
+    if (pick) { toggleTaskPicker(pick.closest(".block-row")); return; }
+    const item = e.target.closest("[data-act='bt-item']");
+    if (item) {
+      const row = item.closest(".block-row"), t = findTask(item.dataset.task);
+      if (t) { row.querySelector(".be-topic").value = t.title; row.dataset.taskId = t.id; refreshRowLink(row); }
+      row.querySelector(".bt-list").hidden = true;
+      return;
+    }
+    const unl = e.target.closest("[data-act='bt-unlink']");
+    if (unl) { const row = unl.closest(".block-row"); delete row.dataset.taskId; refreshRowLink(row); return; }
     const clr = e.target.closest("[data-act='bd-clear']");
     if (clr) { clr.closest(".block-row").querySelectorAll(".be-day").forEach(i => { i.checked = false; }); return; }
     const rm = e.target.closest("[data-act='rm-block']");
@@ -3790,7 +4044,8 @@ function openEditTemplateModal(tplId, groupId) {
     const blocks = [...$blocks.querySelectorAll(".block-row")].map(r => ({
       topic:   r.querySelector(".be-topic").value.trim(),
       minutes: Math.max(1, Math.min(300, +r.querySelector(".be-mins").value || 25)),
-      days:    readBlockDays(r)
+      days:    readBlockDays(r),
+      ...(r.dataset.taskId ? { taskId: r.dataset.taskId } : {})
     }));
 
     if (!blocks.length) { toast("Add at least one block"); return; }
@@ -4080,6 +4335,696 @@ dashSeg.addEventListener("click", e => {
   save();
   renderDashboard();
 });
+
+/* ---------- PLAN CHECKLIST ---------- */
+/* sections -> tasks. A task can become a template block (topic) and is checked off
+   automatically when that block is finished in a session. */
+const cpBlock = b => ({ topic: b.topic, minutes: b.minutes, ...(b.taskId ? { taskId: b.taskId } : {}) });
+
+function findTask(id) {
+  for (const g of state.checklist) {
+    const t = g.tasks.find(x => x.id === id);
+    if (t) return t;
+  }
+  return null;
+}
+function taskSection(id) { return state.checklist.find(g => g.tasks.some(t => t.id === id)) || null; }
+
+function completeTaskFromBlock(b) {
+  if (!b || !b.taskId) return;
+  const t = findTask(b.taskId);
+  if (!t || t.done) return;
+  t.done = true; t.doneAt = Date.now();
+  save();
+  toast(`Task checked off: ${t.title}`);
+  if (state.ui.tab === "plan") renderPlan();
+}
+
+function unlinkTasks(ids) {
+  const set = new Set(ids);
+  state.templateGroups.forEach(g => g.templates.forEach(t => t.blocks.forEach(b => {
+    if (b.taskId && set.has(b.taskId)) delete b.taskId;
+  })));
+}
+
+/* taskId -> titles of templates that use it */
+function templateLinks() {
+  const m = new Map();
+  state.templateGroups.forEach(g => g.templates.forEach(t => t.blocks.forEach(b => {
+    if (!b.taskId) return;
+    const arr = m.get(b.taskId) || [];
+    if (!arr.includes(t.title)) arr.push(t.title);
+    m.set(b.taskId, arr);
+  })));
+  return m;
+}
+
+function renderChecklist() {
+  const all = state.checklist.flatMap(g => g.tasks);
+  const done = all.filter(t => t.done).length;
+  const pct = all.length ? Math.round(done / all.length * 100) : 0;
+  const hide = state.ui.ckHideDone;
+  const links = templateLinks();
+  const todayK = dateKey(new Date());
+
+  const top = `
+    <div class="ck-top">
+      <div class="ck-prog">${all.length ? `<b>${done}</b> of <b>${all.length}</b> done · ${pct}%` : "No tasks yet"}
+        <div class="ck-bar"><i style="width:${pct}%"></i></div></div>
+      <button class="btn sm" data-act="ck-hide">${hide ? "Show completed" : "Hide completed"}</button>
+      <button class="btn sm" data-act="ck-io">Import / Export</button>
+      <button class="btn primary sm" data-act="ck-newsec">+ Section</button>
+    </div>`;
+
+  if (!state.checklist.length) {
+    ckBody.innerHTML = top + `<div class="empty">No checklist yet.<br>Create a <b>section</b> (e.g. “Exam prep”, “Admin”) and add the tasks you need to complete,<br>or use <b>Import / Export</b> to load a CSV or JSON file.</div>`;
+    return;
+  }
+
+  const secs = state.checklist.map(g => {
+    const d = g.tasks.filter(t => t.done).length;
+    const rows = g.tasks.filter(t => !(hide && t.done)).map(t => {
+      const tl = links.get(t.id);
+      const dueChip = t.due
+        ? `<span class="ck-chip ${!t.done && t.due < todayK ? "over" : (!t.done && t.due === todayK ? "today" : "")}">${!t.done && t.due < todayK ? "Overdue · " : ""}${esc(new Date(t.due + "T00:00:00").toLocaleDateString(undefined, { day: "numeric", month: "short" }))}</span>` : "";
+      const tplChip = tl ? `<span class="ck-chip tpl" title="Topic in: ${esc(tl.join(", "))}">▦ ${esc(tl[0])}${tl.length > 1 ? ` +${tl.length - 1}` : ""}</span>` : "";
+      return `
+        <div class="ck-row ${t.done ? "done" : ""}" data-t="${esc(t.id)}">
+          <input type="checkbox" data-act="ck-toggle" ${t.done ? "checked" : ""} aria-label="Done">
+          <div><div class="ck-title">${esc(t.title)}</div><div class="ck-meta">${dueChip}${tplChip}</div></div>
+          <button class="icon-btn sm" data-act="ck-tpl" title="Add to a template as a topic" aria-label="Add to a template">▦</button>
+          <button class="icon-btn sm" data-act="ck-edit" title="Edit task" aria-label="Edit task">✎</button>
+          <button class="icon-btn sm" data-act="ck-del" title="Delete task" aria-label="Delete task">✕</button>
+        </div>`;
+    }).join("");
+    const body = g.collapsed ? "" : `
+      <div class="ck-body">
+        ${rows || `<div class="empty" style="padding:12px">${g.tasks.length ? "All tasks completed 🎉" : "No tasks in this section yet."}</div>`}
+        <div class="ck-addrow">
+          <input class="ck-add" data-g="${esc(g.id)}" placeholder="Add a task and press Enter" autocomplete="off">
+          <button class="btn sm" data-act="ck-add" data-g="${esc(g.id)}">Add</button>
+        </div>
+      </div>`;
+    return `
+      <div class="ck-sec" data-g="${esc(g.id)}">
+        <div class="ck-head">
+          <button class="ck-fold" data-act="ck-fold" aria-label="Collapse or expand">${g.collapsed ? "▸" : "▾"}</button>
+          <span class="ck-name" data-act="ck-fold">${esc(g.name)}</span>
+          <span class="ck-count">${d}/${g.tasks.length}</span>
+          <button class="icon-btn sm" data-act="ck-sectpl" title="Add this section's open tasks to a template" aria-label="Add open tasks to a template">▦</button>
+          <button class="icon-btn sm" data-act="ck-rename" title="Rename section" aria-label="Rename section">✎</button>
+          <button class="icon-btn sm" data-act="ck-delsec" title="Delete section" aria-label="Delete section">✕</button>
+        </div>
+        ${body}
+      </div>`;
+  }).join("");
+
+  ckBody.innerHTML = top + secs;
+}
+
+function ckRefresh(focusGroup) {
+  save();
+  renderPlan();
+  if (state.ui.tab === "templates") renderTemplates();
+  if (focusGroup) {
+    const i = ckBody.querySelector(`.ck-add[data-g="${focusGroup}"]`);
+    if (i) i.focus();
+  }
+}
+
+function addTaskTo(gid) {
+  const input = ckBody.querySelector(`.ck-add[data-g="${gid}"]`);
+  const g = state.checklist.find(x => x.id === gid);
+  if (!input || !g) return;
+  const title = input.value.trim();
+  if (!title) { input.focus(); return; }
+  g.tasks.push({ id: uid(), title, done: false, due: "", created: Date.now() });
+  ckRefresh(gid);
+}
+
+function openNameModal(title, label, placeholder, value, okLabel, cb) {
+  openModal(title, `
+    <label class="fld">${label}
+      <input id="nmIn" placeholder="${esc(placeholder)}" value="${esc(value)}" autocomplete="off">
+    </label>
+    <button class="btn primary wide" id="nmOk">${okLabel}</button>`);
+  const i = document.getElementById("nmIn");
+  i.focus(); i.select();
+  const go = () => { const v = i.value.trim(); if (!v) { toast("Enter a name"); return; } cb(v); };
+  document.getElementById("nmOk").addEventListener("click", go);
+  i.addEventListener("keydown", e => { if (e.key === "Enter") go(); });
+}
+
+function openTaskEditModal(id) {
+  const t = findTask(id), cur = taskSection(id);
+  if (!t) return;
+  const tl = templateLinks().get(id);
+  openModal("Edit task", `
+    <label class="fld">Task
+      <input id="tkTitle" value="${esc(t.title)}" autocomplete="off">
+    </label>
+    <label class="fld">Section
+      <select id="tkSec">${state.checklist.map(g => `<option value="${esc(g.id)}" ${g.id === cur.id ? "selected" : ""}>${esc(g.name)}</option>`).join("")}</select>
+    </label>
+    <label class="fld">Due date <span class="opt">— optional</span>
+      <input id="tkDue" type="date" value="${esc(t.due || "")}">
+    </label>
+    ${tl ? `<p class="hint">Topic in template${tl.length > 1 ? "s" : ""}: ${esc(tl.join(", "))}. Finishing that block checks this task off.</p>` : ""}
+    <button class="btn primary wide" id="tkSave">Save changes</button>`);
+  document.getElementById("tkTitle").focus();
+  document.getElementById("tkSave").addEventListener("click", () => {
+    const title = document.getElementById("tkTitle").value.trim();
+    if (!title) { toast("Enter a task"); return; }
+    t.title = title;
+    t.due = document.getElementById("tkDue").value || "";
+    const to = state.checklist.find(g => g.id === document.getElementById("tkSec").value);
+    if (to && to.id !== cur.id) {
+      cur.tasks = cur.tasks.filter(x => x.id !== id);
+      to.tasks.push(t);
+    }
+    closeModal(); ckRefresh();
+    toast("Task updated");
+  });
+}
+
+/* Turn tasks into topics (blocks) of a template */
+function openTaskToTemplateModal(preIds) {
+  const open = state.checklist.map(g => ({ g, tasks: g.tasks.filter(t => !t.done) })).filter(x => x.tasks.length);
+  if (!open.length) { toast("No open tasks to add"); return; }
+  const pre = new Set(preIds || []);
+  const hasTpl = state.templateGroups.some(g => g.templates.length);
+  const targets = state.templateGroups.filter(g => g.templates.length).map(g =>
+    `<optgroup label="${esc(g.name)}">${g.templates.map(t => `<option value="${esc(t.id)}">${esc(t.title)}</option>`).join("")}</optgroup>`).join("");
+
+  openModal("Add tasks to a template", `
+    <p class="hint">Each task becomes a topic (block) in the template. When you finish that block in a session, the task is checked off.</p>
+    <div class="ck-pick" id="ttList">
+      ${open.map(({ g, tasks }) => `<div class="ck-sech">${esc(g.name)}</div>${tasks.map(t => `
+        <label class="ck-pk"><input type="checkbox" value="${esc(t.id)}" ${pre.has(t.id) ? "checked" : ""}><span>${esc(t.title)}</span></label>`).join("")}`).join("")}
+    </div>
+    <label class="fld">Template
+      <select id="ttTarget">${targets}<option value="__new">＋ New template…</option></select>
+    </label>
+    <label class="fld" id="ttNewWrap" ${hasTpl ? "hidden" : ""}>New template name
+      <input id="ttNew" placeholder="e.g. Exam prep block" autocomplete="off">
+    </label>
+    <label class="fld">Minutes per block
+      <input id="ttMins" type="number" min="1" max="300" value="${state.settings.focus}">
+    </label>
+    <button class="btn primary wide" id="ttGo">Add to template</button>`);
+
+  const $t = document.getElementById("ttTarget"), $w = document.getElementById("ttNewWrap");
+  if (!hasTpl) $t.value = "__new";
+  $t.addEventListener("change", () => { $w.hidden = $t.value !== "__new"; if (!$w.hidden) document.getElementById("ttNew").focus(); });
+
+  document.getElementById("ttGo").addEventListener("click", () => {
+    const ids = [...document.querySelectorAll("#ttList input:checked")].map(i => i.value);
+    if (!ids.length) { toast("Pick at least one task"); return; }
+    const mins = Math.max(1, Math.min(300, Math.round(+document.getElementById("ttMins").value) || state.settings.focus));
+    const order = state.checklist.flatMap(g => g.tasks).map(t => t.id);
+    const tasks = ids.sort((a, b) => order.indexOf(a) - order.indexOf(b)).map(findTask).filter(Boolean);
+
+    let tpl;
+    if ($t.value === "__new") {
+      if (!state.templateGroups.length) state.templateGroups.push({ id: uid(), name: "General", templates: [] });
+      tpl = { id: uid(), title: document.getElementById("ttNew").value.trim() || "Checklist tasks", blocks: [],
+              resources: [], days: [], daysSince: "", window: null, created: Date.now() };
+      state.templateGroups[0].templates.push(tpl);
+    } else {
+      tpl = findTemplate($t.value);
+    }
+    if (!tpl) { toast("Template not found"); return; }
+
+    let added = 0, skipped = 0;
+    tasks.forEach(t => {
+      if (tpl.blocks.some(b => b.taskId === t.id)) { skipped++; return; }
+      tpl.blocks.push({ topic: t.title, minutes: mins, days: [], taskId: t.id });
+      added++;
+    });
+    save();
+    closeModal();
+    renderTemplates();
+    renderPlan();
+    toast(added ? `Added ${added} topic${added !== 1 ? "s" : ""} to "${tpl.title}"${skipped ? ` (${skipped} already there)` : ""}`
+                : "Those tasks are already in that template");
+  });
+}
+
+ckBody.addEventListener("click", e => {
+  const el = e.target.closest("[data-act]");
+  if (!el) return;
+  const act = el.dataset.act;
+  const sec = el.closest("[data-g].ck-sec");
+  const g = sec ? state.checklist.find(x => x.id === sec.dataset.g) : null;
+  const row = el.closest(".ck-row");
+  const tid = row ? row.dataset.t : null;
+
+  if (act === "ck-toggle") return;               // handled on change
+  if (act === "ck-hide") { state.ui.ckHideDone = !state.ui.ckHideDone; save(); renderChecklist(); return; }
+  if (act === "ck-newsec") {
+    openNameModal("New section", "Section name", "e.g. Exam prep", "", "Create section", name => {
+      state.checklist.push({ id: uid(), name, collapsed: false, tasks: [] });
+      closeModal(); ckRefresh(); toast("Section created");
+    });
+    return;
+  }
+  if (act === "ck-add") { addTaskTo(el.dataset.g); return; }
+  if (act === "ck-io") { openChecklistIOModal(); return; }
+  if (!g) return;
+  if (act === "ck-fold") { g.collapsed = !g.collapsed; save(); renderChecklist(); return; }
+  if (act === "ck-rename") {
+    openNameModal("Rename section", "Section name", "Section name", g.name, "Save", name => {
+      g.name = name; closeModal(); ckRefresh();
+    });
+    return;
+  }
+  if (act === "ck-delsec") {
+    if (!confirm(`Delete section "${g.name}" and its ${g.tasks.length} task${g.tasks.length !== 1 ? "s" : ""}?`)) return;
+    unlinkTasks(g.tasks.map(t => t.id));
+    state.checklist = state.checklist.filter(x => x.id !== g.id);
+    ckRefresh(); renderTemplates(); toast("Section deleted");
+    return;
+  }
+  if (act === "ck-sectpl") {
+    openTaskToTemplateModal(g.tasks.filter(t => !t.done).map(t => t.id));
+    return;
+  }
+  if (!tid) return;
+  if (act === "ck-tpl")  { openTaskToTemplateModal([tid]); return; }
+  if (act === "ck-edit") { openTaskEditModal(tid); return; }
+  if (act === "ck-del") {
+    const linked = templateLinks().get(tid);
+    if (linked && !confirm(`This task is a topic in: ${linked.join(", ")}.\nThe blocks keep their text but stop being linked. Delete it?`)) return;
+    unlinkTasks([tid]);
+    g.tasks = g.tasks.filter(t => t.id !== tid);
+    ckRefresh(); renderTemplates();
+  }
+});
+
+ckBody.addEventListener("change", e => {
+  const cb = e.target.closest("[data-act='ck-toggle']");
+  if (!cb) return;
+  const row = cb.closest(".ck-row");
+  const t = row && findTask(row.dataset.t);
+  if (!t) return;
+  t.done = cb.checked;
+  t.doneAt = cb.checked ? Date.now() : 0;
+  ckRefresh();
+});
+
+ckBody.addEventListener("keydown", e => {
+  if (e.key === "Enter" && e.target.classList.contains("ck-add")) {
+    e.preventDefault();
+    addTaskTo(e.target.dataset.g);
+  }
+});
+
+/* ---------- CHECKLIST IMPORT / EXPORT (CSV + JSON) ---------- */
+const CK_CSV_TEMPLATE =
+`section,task,done,due
+Exam prep,Read chapter 4,no,2026-11-10
+Exam prep,Solve a past paper,no,
+Admin,Book the exam slot,yes,
+Admin,Print study notes,no,2026-11-05`;
+
+const CK_JSON_TEMPLATE =
+`{
+  "sections": [
+    {
+      "name": "Exam prep",
+      "tasks": [
+        { "title": "Read chapter 4", "due": "2026-11-10" },
+        { "title": "Solve a past paper", "done": false }
+      ]
+    },
+    {
+      "name": "Admin",
+      "tasks": [ "Book the exam slot", "Print study notes" ]
+    }
+  ]
+}`;
+
+function ckParseDone(v) {
+  if (typeof v === "boolean") return v;
+  if (typeof v === "number") return v === 1;
+  return /^(1|true|yes|y|x|done|sim|s|ok|✓|✔|completed?|conclu[ií]d[oa]|feit[oa])$/i.test(String(v == null ? "" : v).trim());
+}
+function ckParseDue(v) {
+  const t = String(v == null ? "" : v).trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(t)) return t;
+  const m = t.match(/^(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{4})$/);       // day/month/year
+  if (m && +m[2] >= 1 && +m[2] <= 12 && +m[1] >= 1 && +m[1] <= 31)
+    return `${m[3]}-${String(m[2]).padStart(2, "0")}-${String(m[1]).padStart(2, "0")}`;
+  return "";
+}
+
+/* RFC-4180-ish CSV parser: quotes, escaped quotes, newlines inside quotes */
+function ckCsvRows(text, delim) {
+  const rows = []; let row = [], cur = "", q = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (q) {
+      if (c === '"') { if (text[i + 1] === '"') { cur += '"'; i++; } else q = false; }
+      else cur += c;
+    } else if (c === '"') q = true;
+    else if (c === delim) { row.push(cur); cur = ""; }
+    else if (c === "\n" || c === "\r") {
+      if (c === "\r" && text[i + 1] === "\n") i++;
+      row.push(cur); cur = "";
+      if (row.some(x => x.trim() !== "")) rows.push(row);
+      row = [];
+    } else cur += c;
+  }
+  row.push(cur);
+  if (row.some(x => x.trim() !== "")) rows.push(row);
+  return rows;
+}
+
+/* group flat {section, title, done, due} rows into sections, keeping order */
+function ckGroup(items) {
+  const out = [], idx = new Map();
+  const sec = name => {
+    const key = name.toLowerCase();
+    if (!idx.has(key)) { idx.set(key, { name, tasks: [] }); out.push(idx.get(key)); }
+    return idx.get(key);
+  };
+  items.forEach(it => {
+    const s = sec(it.section || "Tasks");
+    if (it.title) s.tasks.push({ title: it.title, done: !!it.done, due: it.due || "" });
+  });
+  return out;
+}
+
+function ckTaskFromJson(x) {
+  if (typeof x === "string") return { section: "", title: x.trim(), done: false, due: "" };
+  if (x && typeof x === "object") {
+    return { title: String(x.title ?? x.task ?? x.name ?? x.text ?? "").trim(),
+             done: ckParseDone(x.done ?? x.completed), due: ckParseDue(x.due ?? x.deadline ?? x.date ?? "") };
+  }
+  return null;
+}
+function ckSectionsFromJson(v) {
+  const mapSec = o => {
+    const name = String(o.name ?? o.title ?? o.section ?? o.group ?? "").trim() || "Tasks";
+    const list = Array.isArray(o.tasks) ? o.tasks : (Array.isArray(o.items) ? o.items : []);
+    return list.map(ckTaskFromJson).filter(Boolean).map(t => ({ ...t, section: name }))
+      .concat(list.length ? [] : [{ section: name, title: "" }]);
+  };
+  if (Array.isArray(v)) {
+    if (v.length && v.every(x => typeof x === "string")) return ckGroup(v.map(x => ({ section: "Tasks", title: x.trim() })));
+    if (v.some(x => x && typeof x === "object" && (Array.isArray(x.tasks) || Array.isArray(x.items)))) {
+      return ckGroup(v.filter(x => x && typeof x === "object").flatMap(mapSec));
+    }
+    return ckGroup(v.filter(x => x && typeof x === "object").map(r => ({   // flat rows
+      section: String(r.section ?? r.group ?? r.category ?? "").trim(),
+      title: String(r.title ?? r.task ?? r.name ?? "").trim(),
+      done: ckParseDone(r.done ?? r.completed), due: ckParseDue(r.due ?? r.deadline ?? "") })));
+  }
+  if (v && typeof v === "object") {
+    const arr = v.sections ?? v.checklist ?? v.groups;
+    if (Array.isArray(arr)) return ckSectionsFromJson(arr);
+    const keys = Object.keys(v).filter(k => Array.isArray(v[k]));
+    if (keys.length) return ckGroup(keys.flatMap(k => mapSec({ name: k, tasks: v[k] })));
+  }
+  return [];
+}
+
+function ckSectionsFromCsv(text) {
+  const first = text.split(/\r?\n/).find(l => l.trim()) || "";
+  const delim = [";", "\t", ","].map(d => [d, first.split(d).length]).sort((a, b) => b[1] - a[1])[0][0];
+  const rows = ckCsvRows(text, delim);
+  if (!rows.length) return [];
+  const ALIAS = {
+    section: ["section", "sections", "group", "category", "seção", "secao", "categoria", "grupo"],
+    title:   ["task", "tasks", "title", "name", "item", "tarefa", "tarefas", "titulo", "título"],
+    done:    ["done", "completed", "complete", "status", "concluída", "concluida", "concluído", "concluido", "feito"],
+    due:     ["due", "due date", "duedate", "deadline", "date", "prazo", "vencimento"]
+  };
+  const head = rows[0].map(c => c.trim().toLowerCase());
+  const col = {};
+  Object.entries(ALIAS).forEach(([k, names]) => { const i = head.findIndex(h => names.includes(h)); if (i >= 0) col[k] = i; });
+  let body = rows;
+  if (col.title !== undefined) body = rows.slice(1);
+  else if (rows[0].length >= 2) { col.section = 0; col.title = 1; col.done = 2; col.due = 3; }
+  else { col.title = 0; }
+  const get = (r, k) => (col[k] !== undefined && r[col[k]] !== undefined) ? r[col[k]].trim() : "";
+  let last = "";
+  const items = body.map(r => {
+    const sec = get(r, "section");
+    if (sec) last = sec;
+    return { section: sec || last, title: get(r, "title"), done: ckParseDone(get(r, "done")), due: ckParseDue(get(r, "due")) };
+  });
+  return ckGroup(items);
+}
+
+/* returns { sections, format, error } */
+function parseChecklistText(raw) {
+  const text = String(raw || "").replace(/^\uFEFF/, "").trim();
+  if (!text) return { sections: [], format: "", error: "" };
+  if (text[0] === "{" || text[0] === "[") {
+    try { return { sections: ckSectionsFromJson(JSON.parse(text)), format: "JSON", error: "" }; }
+    catch (e) { return { sections: [], format: "JSON", error: "That JSON isn't valid: " + e.message }; }
+  }
+  return { sections: ckSectionsFromCsv(text), format: "CSV", error: "" };
+}
+
+/* how many sections/tasks would be new vs already there */
+function ckImportStats(sections, replace) {
+  let newSec = 0, newTasks = 0, dupes = 0;
+  sections.forEach(s => {
+    const ex = replace ? null : state.checklist.find(g => g.name.trim().toLowerCase() === s.name.toLowerCase());
+    if (!ex) newSec++;
+    const have = new Set(ex ? ex.tasks.map(t => t.title.trim().toLowerCase()) : []);
+    s.tasks.forEach(t => {
+      const k = t.title.toLowerCase();
+      if (have.has(k)) dupes++; else { have.add(k); newTasks++; }
+    });
+  });
+  return { newSec, newTasks, dupes };
+}
+
+function applyChecklistImport(sections, replace) {
+  if (replace) {
+    unlinkTasks(state.checklist.flatMap(g => g.tasks.map(t => t.id)));
+    state.checklist = [];
+  }
+  sections.forEach(s => {
+    let g = state.checklist.find(x => x.name.trim().toLowerCase() === s.name.toLowerCase());
+    if (!g) { g = { id: uid(), name: s.name, collapsed: false, tasks: [] }; state.checklist.push(g); }
+    const have = new Set(g.tasks.map(t => t.title.trim().toLowerCase()));
+    s.tasks.forEach(t => {
+      const k = t.title.toLowerCase();
+      if (have.has(k)) return;
+      have.add(k);
+      g.tasks.push({ id: uid(), title: t.title, done: !!t.done, due: t.due || "", created: Date.now(), ...(t.done ? { doneAt: Date.now() } : {}) });
+    });
+  });
+}
+
+function ckExportRows() {
+  return state.checklist.flatMap(g => g.tasks.length
+    ? g.tasks.map(t => ({ section: g.name, title: t.title, done: t.done, due: t.due || "" }))
+    : [{ section: g.name, title: "", done: false, due: "" }]);
+}
+function ckExportCsv() {
+  const q = v => /[",;\n\r]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v;
+  return "section,task,done,due\n" + ckExportRows().map(r => [q(r.section), q(r.title), r.done ? "yes" : "no", r.due].join(",")).join("\n");
+}
+function ckExportJson() {
+  return JSON.stringify({ sections: state.checklist.map(g => ({ name: g.name,
+    tasks: g.tasks.map(t => ({ title: t.title, done: t.done, ...(t.due ? { due: t.due } : {}) })) })) }, null, 2);
+}
+
+function downloadText(name, text, mime) {
+  try {
+    const blob = new Blob([text], { type: mime });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = name;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    return true;
+  } catch (e) { return false; }
+}
+async function copyText(text) {
+  try { await navigator.clipboard.writeText(text); return true; } catch (e) {}
+  try {
+    const ta = document.createElement("textarea");
+    ta.value = text; ta.style.position = "fixed"; ta.style.opacity = "0";
+    document.body.appendChild(ta); ta.select();
+    const ok = document.execCommand("copy"); ta.remove(); return ok;
+  } catch (e) { return false; }
+}
+/* read a file as text; tolerate Excel's Windows-1252 CSVs */
+function readFileText(file) {
+  return new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onerror = () => reject(new Error("read"));
+    r.onload = () => {
+      const buf = r.result;
+      try { resolve(new TextDecoder("utf-8", { fatal: true }).decode(buf)); }
+      catch (e) {
+        try { resolve(new TextDecoder("windows-1252").decode(buf)); }
+        catch (e2) { reject(e2); }
+      }
+    };
+    r.readAsArrayBuffer(file);
+  });
+}
+
+function openChecklistIOModal() {
+  openModal("Import / Export checklist", `
+    <p class="hint">Upload a <b>CSV</b> or <b>JSON</b> file with sections and tasks, or paste its contents below.</p>
+
+    <div class="bk-file">
+      <div class="bk-file-row">
+        <label class="btn bk-browse" for="ckFile">Browse…</label>
+        <span class="bk-fname" id="ckFileName">No file selected</span>
+      </div>
+      <input type="file" id="ckFile" class="bk-file-in" accept=".csv,.json,.txt,text/csv,application/json,text/plain,*/*">
+    </div>
+
+    <textarea id="ckText" rows="5" spellcheck="false" placeholder="…or paste CSV / JSON here"></textarea>
+    <div class="preview" id="ckPrev"></div>
+
+    <label class="fld">When importing
+      <select id="ckMode">
+        <option value="add">Add to my checklist (skips tasks already there)</option>
+        <option value="replace">Replace my whole checklist</option>
+      </select>
+    </label>
+    <button class="btn primary wide" id="ckGo" disabled>Import</button>
+
+    <div class="ck-ioacts">
+      <button class="btn sm" type="button" id="ckShowTpl" aria-expanded="false">Show template</button>
+      <button class="btn sm" type="button" id="ckExpCsv" ${state.checklist.length ? "" : "disabled"}>Export CSV</button>
+      <button class="btn sm" type="button" id="ckExpJson" ${state.checklist.length ? "" : "disabled"}>Export JSON</button>
+    </div>
+
+    <div class="ck-tplbox" id="ckTpl" hidden>
+      <h4>CSV template</h4>
+      <pre>${esc(CK_CSV_TEMPLATE)}</pre>
+      <div class="ck-tplrow">
+        <button class="btn sm" type="button" data-tpl="csv-copy">Copy</button>
+        <button class="btn sm" type="button" data-tpl="csv-dl">Download .csv</button>
+        <button class="btn sm" type="button" data-tpl="csv-use">Edit here</button>
+      </div>
+      <p class="hint" style="margin:8px 0 0"><code>done</code> (yes/no) and <code>due</code> (YYYY-MM-DD or DD/MM/YYYY) are optional. A blank section reuses the one above. Files separated by <code>;</code> work too.</p>
+
+      <h4>JSON template</h4>
+      <pre>${esc(CK_JSON_TEMPLATE)}</pre>
+      <div class="ck-tplrow">
+        <button class="btn sm" type="button" data-tpl="json-copy">Copy</button>
+        <button class="btn sm" type="button" data-tpl="json-dl">Download .json</button>
+        <button class="btn sm" type="button" data-tpl="json-use">Edit here</button>
+      </div>
+      <p class="hint" style="margin:8px 0 0">Tasks can be plain text or objects with <code>title</code>, <code>done</code> and <code>due</code>.</p>
+    </div>
+  `);
+
+  const $text = document.getElementById("ckText"), $prev = document.getElementById("ckPrev"),
+        $go = document.getElementById("ckGo"), $mode = document.getElementById("ckMode");
+  let parsed = { sections: [] };
+
+  function refresh() {
+    parsed = parseChecklistText($text.value);
+    const replace = $mode.value === "replace";
+    if (parsed.error) { $prev.innerHTML = `<div class="prev-empty">${esc(parsed.error)}</div>`; $go.disabled = true; return; }
+    if (!parsed.sections.length) {
+      $prev.innerHTML = `<div class="prev-empty">${$text.value.trim() ? "No sections or tasks found — check the format with “Show template”" : "Nothing to import yet"}</div>`;
+      $go.disabled = true; return;
+    }
+    const st = ckImportStats(parsed.sections, replace);
+    const shown = parsed.sections.slice(0, 20);
+    $prev.innerHTML =
+      `<div class="prev-item"><b>${parsed.format} · ${st.newSec} new section${st.newSec !== 1 ? "s" : ""}, ${st.newTasks} new task${st.newTasks !== 1 ? "s" : ""}</b>
+         <span>${st.dupes ? st.dupes + " already there" : ""}</span></div>` +
+      shown.map(s => `<div class="prev-item"><b>${esc(s.name)}</b><span>${s.tasks.length} task${s.tasks.length !== 1 ? "s" : ""}</span></div>`).join("") +
+      (parsed.sections.length > shown.length ? `<div class="prev-more">… and ${parsed.sections.length - shown.length} more</div>` : "");
+    $go.disabled = !(st.newSec || st.newTasks);
+    $go.textContent = replace ? "Replace checklist" : "Import";
+  }
+
+  let t = null;
+  $text.addEventListener("input", () => { clearTimeout(t); t = setTimeout(refresh, 100); });
+  $mode.addEventListener("change", refresh);
+
+  document.getElementById("ckFile").addEventListener("change", async e => {
+    const f = e.target.files && e.target.files[0];
+    if (!f) return;
+    document.getElementById("ckFileName").textContent = f.name;
+    try { $text.value = await readFileText(f); }
+    catch (err) { toast("Could not read that file — try pasting its contents"); }
+    e.target.value = "";
+    refresh();
+  });
+
+  $go.addEventListener("click", () => {
+    if (!parsed.sections.length) return;
+    const replace = $mode.value === "replace";
+    if (replace && state.checklist.length && !confirm("Replace your whole checklist? Tasks linked to template topics will be unlinked.")) return;
+    const st = ckImportStats(parsed.sections, replace);
+    applyChecklistImport(parsed.sections, replace);
+    save();
+    closeModal();
+    renderPlan();
+    renderTemplates();
+    toast(`Imported ${st.newTasks} task${st.newTasks !== 1 ? "s" : ""} in ${parsed.sections.length} section${parsed.sections.length !== 1 ? "s" : ""}`);
+  });
+
+  document.getElementById("ckShowTpl").addEventListener("click", e => {
+    const box = document.getElementById("ckTpl");
+    box.hidden = !box.hidden;
+    e.target.textContent = box.hidden ? "Show template" : "Hide template";
+    e.target.setAttribute("aria-expanded", String(!box.hidden));
+    if (!box.hidden && box.scrollIntoView) box.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  });
+  document.getElementById("ckTpl").addEventListener("click", async e => {
+    const b = e.target.closest("[data-tpl]");
+    if (!b) return;
+    const [kind, act] = b.dataset.tpl.split("-");
+    const text = kind === "csv" ? CK_CSV_TEMPLATE : CK_JSON_TEMPLATE;
+    if (act === "copy") toast(await copyText(text) ? "Template copied" : "Select the text and copy it manually");
+    if (act === "use")  { $text.value = text; refresh(); $text.focus(); }
+    if (act === "dl") {
+      const ok = kind === "csv"
+        ? downloadText("checklist-template.csv", "\uFEFF" + CK_CSV_TEMPLATE + "\n", "text/csv")
+        : downloadText("checklist-template.json", CK_JSON_TEMPLATE + "\n", "application/json");
+      toast(ok ? "Template downloaded" : "Download blocked — use Copy instead");
+    }
+  });
+  document.getElementById("ckExpCsv").addEventListener("click", () =>
+    toast(downloadText("checklist.csv", "\uFEFF" + ckExportCsv() + "\n", "text/csv") ? "Checklist exported" : "Download blocked — copy from Export JSON/paste box instead"));
+  document.getElementById("ckExpJson").addEventListener("click", () =>
+    toast(downloadText("checklist.json", ckExportJson() + "\n", "application/json") ? "Checklist exported" : "Download blocked"));
+}
+
+/* ----- template editor helpers: link a block to a task ----- */
+function blockLinkMarkup(taskId) {
+  return `
+    <div class="bt">
+      <button class="btn sm" type="button" data-act="bt-pick" title="Use a task from your checklist as this topic">☑ Pick from checklist</button>
+      <span class="bt-state">${linkStateHtml(taskId)}</span>
+    </div>
+    <div class="bt-list" hidden></div>`;
+}
+function linkStateHtml(taskId) {
+  const t = taskId && findTask(taskId);
+  return t ? `Linked to <b>${esc(t.title)}</b> <button class="bt-unlink" type="button" data-act="bt-unlink">unlink</button>` : "";
+}
+function refreshRowLink(row) {
+  row.querySelector(".bt-state").innerHTML = linkStateHtml(row.dataset.taskId);
+}
+function toggleTaskPicker(row) {
+  const list = row.querySelector(".bt-list");
+  if (!list.hidden) { list.hidden = true; return; }
+  const open = state.checklist.map(g => ({ g, tasks: g.tasks.filter(t => !t.done) })).filter(x => x.tasks.length);
+  list.innerHTML = open.length
+    ? open.map(({ g, tasks }) => `<div class="ck-sech">${esc(g.name)}</div>${tasks.map(t =>
+        `<button class="bt-item" type="button" data-act="bt-item" data-task="${esc(t.id)}">${esc(t.title)}</button>`).join("")}`).join("")
+    : `<div class="pick-empty">No open tasks. Add some in Plan → Checklist first.</div>`;
+  list.hidden = false;
+}
 
 /* ---------- HISTORY & ACTIVITY LOG ---------- */
 const historyBody = $("#historyBody");
@@ -4535,7 +5480,7 @@ function openImportModal(kind) {
         group.templates.push({
           id: uid(),
           title: s.title,
-          blocks: s.blocks.map(b => ({ topic: b.topic, minutes: b.minutes })),
+          blocks: s.blocks.map(b => cpBlock(b)),
           resources: [],
           created: Date.now()
         });
@@ -4649,6 +5594,7 @@ renderDashboard();
 renderPlan();
 renderHistory();
 updateTimerUI();
+updateBackupNudge();
 
 })();
 </script>
