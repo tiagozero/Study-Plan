@@ -298,6 +298,25 @@
   .wp-status.over{color:var(--danger)}
 
   .block-editor{display:flex;flex-direction:column;gap:6px;max-height:340px;overflow:auto;padding:2px;overscroll-behavior:contain}
+  /* history */
+  .tabs{overflow-x:auto;scrollbar-width:none}
+  .tabs::-webkit-scrollbar{display:none}
+  .tabs button{white-space:nowrap;padding-left:10px;padding-right:10px}
+  .h-filters{display:grid;grid-template-columns:1fr 150px;gap:8px;margin-bottom:12px}
+  .h-filters input,.h-filters select{margin-top:0}
+  @media(max-width:480px){ .h-filters{grid-template-columns:1fr} }
+  .h-sum{display:flex;gap:14px;flex-wrap:wrap;font-size:12.5px;color:var(--muted);margin-bottom:6px}
+  .h-sum b{color:var(--text);font-weight:600}
+  .h-day{margin-top:16px}
+  .h-day-head{display:flex;justify-content:space-between;align-items:baseline;padding:0 2px 6px;border-bottom:1px solid var(--border);font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;font-weight:600}
+  .h-day-head b{color:var(--text);font-weight:600;letter-spacing:0;text-transform:none;font-size:12.5px}
+  .h-row{display:grid;grid-template-columns:52px minmax(0,1fr) auto auto auto;gap:8px;align-items:center;padding:9px 2px;border-bottom:1px solid var(--border)}
+  .h-time{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+  .h-title{font-size:14px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .h-sub{font-size:12px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .h-min{font-size:13px;font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .h-more{display:block;margin:14px auto 0}
+  .qchips{display:flex;gap:6px;flex-wrap:wrap;margin:-4px 0 12px}
   .block-row{display:grid;grid-template-columns:1fr 78px 30px;gap:6px;align-items:center}
   .block-row input{margin-top:0;padding:7px 9px;font-size:13.5px}
   .block-row .icon-btn{width:28px;height:28px}
@@ -650,6 +669,7 @@
         <button data-tab="sessions"  role="tab" class="on">Sessions</button>
         <button data-tab="plan"      role="tab">Plan</button>
         <button data-tab="dashboard" role="tab">Dashboard</button>
+        <button data-tab="history"   role="tab">History</button>
         <button data-tab="resources" role="tab">Resources</button>
         <button data-tab="templates" role="tab">Templates</button>
       </div>
@@ -660,6 +680,7 @@
           <div class="sec-actions">
             <button class="btn" id="importBtn">Import</button>
             <button class="btn" id="overviewBtn" hidden>Overview</button>
+            <button class="btn" id="logBtnSessions">Log activity</button>
             <button class="btn" id="addWindowBtn">Time window</button>
             <button class="btn primary" id="addBtn">+ New</button>
           </div>
@@ -696,6 +717,30 @@
           </div>
         </div>
         <div id="dashBody"></div>
+      </section>
+
+      <section class="card tab-panel" data-panel="history" role="tabpanel" hidden>
+        <div class="sec-head">
+          <h2>History</h2>
+          <div class="sec-actions">
+            <div class="seg sm" id="histSeg">
+              <button data-range="day">Today</button>
+              <button data-range="week" class="on">7 days</button>
+              <button data-range="month">30 days</button>
+              <button data-range="all">All</button>
+            </div>
+            <button class="btn primary" id="logBtn">+ Log activity</button>
+          </div>
+        </div>
+        <div class="h-filters">
+          <input id="histSearch" type="search" placeholder="Search activity, topic or note" autocomplete="off">
+          <select id="histSource" aria-label="Filter by source">
+            <option value="all">All entries</option>
+            <option value="timer">From timer</option>
+            <option value="manual">Logged manually</option>
+          </select>
+        </div>
+        <div id="historyBody"></div>
       </section>
 
       <section class="card tab-panel" data-panel="resources" role="tabpanel" hidden>
@@ -758,7 +803,7 @@
 const KEY = "studyplan.v1";
 const TIMER_KEY = "studyplan.timer.v1";
 const BASE_TITLE = "Study Plan";
-const TABS = ["sessions", "plan", "dashboard", "resources", "templates"];
+const TABS = ["sessions", "plan", "dashboard", "history", "resources", "templates"];
 const DAY = 86400000;
 const BACKUP_VERSION = 1;
 const $ = (s, r = document) => r.querySelector(s);
@@ -771,6 +816,7 @@ let state = {
     hideResForm: false,
     dashRange: "week",
     planRange: "week",
+    histRange: "week",
     planAnchor: null
   },
   settings: { mode: "pomodoro", focus: 25, short: 5, long: 15, longEvery: 4 },
@@ -860,6 +906,7 @@ function load() {
   if (!TABS.includes(state.ui.tab)) state.ui.tab = "sessions";
   if (!["day", "week", "month", "all"].includes(state.ui.dashRange)) state.ui.dashRange = "week";
   if (!["day", "week", "month"].includes(state.ui.planRange)) state.ui.planRange = "week";
+  if (!["day", "week", "month", "all"].includes(state.ui.histRange)) state.ui.histRange = "week";
   if (!state.ui.planAnchor) state.ui.planAnchor = dateKey(new Date());
   if (typeof state.lastBackup !== "number") state.lastBackup = null;
 
@@ -901,6 +948,15 @@ function normalise() {
     });
   });
   if (!state.recurLog || typeof state.recurLog !== "object") state.recurLog = {};
+  state.history = state.history.filter(h => h && typeof h.ts === "number" && isFinite(h.ts) && typeof h.minutes === "number" && h.minutes > 0);
+  state.history.forEach(h => {
+    if (!h.id) h.id = uid();
+    if (typeof h.sessionTitle !== "string") h.sessionTitle = "";
+    if (typeof h.topic !== "string") h.topic = "";
+    if (typeof h.note !== "string") h.note = "";
+    if (!h.sessionId) h.sessionId = h.manual ? "manual:" + h.sessionTitle.toLowerCase() : "unknown";
+  });
+  state.history.sort((a, b) => a.ts - b.ts);
   state.sessions.forEach(tagLegacyWindowBlocks);
   state.plans.forEach(p => {
     if (!Array.isArray(p.blocks)) p.blocks = [];
@@ -1065,6 +1121,7 @@ function setTab(tab) {
 
   if (tab === "dashboard") renderDashboard();
   if (tab === "plan") renderPlan();
+  if (tab === "history") renderHistory();
 }
 
 tabBar.addEventListener("click", e => {
@@ -1109,6 +1166,7 @@ function beep(freq = 660, dur = 0.45) {
 function logStudy(minutes, session, block) {
   if (!minutes || minutes < 0.05) return;
   state.history.push({
+    id: uid(),
     ts: Date.now(),
     minutes: Math.round(minutes * 100) / 100,
     sessionId: session.id,
@@ -1118,6 +1176,7 @@ function logStudy(minutes, session, block) {
   if (state.history.length > 8000) state.history = state.history.slice(-8000);
   save();
   if (state.ui.tab === "dashboard") renderDashboard();
+  if (state.ui.tab === "history") renderHistory();
 }
 
 /* ---------- TIMER CORE ---------- */
@@ -1982,7 +2041,8 @@ function importBackupFile(file) {
       state.settings = { ...state.settings, ...data.settings };
     }
     if (data.ui && typeof data.ui === "object") {
-      const { tab, hideResForm, dashRange, planRange } = data.ui;
+      const { tab, hideResForm, dashRange, planRange, histRange } = data.ui;
+      if (["day", "week", "month", "all"].includes(histRange)) state.ui.histRange = histRange;
       if (TABS.includes(tab)) state.ui.tab = tab;
       if (typeof hideResForm === "boolean") state.ui.hideResForm = hideResForm;
       if (["day", "week", "month", "all"].includes(dashRange)) state.ui.dashRange = dashRange;
@@ -3427,7 +3487,8 @@ function addPlanFromSource(kind, id, dateStr) {
   } else {
     const t = findTemplate(id); if (!t) return;
     title = t.title;
-    blocks = t.blocks.map(b => ({ topic: b.topic, minutes: b.minutes }));
+    const dayBlocks = blocksForDay(t.blocks, dowOfKey(dateStr));
+    blocks = (dayBlocks.length ? dayBlocks : t.blocks).map(b => ({ topic: b.topic, minutes: b.minutes }));
     resources = [...(t.resources || [])];
     win = copyWindow(t.window);
     tplId = t.id;
@@ -3909,7 +3970,7 @@ function renderDashboard() {
 
   if (!state.history.length) {
     dashBody.innerHTML =
-      `<div class="empty">No study data yet.<br>Finish a focus block and your stats will appear here.</div>`;
+      `<div class="empty">No study data yet.<br>Finish a focus block or log an activity and your stats will appear here.</div>`;
     return;
   }
 
@@ -4019,6 +4080,201 @@ dashSeg.addEventListener("click", e => {
   save();
   renderDashboard();
 });
+
+/* ---------- HISTORY & ACTIVITY LOG ---------- */
+const historyBody = $("#historyBody");
+const histSeg     = $("#histSeg");
+const histSearch  = $("#histSearch");
+const histSource  = $("#histSource");
+let histLimit = 100;
+
+const fmtHM = ts => new Date(ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+function fmtDayHead(key) {
+  const t = dayKey(Date.now()), y = dayKey(Date.now() - DAY);
+  if (key === t) return "Today";
+  if (key === y) return "Yesterday";
+  const d = new Date(key + "T00:00:00");
+  const opts = { weekday: "short", day: "numeric", month: "short" };
+  if (d.getFullYear() !== new Date().getFullYear()) opts.year = "numeric";
+  return d.toLocaleDateString(undefined, opts);
+}
+
+function renderHistory() {
+  [...histSeg.children].forEach(b => b.classList.toggle("on", b.dataset.range === state.ui.histRange));
+
+  if (!state.history.length) {
+    historyBody.innerHTML = `<div class="empty">Nothing here yet.<br>Finish a focus block, or log an activity you did away from the timer.</div>`;
+    return;
+  }
+
+  const [start, end] = rangeBounds(state.ui.histRange);
+  const q = histSearch.value.trim().toLowerCase();
+  const src = histSource.value;
+
+  const list = state.history
+    .filter(h => h.ts >= start && h.ts < end)
+    .filter(h => src === "all" || (src === "manual" ? !!h.manual : !h.manual))
+    .filter(h => !q || `${h.sessionTitle} ${h.topic} ${h.note}`.toLowerCase().includes(q))
+    .sort((a, b) => b.ts - a.ts);
+
+  if (!list.length) {
+    historyBody.innerHTML = `<div class="empty">No entries match these filters.</div>`;
+    return;
+  }
+
+  const total = list.reduce((a, h) => a + h.minutes, 0);
+  const dayCount = new Set(list.map(h => dayKey(h.ts))).size;
+  const shown = list.slice(0, histLimit);
+
+  const groups = new Map();
+  shown.forEach(h => {
+    const k = dayKey(h.ts);
+    if (!groups.has(k)) groups.set(k, []);
+    groups.get(k).push(h);
+  });
+
+  const daysHtml = [...groups.entries()].map(([k, items]) => {
+    const sum = list.filter(h => dayKey(h.ts) === k).reduce((a, h) => a + h.minutes, 0);
+    return `
+      <div class="h-day">
+        <div class="h-day-head"><span>${esc(fmtDayHead(k))}</span><b>${fmtDur(sum)}</b></div>
+        ${items.map(h => {
+          const sub = [h.topic, h.note].filter(Boolean).join(" · ");
+          return `
+          <div class="h-row" data-id="${esc(h.id)}">
+            <div class="h-time">${fmtHM(h.ts)}</div>
+            <div>
+              <div class="h-title">${esc(h.sessionTitle || "Untitled")}${h.manual ? `<span class="rec-badge" title="Logged manually">Logged</span>` : ""}</div>
+              ${sub ? `<div class="h-sub" title="${esc(sub)}">${esc(sub)}</div>` : ""}
+            </div>
+            <div class="h-min">${fmtDur(h.minutes)}</div>
+            <button class="icon-btn sm" data-act="h-edit" title="Edit entry" aria-label="Edit entry">✎</button>
+            <button class="icon-btn sm" data-act="h-del" title="Delete entry" aria-label="Delete entry">✕</button>
+          </div>`;
+        }).join("")}
+      </div>`;
+  }).join("");
+
+  historyBody.innerHTML = `
+    <div class="h-sum">
+      <span><b>${fmtDur(total)}</b> total</span>
+      <span><b>${list.length}</b> entr${list.length !== 1 ? "ies" : "y"}</span>
+      <span><b>${dayCount}</b> day${dayCount !== 1 ? "s" : ""}</span>
+    </div>
+    ${daysHtml}
+    ${list.length > shown.length ? `<button class="btn h-more" data-act="h-more">Show more (${list.length - shown.length} left)</button>` : ""}`;
+}
+
+function refreshHistoryViews() {
+  renderHistory();
+  if (state.ui.tab === "dashboard") renderDashboard();
+}
+
+historyBody.addEventListener("click", e => {
+  const btn = e.target.closest("[data-act]");
+  if (!btn) return;
+  if (btn.dataset.act === "h-more") { histLimit += 100; renderHistory(); return; }
+  const row = btn.closest("[data-id]");
+  const h = row && state.history.find(x => x.id === row.dataset.id);
+  if (!h) return;
+  if (btn.dataset.act === "h-edit") openLogModal(h.id);
+  else if (btn.dataset.act === "h-del") {
+    if (!confirm(`Delete "${h.sessionTitle || "Untitled"}" (${fmtDur(h.minutes)})?`)) return;
+    state.history = state.history.filter(x => x.id !== h.id);
+    save(); refreshHistoryViews();
+    toast("Entry deleted");
+  }
+});
+
+histSeg.addEventListener("click", e => {
+  const b = e.target.closest("button[data-range]");
+  if (!b || state.ui.histRange === b.dataset.range) return;
+  state.ui.histRange = b.dataset.range;
+  histLimit = 100;
+  save(); renderHistory();
+});
+let histTimer = null;
+histSearch.addEventListener("input", () => { clearTimeout(histTimer); histTimer = setTimeout(() => { histLimit = 100; renderHistory(); }, 120); });
+histSource.addEventListener("change", () => { histLimit = 100; renderHistory(); });
+
+/* Log an activity done away from the timer, or edit an existing history entry */
+function openLogModal(editId) {
+  const h = editId ? state.history.find(x => x.id === editId) : null;
+  const when = h ? new Date(h.ts) : new Date();
+  const dateVal = dayKey(when.getTime());
+  const timeVal = `${String(when.getHours()).padStart(2, "0")}:${String(when.getMinutes()).padStart(2, "0")}`;
+
+  const titles = [...new Set([...state.history.slice().reverse().map(x => x.sessionTitle), ...state.sessions.map(x => x.title)].filter(Boolean))].slice(0, 40);
+  const topics = [...new Set(state.history.slice().reverse().map(x => x.topic).filter(Boolean))].slice(0, 40);
+
+  openModal(h ? "Edit entry" : "Log activity", `
+    <p class="hint">${h
+      ? (h.manual ? "Update this logged activity." : "This entry was recorded by the timer. You can correct its details.")
+      : "Add study time you did away from the timer. It counts toward your dashboard and streak."}</p>
+    <label class="fld">Activity
+      <input id="lgTitle" list="lgTitles" placeholder="e.g. Reading, Lecture, Practice exam" value="${esc(h ? h.sessionTitle : "")}" autocomplete="off">
+      <datalist id="lgTitles">${titles.map(t => `<option value="${esc(t)}">`).join("")}</datalist>
+    </label>
+    <label class="fld">Topic <span class="opt">— optional</span>
+      <input id="lgTopic" list="lgTopics" placeholder="e.g. Chapter 4" value="${esc(h ? h.topic : "")}" autocomplete="off">
+      <datalist id="lgTopics">${topics.map(t => `<option value="${esc(t)}">`).join("")}</datalist>
+    </label>
+    <label class="fld">Minutes
+      <input id="lgMins" type="number" min="1" max="1440" value="${h ? Math.round(h.minutes) || 1 : 30}">
+    </label>
+    <div class="qchips">
+      ${[15, 30, 45, 60, 90, 120].map(m => `<button class="btn sm" type="button" data-m="${m}">${m < 60 ? m + "m" : fmtDur(m)}</button>`).join("")}
+    </div>
+    <div class="two">
+      <label class="fld">Date <input id="lgDate" type="date" value="${dateVal}" max="${dayKey(Date.now())}"></label>
+      <label class="fld">Time <input id="lgTime" type="time" value="${timeVal}"></label>
+    </div>
+    <label class="fld">Note <span class="opt">— optional</span>
+      <textarea id="lgNote" rows="2" placeholder="What did you work on?" autocomplete="off">${esc(h ? h.note : "")}</textarea>
+    </label>
+    <button class="btn primary wide" id="lgSave">${h ? "Save changes" : "Log activity"}</button>
+  `);
+
+  const $mins = document.getElementById("lgMins");
+  document.querySelector(".qchips").addEventListener("click", e => {
+    const b = e.target.closest("[data-m]");
+    if (b) $mins.value = b.dataset.m;
+  });
+  document.getElementById("lgTitle").focus();
+
+  document.getElementById("lgSave").addEventListener("click", () => {
+    const title = document.getElementById("lgTitle").value.trim() || "Activity";
+    const topic = document.getElementById("lgTopic").value.trim();
+    const note  = document.getElementById("lgNote").value.trim();
+    const mins  = Math.round(+$mins.value);
+    if (!(mins >= 1)) { toast("Enter the minutes spent"); return; }
+    const m = Math.min(1440, mins);
+
+    const date = document.getElementById("lgDate").value || dayKey(Date.now());
+    const time = document.getElementById("lgTime").value || "12:00";
+    const ts = new Date(`${date}T${time}`).getTime();
+    if (!isFinite(ts)) { toast("Check the date and time"); return; }
+    if (ts > Date.now() + 60000) { toast("That time is in the future"); return; }
+
+    if (h) {
+      h.sessionTitle = title; h.topic = topic; h.note = note; h.ts = ts;
+      if (m !== Math.round(h.minutes)) h.minutes = m;
+      if (h.manual) h.sessionId = "manual:" + title.toLowerCase();
+    } else {
+      state.history.push({ id: uid(), ts, minutes: m, sessionId: "manual:" + title.toLowerCase(),
+                           sessionTitle: title, topic, note, manual: true });
+    }
+    state.history.sort((a, b) => a.ts - b.ts);
+    if (state.history.length > 8000) state.history = state.history.slice(-8000);
+    save();
+    closeModal();
+    refreshHistoryViews();
+    toast(h ? "Entry updated" : `Logged ${fmtDur(m)}`);
+  });
+}
+
+$("#logBtn").addEventListener("click", () => openLogModal(null));
+$("#logBtnSessions").addEventListener("click", () => openLogModal(null));
 
 /* ---------- IMPORT PARSER ---------- */
 function parseSessions(text) {
@@ -4391,6 +4647,7 @@ renderResources();
 renderTemplates();
 renderDashboard();
 renderPlan();
+renderHistory();
 updateTimerUI();
 
 })();
