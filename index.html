@@ -345,6 +345,43 @@
   .bt-item:hover{background:var(--surface-2)}
   #backupBtn{position:relative}
   #backupBtn.nudge::after{content:"";position:absolute;top:6px;right:6px;width:8px;height:8px;border-radius:50%;background:var(--warn);box-shadow:0 0 0 2px var(--surface)}
+  /* goals */
+  .goals .goal-row{margin:12px 0 14px}
+  .goal-top{display:flex;justify-content:space-between;gap:8px;font-size:13px;margin-bottom:5px}
+  .goal-top b{font-weight:600;font-variant-numeric:tabular-nums}
+  .goal-bar{height:8px;border-radius:99px;background:var(--surface-2);overflow:hidden}
+  .goal-bar i{display:block;height:100%;background:var(--accent);border-radius:99px;transition:width .25s}
+  .goal-row.met .goal-bar i{background:var(--break)}
+  .goal-row.met .goal-top b{color:var(--break)}
+  .goal-sub{font-size:11.5px;color:var(--muted);margin-top:4px}
+  /* history calendar */
+  .cal-head{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+  .cal-head .lbl{flex:1;text-align:center;font-weight:600;font-size:14px}
+  .cal-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px}
+  .cal-dow{font-size:11px;color:var(--muted);text-align:center;text-transform:uppercase;letter-spacing:.04em;padding:2px 0 4px}
+  .cal-cell{position:relative;overflow:hidden;min-height:62px;border:1px solid var(--border);border-radius:10px;background:var(--surface-2);color:var(--text);cursor:pointer;padding:5px 6px;text-align:left;display:flex;flex-direction:column;justify-content:space-between;transition:border-color .12s}
+  .cal-cell:hover{border-color:var(--muted)}
+  .cal-cell::before,.cal-sw::before{content:"";position:absolute;inset:0;background:var(--accent);opacity:0;pointer-events:none}
+  .cal-cell.l1::before,.cal-sw.l1::before{opacity:.14}
+  .cal-cell.l2::before,.cal-sw.l2::before{opacity:.3}
+  .cal-cell.l3::before,.cal-sw.l3::before{opacity:.5}
+  .cal-cell.l4::before,.cal-sw.l4::before{opacity:.92}
+  .cal-cell>span{position:relative}
+  .cal-num{font-size:12px;font-weight:500}
+  .cal-min{font-size:11px;font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .cal-ok{position:absolute!important;top:4px;right:6px;font-size:11px;font-weight:700}
+  .cal-cell.l4{color:var(--on-accent)}
+  .cal-cell.other{opacity:.45}
+  .cal-cell.future{opacity:.5}
+  .cal-cell.today{box-shadow:inset 0 0 0 2px var(--text)}
+  .cal-cell.sel{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent)}
+  .cal-cell.today.sel{box-shadow:0 0 0 2px var(--accent),inset 0 0 0 2px var(--text)}
+  @media(max-width:560px){ .cal-cell{min-height:48px;padding:4px} .cal-min{font-size:10px} .cal-grid{gap:3px} }
+  .cal-legend{display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--muted);margin:10px 0 2px;flex-wrap:wrap}
+  .cal-sw{display:inline-block;position:relative;overflow:hidden;width:14px;height:14px;border-radius:4px;border:1px solid var(--border);background:var(--surface-2)}
+  .cal-day{margin-top:14px;border-top:1px solid var(--border);padding-top:12px}
+  .cal-day-head{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:2px}
+  .cal-day-head b{font-size:14px}
   /* history */
   .tabs{overflow-x:auto;scrollbar-width:none}
   .tabs::-webkit-scrollbar{display:none}
@@ -787,6 +824,10 @@
         <div class="sec-head">
           <h2>History</h2>
           <div class="sec-actions">
+            <div class="seg sm" id="histViewSeg">
+              <button data-hview="list" class="on">List</button>
+              <button data-hview="calendar">Calendar</button>
+            </div>
             <div class="seg sm" id="histSeg">
               <button data-range="day">Today</button>
               <button data-range="week" class="on">7 days</button>
@@ -805,6 +846,7 @@
           </select>
         </div>
         <div id="historyBody"></div>
+        <div id="historyCal" hidden></div>
       </section>
 
       <section class="card tab-panel" data-panel="resources" role="tabpanel" hidden>
@@ -881,6 +923,7 @@ let state = {
     dashRange: "week",
     planRange: "week",
     histRange: "week",
+    histView: "list",
     planView: "calendar",
     ckHideDone: false,
     planAnchor: null
@@ -891,6 +934,7 @@ let state = {
   templates: [],
   templateGroups: [],
   checklist: [],
+  goals: { daily: 0, weekly: 0, streak: 0, streakMode: "any" },
   plans: [],
   recurLog: {},
   history: []
@@ -976,6 +1020,7 @@ function load() {
   if (!["day", "week", "month", "all"].includes(state.ui.histRange)) state.ui.histRange = "week";
   if (!["calendar", "checklist"].includes(state.ui.planView)) state.ui.planView = "calendar";
   state.ui.ckHideDone = !!state.ui.ckHideDone;
+  if (!["list", "calendar"].includes(state.ui.histView)) state.ui.histView = "list";
   if (!state.ui.planAnchor) state.ui.planAnchor = dateKey(new Date());
   if (typeof state.lastBackup !== "number") state.lastBackup = null;
 
@@ -1017,6 +1062,12 @@ function normalise() {
     });
   });
   if (!state.recurLog || typeof state.recurLog !== "object") state.recurLog = {};
+  {
+    const gl = (state.goals && typeof state.goals === "object") ? state.goals : {};
+    const n = (v, max) => Math.max(0, Math.min(max, Math.round(+v) || 0));
+    state.goals = { daily: n(gl.daily, 1440), weekly: n(gl.weekly, 10080), streak: n(gl.streak, 3650),
+                    streakMode: gl.streakMode === "goal" ? "goal" : "any" };
+  }
   if (!Array.isArray(state.checklist)) state.checklist = [];
   state.checklist = state.checklist.filter(g => g && typeof g === "object");
   state.checklist.forEach(g => {
@@ -1252,6 +1303,7 @@ function beep(freq = 660, dur = 0.45) {
 /* ---------- HISTORY ---------- */
 function logStudy(minutes, session, block) {
   if (!minutes || minutes < 0.05) return;
+  const before = goalSnapshot();
   state.history.push({
     id: uid(),
     ts: Date.now(),
@@ -1262,6 +1314,8 @@ function logStudy(minutes, session, block) {
   });
   if (state.history.length > 8000) state.history = state.history.slice(-8000);
   save();
+  const msg = milestoneMsg(before, goalSnapshot());
+  if (msg) toast(msg);
   if (state.ui.tab === "dashboard") renderDashboard();
   if (state.ui.tab === "history") renderHistory();
 }
@@ -2044,6 +2098,7 @@ function backupData() {
     resources: state.resources,
     templateGroups: state.templateGroups,
     checklist: state.checklist,
+    goals: state.goals,
     plans: state.plans,
     recurLog: state.recurLog,
     history: state.history
@@ -2118,6 +2173,7 @@ function sanitizeBackup(data) {
     recurLog:  (data.recurLog && typeof data.recurLog === "object" && !Array.isArray(data.recurLog)) ? data.recurLog : {},
     history:   objs(data.history),
     checklist: Array.isArray(data.checklist) ? objs(data.checklist).map(g => ({ ...g, tasks: objs(g.tasks) })) : null,
+    goals:     (data.goals && typeof data.goals === "object" && !Array.isArray(data.goals)) ? data.goals : null,
     settings:  (data.settings && typeof data.settings === "object") ? data.settings : null,
     ui:        (data.ui && typeof data.ui === "object") ? data.ui : null
   };
@@ -2131,6 +2187,7 @@ function applyBackupData(c) {
   state.recurLog       = c.recurLog;
   state.history        = c.history;
   if (c.checklist) state.checklist = c.checklist;
+  if (c.goals) state.goals = c.goals;
   if (c.settings) state.settings = { ...state.settings, ...c.settings };
   if (c.ui) {
     const { tab, hideResForm, dashRange, planRange, histRange } = c.ui;
@@ -4224,7 +4281,7 @@ function renderDashboard() {
   [...dashSeg.children].forEach(b => b.classList.toggle("on", b.dataset.range === range));
 
   if (!state.history.length) {
-    dashBody.innerHTML =
+    dashBody.innerHTML = goalsCardHtml() +
       `<div class="empty">No study data yet.<br>Finish a focus block or log an activity and your stats will appear here.</div>`;
     return;
   }
@@ -4272,6 +4329,7 @@ function renderDashboard() {
   const maxT = byTList.length ? byTList[0][1] : 1;
 
   dashBody.innerHTML = `
+    ${goalsCardHtml()}
     <div class="stat-grid">
       <div class="stat"><div class="stat-v">${total > 0 ? fmtDur(total) : "0m"}</div><div class="stat-l">Focus time</div></div>
       <div class="stat"><div class="stat-v">${blocks}</div><div class="stat-l">Blocks</div></div>
@@ -5044,7 +5102,47 @@ function fmtDayHead(key) {
   return d.toLocaleDateString(undefined, opts);
 }
 
+function histMatch(h) {
+  const q = histSearch.value.trim().toLowerCase();
+  const src = histSource.value;
+  if (src !== "all" && (src === "manual" ? !h.manual : !!h.manual)) return false;
+  return !q || `${h.sessionTitle} ${h.topic} ${h.note}`.toLowerCase().includes(q);
+}
+
+function histRowHtml(h) {
+  const sub = [h.topic, h.note].filter(Boolean).join(" · ");
+  return `
+    <div class="h-row" data-id="${esc(h.id)}">
+      <div class="h-time">${fmtHM(h.ts)}</div>
+      <div>
+        <div class="h-title">${esc(h.sessionTitle || "Untitled")}${h.manual ? `<span class="rec-badge" title="Logged manually">Logged</span>` : ""}</div>
+        ${sub ? `<div class="h-sub" title="${esc(sub)}">${esc(sub)}</div>` : ""}
+      </div>
+      <div class="h-min">${fmtDur(h.minutes)}</div>
+      <button class="icon-btn sm" data-act="h-edit" title="Edit entry" aria-label="Edit entry">✎</button>
+      <button class="icon-btn sm" data-act="h-del" title="Delete entry" aria-label="Delete entry">✕</button>
+    </div>`;
+}
+
+const histViewSeg = $("#histViewSeg");
+const historyCal  = $("#historyCal");
+function applyHistView() {
+  const v = state.ui.histView;
+  [...histViewSeg.children].forEach(b => b.classList.toggle("on", b.dataset.hview === v));
+  histSeg.hidden     = v !== "list";
+  historyBody.hidden = v !== "list";
+  historyCal.hidden  = v !== "calendar";
+}
+histViewSeg.addEventListener("click", e => {
+  const b = e.target.closest("button[data-hview]");
+  if (!b || state.ui.histView === b.dataset.hview) return;
+  state.ui.histView = b.dataset.hview;
+  save(); renderHistory();
+});
+
 function renderHistory() {
+  applyHistView();
+  if (state.ui.histView === "calendar") { renderHistoryCal(); return; }
   [...histSeg.children].forEach(b => b.classList.toggle("on", b.dataset.range === state.ui.histRange));
 
   if (!state.history.length) {
@@ -5058,8 +5156,7 @@ function renderHistory() {
 
   const list = state.history
     .filter(h => h.ts >= start && h.ts < end)
-    .filter(h => src === "all" || (src === "manual" ? !!h.manual : !h.manual))
-    .filter(h => !q || `${h.sessionTitle} ${h.topic} ${h.note}`.toLowerCase().includes(q))
+    .filter(histMatch)
     .sort((a, b) => b.ts - a.ts);
 
   if (!list.length) {
@@ -5083,20 +5180,7 @@ function renderHistory() {
     return `
       <div class="h-day">
         <div class="h-day-head"><span>${esc(fmtDayHead(k))}</span><b>${fmtDur(sum)}</b></div>
-        ${items.map(h => {
-          const sub = [h.topic, h.note].filter(Boolean).join(" · ");
-          return `
-          <div class="h-row" data-id="${esc(h.id)}">
-            <div class="h-time">${fmtHM(h.ts)}</div>
-            <div>
-              <div class="h-title">${esc(h.sessionTitle || "Untitled")}${h.manual ? `<span class="rec-badge" title="Logged manually">Logged</span>` : ""}</div>
-              ${sub ? `<div class="h-sub" title="${esc(sub)}">${esc(sub)}</div>` : ""}
-            </div>
-            <div class="h-min">${fmtDur(h.minutes)}</div>
-            <button class="icon-btn sm" data-act="h-edit" title="Edit entry" aria-label="Edit entry">✎</button>
-            <button class="icon-btn sm" data-act="h-del" title="Delete entry" aria-label="Delete entry">✕</button>
-          </div>`;
-        }).join("")}
+        ${items.map(histRowHtml).join("")}
       </div>`;
   }).join("");
 
@@ -5115,7 +5199,7 @@ function refreshHistoryViews() {
   if (state.ui.tab === "dashboard") renderDashboard();
 }
 
-historyBody.addEventListener("click", e => {
+function historyClick(e) {
   const btn = e.target.closest("[data-act]");
   if (!btn) return;
   if (btn.dataset.act === "h-more") { histLimit += 100; renderHistory(); return; }
@@ -5129,7 +5213,8 @@ historyBody.addEventListener("click", e => {
     save(); refreshHistoryViews();
     toast("Entry deleted");
   }
-});
+}
+historyBody.addEventListener("click", historyClick);
 
 histSeg.addEventListener("click", e => {
   const b = e.target.closest("button[data-range]");
@@ -5143,11 +5228,12 @@ histSearch.addEventListener("input", () => { clearTimeout(histTimer); histTimer 
 histSource.addEventListener("change", () => { histLimit = 100; renderHistory(); });
 
 /* Log an activity done away from the timer, or edit an existing history entry */
-function openLogModal(editId) {
+function openLogModal(editId, presetDate) {
   const h = editId ? state.history.find(x => x.id === editId) : null;
   const when = h ? new Date(h.ts) : new Date();
-  const dateVal = dayKey(when.getTime());
-  const timeVal = `${String(when.getHours()).padStart(2, "0")}:${String(when.getMinutes()).padStart(2, "0")}`;
+  let dateVal = dayKey(when.getTime());
+  let timeVal = `${String(when.getHours()).padStart(2, "0")}:${String(when.getMinutes()).padStart(2, "0")}`;
+  if (!h && presetDate && presetDate !== dayKey(Date.now())) { dateVal = presetDate; timeVal = "12:00"; }
 
   const titles = [...new Set([...state.history.slice().reverse().map(x => x.sessionTitle), ...state.sessions.map(x => x.title)].filter(Boolean))].slice(0, 40);
   const topics = [...new Set(state.history.slice().reverse().map(x => x.topic).filter(Boolean))].slice(0, 40);
@@ -5201,6 +5287,7 @@ function openLogModal(editId) {
     if (!isFinite(ts)) { toast("Check the date and time"); return; }
     if (ts > Date.now() + 60000) { toast("That time is in the future"); return; }
 
+    const before = goalSnapshot();
     if (h) {
       h.sessionTitle = title; h.topic = topic; h.note = note; h.ts = ts;
       if (m !== Math.round(h.minutes)) h.minutes = m;
@@ -5214,9 +5301,220 @@ function openLogModal(editId) {
     save();
     closeModal();
     refreshHistoryViews();
-    toast(h ? "Entry updated" : `Logged ${fmtDur(m)}`);
+    const ms = milestoneMsg(before, goalSnapshot());
+    toast(ms || (h ? "Entry updated" : `Logged ${fmtDur(m)}`));
   });
 }
+
+/* ---------- GOALS & STREAK TARGETS ---------- */
+function minutesByDay() {
+  const m = new Map();
+  state.history.forEach(h => { const k = dayKey(h.ts); m.set(k, (m.get(k) || 0) + h.minutes); });
+  return m;
+}
+const streakThreshold = () => (state.goals.streakMode === "goal" && state.goals.daily > 0) ? state.goals.daily : 0.01;
+
+function streakFrom(by, thr) {
+  let n = 0;
+  const cur = startOfDay(new Date());
+  if ((by.get(dateKey(cur)) || 0) < thr) cur.setDate(cur.getDate() - 1);   // today may still be in progress
+  while ((by.get(dateKey(cur)) || 0) >= thr) { n++; cur.setDate(cur.getDate() - 1); }
+  return n;
+}
+function bestStreakFrom(by, thr) {
+  const days = [...by.entries()].filter(([, m]) => m >= thr)
+    .map(([k]) => { const [y, mo, d] = k.split("-").map(Number); return Date.UTC(y, mo - 1, d) / DAY; })
+    .sort((a, b) => a - b);
+  let best = 0, run = 0, prev = null;
+  days.forEach(d => { run = (prev !== null && d - prev === 1) ? run + 1 : 1; if (run > best) best = run; prev = d; });
+  return best;
+}
+function goalSnapshot() {
+  const by = minutesByDay();
+  const wk = startOfWeek(new Date());
+  let week = 0, weekDays = 0;
+  for (let i = 0; i < 7; i++) { const m = by.get(dateKey(addDays(wk, i))) || 0; week += m; if (m > 0) weekDays++; }
+  const thr = streakThreshold();
+  return { day: by.get(dateKey(new Date())) || 0, week, weekDays,
+           streak: streakFrom(by, thr), best: bestStreakFrom(by, thr) };
+}
+function milestoneMsg(a, b) {
+  const g = state.goals;
+  if (g.streak > 0 && a.streak < g.streak && b.streak >= g.streak) return `🔥 Streak target reached: ${g.streak} day${g.streak !== 1 ? "s" : ""}!`;
+  if (g.weekly > 0 && a.week < g.weekly && b.week >= g.weekly) return "🎯 Weekly goal reached!";
+  if (g.daily > 0 && a.day < g.daily && b.day >= g.daily) return "🎯 Daily goal reached!";
+  return "";
+}
+
+function goalsCardHtml() {
+  const g = state.goals, sn = goalSnapshot();
+  const row = (label, valTxt, pct, sub, met) => `
+    <div class="goal-row ${met ? "met" : ""}">
+      <div class="goal-top"><span>${label}</span><b>${met ? "✓ " : ""}${valTxt}</b></div>
+      <div class="goal-bar"><i style="width:${Math.min(100, Math.round(pct))}%"></i></div>
+      ${sub ? `<div class="goal-sub">${sub}</div>` : ""}
+    </div>`;
+  const rows = [];
+  if (g.daily) rows.push(row("Today", `${fmtDur(sn.day)} / ${fmtDur(g.daily)}`, sn.day / g.daily * 100,
+    sn.day >= g.daily ? "Daily goal reached" : `${fmtDur(g.daily - sn.day)} to go`, sn.day >= g.daily));
+  if (g.weekly) rows.push(row("This week", `${fmtDur(sn.week)} / ${fmtDur(g.weekly)}`, sn.week / g.weekly * 100,
+    (sn.week >= g.weekly ? "Weekly goal reached" : `${fmtDur(g.weekly - sn.week)} to go`) + ` · ${sn.weekDays} active day${sn.weekDays !== 1 ? "s" : ""}`, sn.week >= g.weekly));
+  if (g.streak) rows.push(row("Streak target", `${sn.streak} / ${g.streak} days`, sn.streak / g.streak * 100,
+    (sn.streak >= g.streak ? "Target reached! Raise it in Set goals · " : "") + `Best streak ${sn.best} day${sn.best !== 1 ? "s" : ""}` +
+    (g.streakMode === "goal" && g.daily ? " · days hitting your daily goal" : ""), sn.streak >= g.streak));
+  return `
+    <div class="dash-block goals">
+      <div class="dash-head"><h3>Goals</h3><button class="btn sm" data-act="goals-edit">${rows.length ? "Edit goals" : "Set goals"}</button></div>
+      ${rows.length ? rows.join("") : `<div class="empty" style="padding:14px">Set a daily or weekly study goal and a streak target to track your progress.</div>`}
+    </div>`;
+}
+
+function refreshGoalViews() {
+  renderDashboard();
+  if (state.ui.tab === "history") renderHistory();
+}
+
+function openGoalsModal() {
+  const g = state.goals;
+  const chips = (target, list, fmt) =>
+    `<div class="qchips" data-for="${target}">${list.map(v => `<button class="btn sm" type="button" data-v="${v}">${fmt(v)}</button>`).join("")}</div>`;
+  openModal("Goals & streak target", `
+    <p class="hint">Set what you want to hit. A value of 0 turns that goal off.</p>
+    <label class="fld">Daily goal <span class="opt">— minutes per day</span>
+      <input id="glDaily" type="number" min="0" max="1440" value="${g.daily}"></label>
+    ${chips("glDaily", [30, 60, 90, 120, 180], fmtDur)}
+    <label class="fld">Weekly goal <span class="opt">— minutes per week (Mon–Sun)</span>
+      <input id="glWeekly" type="number" min="0" max="10080" value="${g.weekly}"></label>
+    ${chips("glWeekly", [180, 300, 600, 900, 1200], fmtDur)}
+    <label class="fld">Streak target <span class="opt">— days in a row</span>
+      <input id="glStreak" type="number" min="0" max="3650" value="${g.streak}"></label>
+    ${chips("glStreak", [7, 14, 30, 60, 100], v => v + "d")}
+    <label class="fld">A streak day is a day with
+      <select id="glMode">
+        <option value="any" ${g.streakMode !== "goal" ? "selected" : ""}>any study time</option>
+        <option value="goal" ${g.streakMode === "goal" ? "selected" : ""}>at least my daily goal</option>
+      </select>
+    </label>
+    <button class="btn primary wide" id="glSave">Save goals</button>
+    <button class="btn wide" id="glClear" type="button" style="margin-top:8px">Turn all goals off</button>
+  `);
+  document.querySelectorAll(".qchips[data-for]").forEach(box => box.addEventListener("click", e => {
+    const b = e.target.closest("[data-v]");
+    if (b) document.getElementById(box.dataset.for).value = b.dataset.v;
+  }));
+  const val = (id, max) => Math.max(0, Math.min(max, Math.round(+document.getElementById(id).value) || 0));
+  document.getElementById("glSave").addEventListener("click", () => {
+    const daily = val("glDaily", 1440), weekly = val("glWeekly", 10080), streak = val("glStreak", 3650);
+    const mode = document.getElementById("glMode").value;
+    if (mode === "goal" && !daily) { toast("Set a daily goal first, or count any study time"); return; }
+    state.goals = { daily, weekly, streak, streakMode: mode };
+    save(); closeModal(); refreshGoalViews(); toast("Goals saved");
+  });
+  document.getElementById("glClear").addEventListener("click", () => {
+    state.goals = { daily: 0, weekly: 0, streak: 0, streakMode: "any" };
+    save(); closeModal(); refreshGoalViews(); toast("Goals turned off");
+  });
+}
+dashBody.addEventListener("click", e => { if (e.target.closest("[data-act='goals-edit']")) openGoalsModal(); });
+
+/* ---------- HISTORY CALENDAR (month grid) ---------- */
+let calMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+let calSel = dateKey(new Date());
+const fmtCompact = m => { m = Math.round(m); if (m < 60) return m + "m"; const h = Math.floor(m / 60), r = m % 60; return r ? `${h}h${String(r).padStart(2, "0")}` : h + "h"; };
+
+function renderHistoryCal() {
+  const by = new Map();
+  state.history.filter(histMatch).forEach(h => { const k = dayKey(h.ts); by.set(k, (by.get(k) || 0) + h.minutes); });
+
+  const daily = state.goals.daily;
+  const first = calMonth, last = new Date(first.getFullYear(), first.getMonth() + 1, 0);
+  const gridStart = startOfWeek(first), gridEnd = addDays(startOfWeek(last), 6);
+  const days = [];
+  for (let d = new Date(gridStart); d <= gridEnd; d = addDays(d, 1)) days.push(d);
+
+  const inMonth = days.filter(d => d.getMonth() === first.getMonth());
+  const vals = inMonth.map(d => by.get(dateKey(d)) || 0);
+  const mTotal = vals.reduce((a, b) => a + b, 0);
+  const mActive = vals.filter(v => v > 0).length;
+  const mBest = Math.max(0, ...vals);
+  const mGoal = daily ? vals.filter(v => v >= daily).length : 0;
+  const maxV = Math.max(mBest, 1);
+
+  const level = m => {
+    if (m <= 0) return 0;
+    if (daily) return m >= daily ? 4 : m >= daily * 0.5 ? 3 : m >= daily * 0.25 ? 2 : 1;
+    const r = m / maxV; return r > 0.75 ? 4 : r > 0.5 ? 3 : r > 0.25 ? 2 : 1;
+  };
+
+  const todayK = dateKey(new Date());
+  const cells = days.map(d => {
+    const k = dateKey(d), m = by.get(k) || 0, other = d.getMonth() !== first.getMonth();
+    const met = daily && m >= daily;
+    const label = `${d.toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long" })}: ${m > 0 ? fmtDur(m) : "no study"}${met ? " (goal reached)" : ""}`;
+    return `<button type="button" class="cal-cell l${level(m)}${other ? " other" : ""}${k === todayK ? " today" : ""}${k === calSel ? " sel" : ""}${k > todayK ? " future" : ""}"
+              data-day="${k}" title="${esc(label)}" aria-label="${esc(label)}" aria-pressed="${k === calSel}">
+              <span class="cal-num">${d.getDate()}</span>
+              ${m > 0 ? `<span class="cal-min">${fmtCompact(m)}</span>` : ""}
+              ${met ? `<span class="cal-ok">✓</span>` : ""}
+            </button>`;
+  }).join("");
+
+  const selEntries = state.history.filter(histMatch).filter(h => dayKey(h.ts) === calSel).sort((a, b) => b.ts - a.ts);
+  const selTotal = selEntries.reduce((a, h) => a + h.minutes, 0);
+  const selDate = new Date(calSel + "T00:00:00");
+  const selFuture = calSel > todayK;
+
+  historyCal.innerHTML = `
+    <div class="cal-head">
+      <button class="icon-btn sm" data-act="cal-prev" title="Previous month" aria-label="Previous month">‹</button>
+      <span class="lbl">${esc(first.toLocaleDateString(undefined, { month: "long", year: "numeric" }))}</span>
+      <button class="icon-btn sm" data-act="cal-next" title="Next month" aria-label="Next month">›</button>
+      <button class="btn sm" data-act="cal-today">Today</button>
+    </div>
+    <div class="h-sum">
+      <span><b>${fmtDur(mTotal)}</b> this month</span>
+      <span><b>${mActive}</b> active day${mActive !== 1 ? "s" : ""}</span>
+      ${daily ? `<span><b>${mGoal}</b> goal day${mGoal !== 1 ? "s" : ""}</span>` : ""}
+      ${mBest > 0 ? `<span>best day <b>${fmtDur(mBest)}</b></span>` : ""}
+    </div>
+    <div class="cal-grid">
+      ${DOW_ORDER.map(d => `<div class="cal-dow">${DOW_NAMES[d]}</div>`).join("")}
+      ${cells}
+    </div>
+    <div class="cal-legend">
+      Less <span class="cal-sw l0"></span><span class="cal-sw l1"></span><span class="cal-sw l2"></span><span class="cal-sw l3"></span><span class="cal-sw l4"></span> More
+      ${daily ? `<span>· ✓ = daily goal (${fmtDur(daily)}) reached</span>` : `<button class="btn sm" data-act="goals-edit" style="margin-left:auto">Set a daily goal</button>`}
+    </div>
+    <div class="cal-day">
+      <div class="cal-day-head">
+        <div><b>${esc(selDate.toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long" }))}</b>
+          <span class="h-sub" style="display:inline;margin-left:6px">${selTotal > 0 ? fmtDur(selTotal) : ""}</span></div>
+        <button class="btn sm" data-act="cal-log" ${selFuture ? "disabled" : ""}>+ Log activity</button>
+      </div>
+      ${selEntries.length ? selEntries.map(histRowHtml).join("")
+        : `<div class="empty" style="padding:16px">${selFuture ? "This day hasn't happened yet." : "Nothing logged on this day."}</div>`}
+    </div>`;
+}
+
+historyCal.addEventListener("click", e => {
+  const cell = e.target.closest("[data-day]");
+  if (cell) {
+    calSel = cell.dataset.day;
+    const d = new Date(calSel + "T00:00:00");
+    if (d.getMonth() !== calMonth.getMonth() || d.getFullYear() !== calMonth.getFullYear())
+      calMonth = new Date(d.getFullYear(), d.getMonth(), 1);
+    renderHistoryCal(); return;
+  }
+  const act = e.target.closest("[data-act]");
+  if (!act) return;
+  const a = act.dataset.act;
+  if (a === "cal-prev")  { calMonth = new Date(calMonth.getFullYear(), calMonth.getMonth() - 1, 1); renderHistoryCal(); return; }
+  if (a === "cal-next")  { calMonth = new Date(calMonth.getFullYear(), calMonth.getMonth() + 1, 1); renderHistoryCal(); return; }
+  if (a === "cal-today") { const n = new Date(); calMonth = new Date(n.getFullYear(), n.getMonth(), 1); calSel = dateKey(n); renderHistoryCal(); return; }
+  if (a === "cal-log")   { openLogModal(null, calSel); return; }
+  if (a === "goals-edit") { openGoalsModal(); return; }
+  historyClick(e);
+});
 
 $("#logBtn").addEventListener("click", () => openLogModal(null));
 $("#logBtnSessions").addEventListener("click", () => openLogModal(null));
