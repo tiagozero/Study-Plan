@@ -297,10 +297,22 @@
   .wp-status.tight{color:var(--warn)}
   .wp-status.over{color:var(--danger)}
 
-  .block-editor{display:flex;flex-direction:column;gap:6px;max-height:220px;overflow:auto;padding:2px;overscroll-behavior:contain}
+  .block-editor{display:flex;flex-direction:column;gap:6px;max-height:340px;overflow:auto;padding:2px;overscroll-behavior:contain}
   .block-row{display:grid;grid-template-columns:1fr 78px 30px;gap:6px;align-items:center}
   .block-row input{margin-top:0;padding:7px 9px;font-size:13.5px}
   .block-row .icon-btn{width:28px;height:28px}
+  .block-row{padding:6px 6px 7px;border:1px solid var(--border);border-radius:10px}
+  .bd{grid-column:1/-1;display:flex;align-items:center;gap:4px;flex-wrap:wrap}
+  .bd-lbl{font-size:11px;color:var(--muted);margin-right:2px;white-space:nowrap}
+  .bd label{position:relative;cursor:pointer}
+  .bd input{position:absolute;opacity:0;pointer-events:none;width:0;height:0;padding:0;margin:0}
+  .bd span.bd-d{display:block;padding:3px 7px;font-size:11px;border:1px solid var(--border);border-radius:7px;color:var(--muted);user-select:none;transition:.15s}
+  .bd label:hover span.bd-d{border-color:var(--muted)}
+  .bd input:checked + span.bd-d{background:var(--accent-soft);color:var(--accent);border-color:var(--accent);font-weight:500}
+  .bd input:focus-visible + span.bd-d{outline:2px solid var(--accent);outline-offset:2px}
+  .bd-clear{margin-left:auto;border:0;background:transparent;color:var(--muted);font-size:11px;cursor:pointer;padding:2px 4px}
+  .bd-clear:hover{color:var(--text)}
+  .chip .chip-days{opacity:.7;font-size:10.5px;margin-left:4px}
 
 
   /* time window overview */
@@ -876,6 +888,7 @@ function normalise() {
     if (!Array.isArray(g.templates)) g.templates = [];
     g.templates.forEach(t => {
       if (!Array.isArray(t.blocks)) t.blocks = [];
+      t.blocks.forEach(b => { b.days = cleanDays(b.days); });
       if (!Array.isArray(t.resources)) t.resources = [];
       t.days = Array.isArray(t.days) ? [...new Set(t.days.map(Number).filter(n => n >= 0 && n <= 6))] : [];
       if (typeof t.daysSince !== "string") t.daysSince = "";
@@ -2286,8 +2299,9 @@ function openWindowModal(editId) {
   function updatePreview() {
     const winMin = windowMinutes();
     const pk     = pickedTemplates();
-    const workMin = pk.reduce((a, t) => a + planTotal(t.blocks), 0);
-    const blockCnt = pk.reduce((a, t) => a + t.blocks.length, 0);
+    const wDow = dowOfKey($date.value || today);
+    const workMin = pk.reduce((a, t) => a + planTotal(blocksForDay(t.blocks, wDow)), 0);
+    const blockCnt = pk.reduce((a, t) => a + blocksForDay(t.blocks, wDow).length, 0);
     const mode = state.settings.mode;
     const override = readBreakOverride();
     const effMin = effectiveMinutes(workMin, blockCnt, mode, editing, override);
@@ -2326,6 +2340,7 @@ function openWindowModal(editId) {
     $start.addEventListener(evt, updatePreview);
     $end.addEventListener(evt, updatePreview);
     $break.addEventListener(evt, updatePreview);
+    $date.addEventListener(evt, updatePreview);
   });
   updatePreview();
 
@@ -2345,9 +2360,10 @@ function openWindowModal(editId) {
     let totalWork = 0;
     let totalBlocks = 0;
 
+    const fDow = dowOfKey($date.value || today);
     for (const t of all) {
-      const tWork = t.blocks.reduce((a, b) => a + b.minutes, 0);
-      const tBlocks = t.blocks.length;
+      const tWork = blocksForDay(t.blocks, fDow).reduce((a, b) => a + b.minutes, 0);
+      const tBlocks = blocksForDay(t.blocks, fDow).length;
       const nextWork = totalWork + tWork;
       const nextBlocks = totalBlocks + tBlocks;
       const eff = effectiveMinutes(nextWork, nextBlocks, mode, editing, override);
@@ -2392,7 +2408,7 @@ function openWindowModal(editId) {
     ordered.forEach(t => {
       const old = oldByKey.get(t.id) || [];
       const used = new Set();
-      const fresh = t.blocks.map(b => {
+      const fresh = blocksForDay(t.blocks, dowOfKey(date)).map(b => {
         const topic = b.topic || t.title;
         const match = old.find(o => !used.has(o) && o.topic === topic && o.minutes === b.minutes);
         if (match) used.add(match);
@@ -2726,9 +2742,12 @@ function openItemOverview(kind, id, date, backGroupId) {
   const src = kind === "template" ? findTemplate(id) : state.plans.find(x => x.id === id);
   if (!src) { toast("Item not found"); return; }
 
-  const blocks = src.blocks || [];
-  const total = blocks.reduce((a, b) => a + b.minutes, 0);
   const isRec = kind === "template" && !!date;
+  /* a dated template shows only the blocks that run on that weekday; vis keeps the real index for reordering */
+  const vis = (src.blocks || []).map((b, oi) => ({ b, oi }))
+    .filter(x => !isRec || blockOnDay(x.b, dowOfKey(date)));
+  const blocks = vis.map(x => x.b);
+  const total = blocks.reduce((a, b) => a + b.minutes, 0);
   const win = src.window || null;
   const winDate = kind === "plan" ? src.date : (date || dateKey(new Date()));
   const back = () => { if (backGroupId) openSectionModal(backGroupId); else closeModal(); };
@@ -2801,7 +2820,7 @@ function openItemOverview(kind, id, date, backGroupId) {
       <div class="ov-row">
         <span class="ov-dot" style="background:${ovColor(r.i)}"></span>
         <div class="ov-info">
-          <div class="ov-name">${r.i + 1}. ${esc(r.b.topic || "Block")}</div>
+          <div class="ov-name">${r.i + 1}. ${esc(r.b.topic || "Block")}${kind === "template" && !isRec ? blockChipDays(r.b) : ""}</div>
           <div class="ov-sub${late ? " late" : ""}">${span(r)} · ${r.b.minutes}m${late ? " · past the window" : ""}${it && it.brk && r.i < rows.length - 1 ? ` · then ${fmtDur(it.brk / 60000)} break` : ""}</div>
         </div>
         <div class="ov-move">
@@ -2854,8 +2873,9 @@ function openItemOverview(kind, id, date, backGroupId) {
     if (!row) return;
     const i = +row.dataset.bi;
     const j = act === "ovi-up" ? i - 1 : act === "ovi-down" ? i + 1 : -1;
-    if (j < 0 || j >= src.blocks.length) return;
-    [src.blocks[i], src.blocks[j]] = [src.blocks[j], src.blocks[i]];
+    if (j < 0 || j >= vis.length) return;
+    const a = vis[i].oi, c = vis[j].oi;
+    [src.blocks[a], src.blocks[c]] = [src.blocks[c], src.blocks[a]];
     save();
     renderTemplates();
     renderPlan();
@@ -2978,6 +2998,29 @@ function daysLabel(days) {
   return DOW_ORDER.filter(d => set.has(d)).map(d => DOW_NAMES[d]).join(" · ");
 }
 
+/* ----- per-block days: empty = the block runs on every day the template runs ----- */
+function blockOnDay(b, dow) { return !b.days || !b.days.length || b.days.includes(dow); }
+function blocksForDay(blocks, dow) { return (blocks || []).filter(b => blockOnDay(b, dow)); }
+function dowOfKey(key) { return new Date(key + "T00:00:00").getDay(); }
+function cleanDays(days) {
+  return Array.isArray(days) ? [...new Set(days.map(Number).filter(n => n >= 0 && n <= 6))] : [];
+}
+function blockDaysMarkup(days) {
+  const set = new Set(days || []);
+  return `
+    <div class="bd">
+      <span class="bd-lbl">Days:</span>
+      ${DOW_ORDER.map(d => `<label><input class="be-day" type="checkbox" value="${d}" ${set.has(d) ? "checked" : ""}><span class="bd-d">${DOW_NAMES[d]}</span></label>`).join("")}
+      <button class="bd-clear" type="button" data-act="bd-clear" title="Run on every day">All days</button>
+    </div>`;
+}
+function readBlockDays(row) {
+  return [...row.querySelectorAll(".be-day:checked")].map(i => +i.value);
+}
+function blockChipDays(b) {
+  return b.days && b.days.length ? `<span class="chip-days">${esc(daysLabel(b.days))}</span>` : "";
+}
+
 function dayPickerMarkup(days) {
   const set = new Set(days || []);
   return `
@@ -3028,8 +3071,10 @@ function planItemsFor(d, includeSkipped) {
     if (!isRecurringOn(t, key, dow)) return;
     const log = state.recurLog[recKey(t.id, key)] || {};
     if (log.skipped && !includeSkipped) return;
+    const dayBlocks = blocksForDay(t.blocks, dow);
+    if (t.blocks.length && !dayBlocks.length) return;   // no block runs on this weekday
     out.push({
-      kind: "rec", id: t.id, date: key, title: t.title, blocks: t.blocks,
+      kind: "rec", id: t.id, date: key, title: t.title, blocks: dayBlocks,
       resources: t.resources || [], done: !!log.done, skipped: !!log.skipped,
       sessionId: log.sessionId || null, window: t.window || null, tplId: t.id
     });
@@ -3289,7 +3334,7 @@ function startRecItem(tplId, date) {
     s = {
       id: uid(),
       title: t.title,
-      blocks: t.blocks.map(b => ({ topic: b.topic, minutes: b.minutes, done: false,
+      blocks: blocksForDay(t.blocks, dowOfKey(date)).map(b => ({ topic: b.topic, minutes: b.minutes, done: false,
         ...(t.window ? { tpl: t.id, tplTitle: t.title } : {}) })),
       resources: [...(t.resources || [])],
       created: Date.now()
@@ -3429,9 +3474,9 @@ function renderTemplateCard(t, groupId) {
       </div>
       <div class="blocks" style="margin-top:11px">
         ${shown.map(b => `
-          <span class="chip static">${esc(b.topic || "Block")} · ${b.minutes}m</span>
+          <span class="chip static">${esc(b.topic || "Block")} · ${b.minutes}m${blockChipDays(b)}</span>
         `).join("")}
-        ${extra > 0 ? `<span class="chip static more" title="${esc(t.blocks.slice(MAX).map(b => (b.topic || "Block") + " · " + b.minutes + "m").join(", "))}">+${extra} more</span>` : ""}
+        ${extra > 0 ? `<span class="chip static more" title="${esc(t.blocks.slice(MAX).map(b => (b.topic || "Block") + " · " + b.minutes + "m" + (b.days && b.days.length ? " (" + daysLabel(b.days) + ")" : "")).join(", "))}">+${extra} more</span>` : ""}
       </div>
       ${resChipsMarkup(t.resources)}
       <div class="session-actions">
@@ -3553,6 +3598,7 @@ function openScheduleModal(tplId) {
   if (!tpl) return;
 
   const total = tpl.blocks.reduce((a, b) => a + b.minutes, 0);
+  const hasBlockDays = tpl.blocks.some(b => b.days && b.days.length);
 
   openModal("Add template to plan", `
     <p class="hint">
@@ -3566,17 +3612,20 @@ function openScheduleModal(tplId) {
     <label class="fld">Date
       <input id="schedDate" type="date" value="${dateKey(new Date())}">
     </label>
+    ${hasBlockDays ? `<p class="hint">Some blocks only run on certain days — only the blocks for the chosen weekday are added.</p>` : ""}
     <button class="btn primary wide" id="schedGo">Add to plan</button>
   `);
 
   document.getElementById("schedGo").addEventListener("click", () => {
     const date = document.getElementById("schedDate").value || dateKey(new Date());
+    const dayBlocks = blocksForDay(tpl.blocks, dowOfKey(date));
+    if (!dayBlocks.length) { toast("No blocks in this template run on that weekday"); return; }
 
     state.plans.push({
       id: uid(),
       date,
       title: tpl.title,
-      blocks: tpl.blocks.map(b => ({ topic: b.topic, minutes: b.minutes, done: false })),
+      blocks: dayBlocks.map(b => ({ topic: b.topic, minutes: b.minutes, done: false })),
       resources: [...(tpl.resources || [])],
       window: copyWindow(tpl.window),
       tplId: tpl.id,
@@ -3599,6 +3648,7 @@ function openEditTemplateModal(tplId, groupId) {
       <input class="be-topic" placeholder="Topic" value="${esc(b.topic || "")}" autocomplete="off">
       <input class="be-mins" type="number" min="1" max="300" value="${b.minutes}">
       <button class="icon-btn sm" type="button" data-act="rm-block" title="Remove">✕</button>
+      ${blockDaysMarkup(b.days)}
     </div>`).join("");
 
   openModal("Edit template", `
@@ -3615,7 +3665,7 @@ function openEditTemplateModal(tplId, groupId) {
           </select>
         </label>
         <div class="fld" style="margin-bottom:6px">
-          Blocks <span class="opt">— topic and minutes per block</span>
+          Blocks <span class="opt">— topic, minutes, and the days each block runs (none selected = every day)</span>
         </div>
         <div class="block-editor" id="eBlocks">${blockRowsHtml}</div>
         <button class="btn sm" type="button" id="eAddBlock" style="margin-top:8px">+ Add block</button>
@@ -3651,12 +3701,15 @@ function openEditTemplateModal(tplId, groupId) {
     row.innerHTML = `
       <input class="be-topic" placeholder="Topic" autocomplete="off">
       <input class="be-mins" type="number" min="1" max="300" value="${state.settings.focus}">
-      <button class="icon-btn sm" type="button" data-act="rm-block" title="Remove">✕</button>`;
+      <button class="icon-btn sm" type="button" data-act="rm-block" title="Remove">✕</button>
+      ${blockDaysMarkup([])}`;
     $blocks.appendChild(row);
     row.querySelector(".be-topic").focus();
   };
 
   $blocks.addEventListener("click", e => {
+    const clr = e.target.closest("[data-act='bd-clear']");
+    if (clr) { clr.closest(".block-row").querySelectorAll(".be-day").forEach(i => { i.checked = false; }); return; }
     const rm = e.target.closest("[data-act='rm-block']");
     if (!rm) return;
     if ($blocks.querySelectorAll(".block-row").length <= 1) {
@@ -3675,7 +3728,8 @@ function openEditTemplateModal(tplId, groupId) {
 
     const blocks = [...$blocks.querySelectorAll(".block-row")].map(r => ({
       topic:   r.querySelector(".be-topic").value.trim(),
-      minutes: Math.max(1, Math.min(300, +r.querySelector(".be-mins").value || 25))
+      minutes: Math.max(1, Math.min(300, +r.querySelector(".be-mins").value || 25)),
+      days:    readBlockDays(r)
     }));
 
     if (!blocks.length) { toast("Add at least one block"); return; }
