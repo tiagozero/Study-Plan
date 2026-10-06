@@ -343,6 +343,29 @@
   .bt-list{grid-column:1/-1;max-height:150px;overflow:auto;border:1px solid var(--border);border-radius:9px;padding:3px;background:var(--surface)}
   .bt-item{display:block;width:100%;text-align:left;border:0;background:transparent;color:var(--text);padding:6px 8px;border-radius:7px;font-size:13px;cursor:pointer}
   .bt-item:hover{background:var(--surface-2)}
+  /* choice blocks: several tasks, pick one when the block starts */
+  .block-row.is-choice{border-color:var(--accent);background:var(--accent-soft)}
+  .block-row.is-choice .be-topic{color:var(--muted);font-style:italic}
+  .block-row.is-choice .bt{display:none}
+  .bc{grid-column:1/-1;display:flex;flex-direction:column;gap:6px;align-items:flex-start}
+  .bc-head{font-size:11.5px;color:var(--muted)}
+  .bc-opt{display:flex;align-items:center;gap:6px;width:100%}
+  .bc-opt input{flex:1;min-width:0}
+  .bc-link{font-size:12px;color:var(--accent)}
+  .bc-acts{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .bc-acts .btn,.bc>.btn{padding:3px 9px;font-size:11px;border-radius:7px}
+  .bc-pick{width:100%;max-height:170px;overflow:auto;border:1px solid var(--border);border-radius:9px;padding:4px 8px;background:var(--surface)}
+  .bc-pick[hidden]{display:none}
+  .bc-pick .btn{margin:6px 0 2px}
+  .chip-choose{margin-left:6px;padding:0 5px;border-radius:6px;color:var(--accent);background:var(--accent-soft);cursor:pointer;font-weight:600}
+  .chip.choice:not(.done){border-style:dashed}
+  .choice-list{display:flex;flex-direction:column;gap:8px;margin:12px 0;max-height:55vh;overflow:auto}
+  .choice-opt{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;text-align:left;
+    background:var(--surface-2);border:1px solid var(--border);color:var(--text);padding:11px 14px;border-radius:11px;font-size:14px;cursor:pointer;transition:.15s}
+  .choice-opt:hover{border-color:var(--accent)}
+  .choice-opt.on{border-color:var(--accent);background:var(--accent-soft)}
+  .choice-opt em{font-style:normal;font-size:11px;color:var(--accent);white-space:nowrap}
+  .choice-foot{display:flex;gap:8px;flex-wrap:wrap}
   #backupBtn{position:relative}
   #backupBtn.nudge::after{content:"";position:absolute;top:6px;right:6px;width:8px;height:8px;border-radius:50%;background:var(--warn);box-shadow:0 0 0 2px var(--surface)}
   /* goals */
@@ -1049,7 +1072,7 @@ function normalise() {
     if (!Array.isArray(g.templates)) g.templates = [];
     g.templates.forEach(t => {
       if (!Array.isArray(t.blocks)) t.blocks = [];
-      t.blocks.forEach(b => { b.days = cleanDays(b.days); });
+      t.blocks.forEach(b => { b.days = cleanDays(b.days); normBlockOptions(b); });
       if (!Array.isArray(t.resources)) t.resources = [];
       t.days = Array.isArray(t.days) ? [...new Set(t.days.map(Number).filter(n => n >= 0 && n <= 6))] : [];
       if (typeof t.daysSince !== "string") t.daysSince = "";
@@ -1085,6 +1108,7 @@ function normalise() {
   });
   state.templateGroups.forEach(g => g.templates.forEach(t => t.blocks.forEach(b => {
     if (b.taskId && !findTask(b.taskId)) delete b.taskId;
+    if (isChoice(b)) b.options.forEach(o => { if (o.taskId && !findTask(o.taskId)) delete o.taskId; });
   })));
   state.history = state.history.filter(h => h && typeof h.ts === "number" && isFinite(h.ts) && typeof h.minutes === "number" && h.minutes > 0);
   state.history.forEach(h => {
@@ -1096,8 +1120,10 @@ function normalise() {
   });
   state.history.sort((a, b) => a.ts - b.ts);
   state.sessions.forEach(tagLegacyWindowBlocks);
+  state.sessions.forEach(x => (x.blocks || []).forEach(normBlockOptions));
   state.plans.forEach(p => {
     if (!Array.isArray(p.blocks)) p.blocks = [];
+    p.blocks.forEach(normBlockOptions);
     if (!Array.isArray(p.resources)) p.resources = [];
     if (typeof p.done !== "boolean") p.done = false;
     const w = p.window;
@@ -1431,6 +1457,7 @@ function startSession(id) {
   renderSessions();
   updateTimerUI();
   saveTimer();
+  promptChoiceIfNeeded();
 }
 
 function resetPhase() {
@@ -1555,6 +1582,7 @@ setInterval(() => {
 
   const s = getSession(timer.sessionId);
   if (!s) { timer.running = false; return; }
+  if (promptChoiceIfNeeded()) return;
 
   if (state.settings.mode === "freeflow") {
     timer.elapsed += dt;
@@ -2447,8 +2475,8 @@ function renderSessions() {
         <div class="bar"><i style="width:${pct}%"></i></div>
         <div class="blocks">
           ${s.blocks.map((b, i) => `
-            <span class="chip${b.done ? " done" : ""}" data-act="toggle" data-i="${i}"
-                  title="Toggle done">${esc(b.topic || "Block " + (i + 1))} · ${b.minutes}m</span>
+            <span class="chip${b.done ? " done" : ""}${isChoice(b) ? " choice" : ""}" data-act="toggle" data-i="${i}"
+                  title="Toggle done">${esc(b.topic || "Block " + (i + 1))} · ${b.minutes}m${isChoice(b) ? `<span class="chip-choose" data-act="choose" data-i="${i}" title="${b.chosen ? "Change choice" : "Choose now"}">⇄</span>` : ""}</span>
           `).join("")}
         </div>
         ${resChipsMarkup(s.resources)}
@@ -2505,6 +2533,8 @@ sessionList.addEventListener("click", e => {
     el.textContent = "✓";
     setTimeout(() => { el.textContent = prev; }, 900);
     toast(`Saved to "${targetGroup.name}"`);
+  } else if (act === "choose") {
+    openChoiceModal(id, +el.dataset.i, false);
   } else if (act === "toggle") {
     const i = +el.dataset.i;
     s.blocks[i].done = !s.blocks[i].done;
@@ -2743,6 +2773,14 @@ function openWindowModal(editId) {
       const old = oldByKey.get(t.id) || [];
       const used = new Set();
       const fresh = blocksForDay(t.blocks, dowOfKey(date)).map(b => {
+        if (isChoice(b)) {
+          const match = old.find(o => !used.has(o) && sameOptions(o.options, b.options) && o.minutes === b.minutes);
+          if (match) used.add(match);
+          const keep = match && match.chosen;
+          return { topic: keep ? match.topic : choiceLabel(b.options), minutes: b.minutes,
+                   taskId: keep ? match.taskId : undefined, options: b.options.map(o => ({ ...o })),
+                   chosen: !!keep, match };
+        }
         const topic = b.topic || t.title;
         const match = old.find(o => !used.has(o) && o.topic === topic && o.minutes === b.minutes);
         if (match) used.add(match);
@@ -2756,6 +2794,7 @@ function openWindowModal(editId) {
           topic: f.topic,
           minutes: f.minutes,
           ...(f.taskId ? { taskId: f.taskId } : {}),
+          ...(f.options ? { options: f.options, chosen: f.chosen } : {}),
           done: f.match ? !!f.match.done : false,
           tpl: t.id,
           tplTitle: t.title
@@ -3357,7 +3396,8 @@ function readBlockDays(row) {
 }
 function blockChipDays(b) {
   return (b.days && b.days.length ? `<span class="chip-days">${esc(daysLabel(b.days))}</span>` : "")
-       + (b.taskId ? `<span class="chip-days" title="Linked to a checklist task">☑</span>` : "");
+       + (b.taskId ? `<span class="chip-days" title="Linked to a checklist task">☑</span>` : "")
+       + (isChoice(b) ? `<span class="chip-days" title="Pick one of ${b.options.length} when it starts">⇄ pick 1 of ${b.options.length}</span>` : "");
 }
 
 function dayPickerMarkup(days) {
@@ -4003,12 +4043,13 @@ function openEditTemplateModal(tplId, groupId) {
   if (!tpl) return;
 
   const blockRowsHtml = tpl.blocks.map(b => `
-    <div class="block-row" ${b.taskId ? `data-task-id="${esc(b.taskId)}"` : ""}>
-      <input class="be-topic" placeholder="Topic" value="${esc(b.topic || "")}" autocomplete="off">
+    <div class="block-row${isChoice(b) ? " is-choice" : ""}" ${b.taskId && !isChoice(b) ? `data-task-id="${esc(b.taskId)}"` : ""}>
+      <input class="be-topic" placeholder="Topic" value="${esc(isChoice(b) ? choiceLabel(b.options) : (b.topic || ""))}" ${isChoice(b) ? "readonly" : ""} autocomplete="off">
       <input class="be-mins" type="number" min="1" max="300" value="${b.minutes}">
       <button class="icon-btn sm" type="button" data-act="rm-block" title="Remove">✕</button>
       ${blockDaysMarkup(b.days)}
-      ${blockLinkMarkup(b.taskId)}
+      ${blockLinkMarkup(isChoice(b) ? null : b.taskId)}
+      <div class="bc">${bcInner(isChoice(b) ? b.options : null)}</div>
     </div>`).join("");
 
   openModal("Edit template", `
@@ -4025,7 +4066,7 @@ function openEditTemplateModal(tplId, groupId) {
           </select>
         </label>
         <div class="fld" style="margin-bottom:6px">
-          Blocks <span class="opt">— topic, minutes, days (none = every day), and an optional checklist task</span>
+          Blocks <span class="opt">— topic, minutes, days (none = every day), an optional checklist task, or <b>⇄ a choice</b> of several tasks</span>
         </div>
         <div class="block-editor" id="eBlocks">${blockRowsHtml}</div>
         <button class="btn sm" type="button" id="eAddBlock" style="margin-top:8px">+ Add block</button>
@@ -4063,12 +4104,42 @@ function openEditTemplateModal(tplId, groupId) {
       <input class="be-mins" type="number" min="1" max="300" value="${state.settings.focus}">
       <button class="icon-btn sm" type="button" data-act="rm-block" title="Remove">✕</button>
       ${blockDaysMarkup([])}
-      ${blockLinkMarkup(null)}`;
+      ${blockLinkMarkup(null)}
+      <div class="bc">${bcInner(null)}</div>`;
     $blocks.appendChild(row);
     row.querySelector(".be-topic").focus();
   };
 
+  $blocks.addEventListener("keydown", e => {
+    const inp = e.target.closest && e.target.closest(".bo-topic");
+    if (!inp || e.key !== "Enter") return;
+    e.preventDefault();
+    const row = inp.closest(".block-row"), all = [...row.querySelectorAll(".bo-topic")], k = all.indexOf(inp);
+    if (k < all.length - 1) all[k + 1].focus();
+    else if (inp.value.trim()) bcRender(row, [...bcReadRaw(row), { topic: "" }], true);
+  });
+  $blocks.addEventListener("paste", e => {
+    const inp = e.target.closest && e.target.closest(".bo-topic");
+    if (!inp) return;
+    const lines = ((e.clipboardData || window.clipboardData).getData("text") || "")
+      .split(/\r?\n/).map(x => x.replace(/^\s*(?:[-*•]|\d+[.)])\s*/, "").trim()).filter(Boolean);
+    if (lines.length < 2) return;
+    e.preventDefault();
+    const row = inp.closest(".block-row"), raw = bcReadRaw(row), k = [...row.querySelectorAll(".bo-topic")].indexOf(inp);
+    raw.splice(k, 1, ...lines.map(t => ({ topic: t })));
+    bcRender(row, raw, false);
+  });
+
+  $blocks.addEventListener("input", e => {
+    const inp = e.target.closest(".bo-topic");
+    if (!inp) return;
+    const o = inp.closest(".bc-opt");
+    if (o.dataset.taskId) { delete o.dataset.taskId; const l = o.querySelector(".bc-link"); if (l) l.remove(); }
+    bcSyncLabel(inp.closest(".block-row"));
+  });
+
   $blocks.addEventListener("click", e => {
+    if (bcHandleClick(e, $blocks)) return;
     const pick = e.target.closest("[data-act='bt-pick']");
     if (pick) { toggleTaskPicker(pick.closest(".block-row")); return; }
     const item = e.target.closest("[data-act='bt-item']");
@@ -4098,12 +4169,18 @@ function openEditTemplateModal(tplId, groupId) {
     const newGid = document.getElementById("eGroup").value;
     const resources = getPicked();
 
-    const blocks = [...$blocks.querySelectorAll(".block-row")].map(r => ({
-      topic:   r.querySelector(".be-topic").value.trim(),
-      minutes: Math.max(1, Math.min(300, +r.querySelector(".be-mins").value || 25)),
-      days:    readBlockDays(r),
-      ...(r.dataset.taskId ? { taskId: r.dataset.taskId } : {})
-    }));
+    const blocks = [...$blocks.querySelectorAll(".block-row")].map(r => {
+      const minutes = Math.max(1, Math.min(300, +r.querySelector(".be-mins").value || 25));
+      const days = readBlockDays(r);
+      const opts = r.classList.contains("is-choice") ? bcRead(r) : [];
+      if (opts.length > 1) return { topic: choiceLabel(opts), minutes, days, options: opts };
+      if (opts.length === 1) return { topic: opts[0].topic, minutes, days, ...(opts[0].taskId ? { taskId: opts[0].taskId } : {}) };
+      return {
+        topic: r.classList.contains("is-choice") ? "" : r.querySelector(".be-topic").value.trim(),
+        minutes, days,
+        ...(r.dataset.taskId && !r.classList.contains("is-choice") ? { taskId: r.dataset.taskId } : {})
+      };
+    });
 
     if (!blocks.length) { toast("Add at least one block"); return; }
 
@@ -4397,7 +4474,87 @@ dashSeg.addEventListener("click", e => {
 /* ---------- PLAN CHECKLIST ---------- */
 /* sections -> tasks. A task can become a template block (topic) and is checked off
    automatically when that block is finished in a session. */
-const cpBlock = b => ({ topic: b.topic, minutes: b.minutes, ...(b.taskId ? { taskId: b.taskId } : {}) });
+/* A copy always starts "undecided": a choice block keeps its alternatives but not the pick. */
+const cpBlock = b => isChoice(b)
+  ? { topic: choiceLabel(b.options), minutes: b.minutes, options: b.options.map(o => ({ ...o })) }
+  : { topic: b.topic, minutes: b.minutes, ...(b.taskId ? { taskId: b.taskId } : {}) };
+
+/* ---------- CHOICE BLOCKS ----------
+   A block with options[] (2+) is a "pick one" slot: several tasks are added at once and
+   you choose which one to do when the block comes up. Choosing sets topic/taskId, so
+   history and checklist auto-complete work exactly like a normal block. */
+function cleanOptions(o) {
+  if (!Array.isArray(o)) return [];
+  return o.filter(x => x && typeof x.topic === "string" && x.topic.trim())
+          .map(x => ({ topic: x.topic.trim(), ...(x.taskId ? { taskId: String(x.taskId) } : {}) }));
+}
+function normBlockOptions(b) {
+  if (!b || typeof b !== "object") return;
+  const o = cleanOptions(b.options);
+  if (o.length > 1) { b.options = o; b.chosen = !!b.chosen; }
+  else { delete b.options; delete b.chosen; }
+}
+function isChoice(b) { return !!b && Array.isArray(b.options) && b.options.length > 1; }
+function needsChoice(b) { return isChoice(b) && !b.chosen; }
+function choiceLabel(opts) {
+  const t = (opts || []).map(o => o.topic).filter(Boolean);
+  return t.length ? "Choose: " + t.join(" / ") : "Choose…";
+}
+function sameOptions(a, b) {
+  return Array.isArray(a) && Array.isArray(b) && a.length === b.length &&
+         a.every((o, i) => o.topic === b[i].topic);
+}
+function applyChoice(b, o) {
+  b.topic = o.topic;
+  if (o.taskId) b.taskId = o.taskId; else delete b.taskId;
+  b.chosen = true;
+}
+function openChoiceModal(sid, i, fromTimer) {
+  const s = getSession(sid), b = s && s.blocks[i];
+  if (!isChoice(b)) return;
+  openModal("Choose what to study", `
+    <p class="hint">Block ${i + 1} · ${b.minutes} min — pick one.${fromTimer ? " The timer is paused until you choose." : ""}</p>
+    <div class="choice-list">
+      ${b.options.map((o, k) => `
+        <button class="choice-opt${b.chosen && b.topic === o.topic ? " on" : ""}" type="button" data-k="${k}">
+          <span>${esc(o.topic)}</span>${o.taskId ? "<em>☑ checklist task</em>" : ""}
+        </button>`).join("")}
+    </div>
+    <div class="choice-foot">
+      <button class="btn sm" type="button" data-rand="1">🎲 Surprise me</button>
+      ${b.chosen && !b.done ? `<button class="btn sm" type="button" data-reset="1">Undo my choice</button>` : ""}
+    </div>`, e => {
+    const pickBtn = e.target.closest("[data-k]");
+    const rand = e.target.closest("[data-rand]");
+    const reset = e.target.closest("[data-reset]");
+    let opt = null;
+    if (pickBtn) opt = b.options[+pickBtn.dataset.k];
+    else if (rand) opt = b.options[Math.floor(Math.random() * b.options.length)];
+    else if (reset) {
+      b.chosen = false; b.topic = choiceLabel(b.options); delete b.taskId;
+      save(); closeModal(); renderSessions(); updateTimerUI(); return;
+    }
+    if (!opt) return;
+    applyChoice(b, opt);
+    save(); closeModal(); renderSessions();
+    if (fromTimer && timer.sessionId === sid && timer.blockIndex === i) {
+      timer.running = true; timer.lastTick = Date.now(); saveTimer();
+    }
+    updateTimerUI();
+    toast(`Doing: ${opt.topic}`);
+  });
+}
+/* Pauses the timer and asks, when the block that is about to run is still undecided */
+function promptChoiceIfNeeded() {
+  const s = getSession(timer.sessionId);
+  if (!s || timer.finished || timer.phase !== "work") return false;
+  const b = s.blocks[timer.blockIndex];
+  if (!needsChoice(b)) return false;
+  timer.running = false;
+  saveTimer(); updateTimerUI();
+  openChoiceModal(s.id, timer.blockIndex, true);
+  return true;
+}
 
 function findTask(id) {
   for (const g of state.checklist) {
@@ -4422,6 +4579,7 @@ function unlinkTasks(ids) {
   const set = new Set(ids);
   state.templateGroups.forEach(g => g.templates.forEach(t => t.blocks.forEach(b => {
     if (b.taskId && set.has(b.taskId)) delete b.taskId;
+    if (isChoice(b)) b.options.forEach(o => { if (o.taskId && set.has(o.taskId)) delete o.taskId; });
   })));
 }
 
@@ -4429,10 +4587,11 @@ function unlinkTasks(ids) {
 function templateLinks() {
   const m = new Map();
   state.templateGroups.forEach(g => g.templates.forEach(t => t.blocks.forEach(b => {
-    if (!b.taskId) return;
-    const arr = m.get(b.taskId) || [];
-    if (!arr.includes(t.title)) arr.push(t.title);
-    m.set(b.taskId, arr);
+    [b.taskId, ...(isChoice(b) ? b.options.map(o => o.taskId) : [])].filter(Boolean).forEach(id => {
+      const arr = m.get(id) || [];
+      if (!arr.includes(t.title)) arr.push(t.title);
+      m.set(id, arr);
+    });
   })));
   return m;
 }
@@ -4586,6 +4745,12 @@ function openTaskToTemplateModal(preIds) {
     <label class="fld" id="ttNewWrap" ${hasTpl ? "hidden" : ""}>New template name
       <input id="ttNew" placeholder="e.g. Exam prep block" autocomplete="off">
     </label>
+    <label class="fld">Add them as
+      <select id="ttMode">
+        <option value="separate">Separate blocks — do them all</option>
+        <option value="choice">One choice block — pick one when it starts</option>
+      </select>
+    </label>
     <label class="fld">Minutes per block
       <input id="ttMins" type="number" min="1" max="300" value="${state.settings.focus}">
     </label>
@@ -4601,6 +4766,8 @@ function openTaskToTemplateModal(preIds) {
     const mins = Math.max(1, Math.min(300, Math.round(+document.getElementById("ttMins").value) || state.settings.focus));
     const order = state.checklist.flatMap(g => g.tasks).map(t => t.id);
     const tasks = ids.sort((a, b) => order.indexOf(a) - order.indexOf(b)).map(findTask).filter(Boolean);
+    const asChoice = document.getElementById("ttMode").value === "choice";
+    if (asChoice && tasks.length < 2) { toast("Pick at least two tasks for a choice block"); return; }
 
     let tpl;
     if ($t.value === "__new") {
@@ -4612,6 +4779,17 @@ function openTaskToTemplateModal(preIds) {
       tpl = findTemplate($t.value);
     }
     if (!tpl) { toast("Template not found"); return; }
+
+    if (asChoice) {
+      const options = tasks.map(t => ({ topic: t.title, taskId: t.id }));
+      tpl.blocks.push({ topic: choiceLabel(options), minutes: mins, days: [], options });
+      save();
+      closeModal();
+      renderTemplates();
+      renderPlan();
+      toast(`Added a choice of ${options.length} tasks to "${tpl.title}"`);
+      return;
+    }
 
     let added = 0, skipped = 0;
     tasks.forEach(t => {
@@ -5055,6 +5233,98 @@ function openChecklistIOModal() {
     toast(downloadText("checklist.csv", "\uFEFF" + ckExportCsv() + "\n", "text/csv") ? "Checklist exported" : "Download blocked — copy from Export JSON/paste box instead"));
   document.getElementById("ckExpJson").addEventListener("click", () =>
     toast(downloadText("checklist.json", ckExportJson() + "\n", "application/json") ? "Checklist exported" : "Download blocked"));
+}
+
+/* ----- template editor helpers: choice block (several tasks, pick one) ----- */
+function bcInner(opts) {
+  if (!opts || !opts.length) {
+    return `<button class="btn sm" type="button" data-act="bc-make" title="Add several tasks to this block and choose which one to do when it starts">⇄ Choose between several tasks</button>`;
+  }
+  return `
+    <div class="bc-head">Pick one of these when the block starts (${opts.length} so far — press Enter or paste a list, one per line, to add more):</div>
+    ${opts.map(o => `
+      <div class="bc-opt"${o.taskId ? ` data-task-id="${esc(o.taskId)}"` : ""}>
+        <input class="bo-topic" value="${esc(o.topic || "")}" placeholder="Alternative" autocomplete="off">
+        ${o.taskId ? `<span class="bc-link" title="Linked to a checklist task">☑</span>` : ""}
+        <button class="icon-btn sm" type="button" data-act="bo-rm" title="Remove">✕</button>
+      </div>`).join("")}
+    <div class="bc-acts">
+      <button class="btn primary sm" type="button" data-act="bo-add">＋ Add another choice</button>
+      <button class="btn sm" type="button" data-act="bo-pick">☑ Several from checklist</button>
+      <button class="bt-unlink" type="button" data-act="bc-off">Back to a single block</button>
+    </div>
+    <div class="bc-pick" hidden></div>`;
+}
+function bcReadRaw(row) {
+  return [...row.querySelectorAll(".bc-opt")].map(el => ({
+    topic: el.querySelector(".bo-topic").value.trim(),
+    ...(el.dataset.taskId ? { taskId: el.dataset.taskId } : {})
+  }));
+}
+function bcRead(row) { return bcReadRaw(row).filter(o => o.topic); }
+function bcSyncLabel(row) {
+  const t = row.querySelector(".be-topic");
+  if (row.classList.contains("is-choice")) t.value = choiceLabel(bcRead(row));
+}
+function bcRender(row, opts, focusLast) {
+  const on = !!(opts && opts.length);
+  row.classList.toggle("is-choice", on);
+  row.querySelector(".be-topic").readOnly = on;
+  row.querySelector(".bc").innerHTML = bcInner(on ? opts : null);
+  if (on) bcSyncLabel(row);
+  if (on && focusLast) { const all = row.querySelectorAll(".bo-topic"); all[all.length - 1].focus(); }
+}
+/* returns true when the click belonged to the choice UI */
+function bcHandleClick(e, $blocks) {
+  const el = e.target.closest("[data-act]");
+  if (!el) return false;
+  const act = el.dataset.act, row = el.closest(".block-row");
+  if (!row || !$blocks.contains(row)) return false;
+
+  if (act === "bc-make") {
+    const topic = row.querySelector(".be-topic").value.trim();
+    const first = topic ? [{ topic, ...(row.dataset.taskId ? { taskId: row.dataset.taskId } : {}) }] : [{ topic: "" }];
+    delete row.dataset.taskId; refreshRowLink(row);
+    bcRender(row, [...first, { topic: "" }, ...(topic ? [{ topic: "" }] : [])], false);
+    row.querySelectorAll(".bo-topic")[topic ? 1 : 0].focus();
+    return true;
+  }
+  if (act === "bc-off") {
+    const first = bcRead(row)[0];
+    row.querySelector(".be-topic").value = first ? first.topic : "";
+    if (first && first.taskId) row.dataset.taskId = first.taskId; else delete row.dataset.taskId;
+    bcRender(row, null);
+    refreshRowLink(row);
+    return true;
+  }
+  if (act === "bo-add") { bcRender(row, [...bcReadRaw(row), { topic: "" }], true); return true; }
+  if (act === "bo-rm") {
+    const left = bcReadRaw(row); left.splice([...row.querySelectorAll(".bc-opt")].indexOf(el.closest(".bc-opt")), 1);
+    bcRender(row, left.length ? left : [{ topic: "" }], false);
+    return true;
+  }
+  if (act === "bo-pick") {
+    const box = row.querySelector(".bc-pick");
+    if (!box.hidden) { box.hidden = true; return true; }
+    const have = new Set(bcReadRaw(row).map(o => o.taskId).filter(Boolean));
+    const open = state.checklist.map(g => ({ g, tasks: g.tasks.filter(t => !t.done && !have.has(t.id)) })).filter(x => x.tasks.length);
+    box.innerHTML = open.length
+      ? open.map(({ g, tasks }) => `<div class="ck-sech">${esc(g.name)}</div>${tasks.map(t =>
+          `<label class="ck-pk"><input type="checkbox" value="${esc(t.id)}"><span>${esc(t.title)}</span></label>`).join("")}`).join("")
+        + `<button class="btn sm primary" type="button" data-act="bo-pick-go">Add selected</button>`
+      : `<div class="pick-empty">No other open tasks. Add some in Plan → Checklist first.</div>`;
+    box.hidden = false;
+    return true;
+  }
+  if (act === "bo-pick-go") {
+    const ids = [...row.querySelectorAll(".bc-pick input:checked")].map(i => i.value);
+    if (!ids.length) { toast("Tick at least one task"); return true; }
+    const keep = bcReadRaw(row).filter(o => o.topic);
+    const added = ids.map(findTask).filter(Boolean).map(t => ({ topic: t.title, taskId: t.id }));
+    bcRender(row, [...keep, ...added], false);
+    return true;
+  }
+  return false;
 }
 
 /* ----- template editor helpers: link a block to a task ----- */
