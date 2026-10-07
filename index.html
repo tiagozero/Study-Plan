@@ -456,8 +456,8 @@
   @media(max-width:700px){ .form-grid{grid-template-columns:1fr} .form-wide .fg-col + .fg-col{margin-top:6px} }
 
   /* ===== roomier template editor (edit + create) ===== */
-  .modal.form-wide{max-width:1060px;max-height:92vh;padding:26px 30px}
-  .modal.form-wide .form-grid{grid-template-columns:minmax(0,1.45fr) minmax(0,1fr);gap:0 0;align-items:start}
+  .modal.form-wide{max-width:min(1480px,96vw);width:96vw;max-height:92vh;padding:26px 34px}
+  .modal.form-wide .form-grid{grid-template-columns:minmax(0,1fr) minmax(460px,1.1fr);gap:0 0;align-items:start}
   .modal.form-wide .fg-col + .fg-col{border-left:1px solid var(--border);padding-left:30px;margin-left:30px}
   .modal.form-wide .fld{margin-bottom:16px}
   .modal.form-wide .fld .opt{display:block;margin-top:3px;line-height:1.45}
@@ -487,7 +487,7 @@
     .modal.tpl-edit{height:min(88vh,800px);display:flex;flex-direction:column;overflow:hidden}
     .modal.tpl-edit #modalBody{flex:1;min-height:0;display:flex;flex-direction:column}
     .modal.tpl-edit .form-grid{flex:1;min-height:0;grid-template-rows:minmax(0,1fr)}
-    .modal.tpl-edit .fg-col{min-height:0;height:100%;display:flex;flex-direction:column;overflow-y:auto;overscroll-behavior:contain}
+    .modal.tpl-edit .fg-col{min-height:0;height:100%;display:flex;flex-direction:column;overflow-y:auto;overflow-x:hidden;scrollbar-gutter:stable;overscroll-behavior:contain}
     .modal.tpl-edit .fg-col:first-child{overflow:hidden}
     .modal.tpl-edit .fg-col:first-child .block-editor{flex:1 1 auto;min-height:0;max-height:none;overflow-y:auto}
     .modal.tpl-edit .fg-col:first-child > *{flex:none}
@@ -534,6 +534,16 @@
   .col-left .seg{margin-top:18px;padding:4px;border-radius:13px}
   .col-left .seg button{padding:10px 8px;font-size:13.5px;border-radius:10px}
   details.settings{margin-top:16px;padding-top:14px}
+  .b-ctl{display:flex;gap:4px;align-items:center}
+  .modal.form-wide .block-row{grid-template-columns:minmax(0,1fr) 96px auto}
+  .modal.form-wide .block-row .b-ctl .icon-btn{width:30px;height:34px;font-size:10px}
+  .b-ctl .icon-btn:disabled{opacity:.25;cursor:default}
+  .block-row.moved{box-shadow:0 0 0 2px var(--accent);transition:box-shadow .3s}
+  /* right column scrolls instead of squashing its sections (resources were collapsing) */
+  .modal.tpl-edit .fg-col + .fg-col{overflow-x:hidden;padding-right:10px}
+  .modal.tpl-edit .fg-col + .fg-col > *{flex:none;min-width:0;max-width:100%}
+  .modal.tpl-edit .fg-col + .fg-col input,.modal.tpl-edit .fg-col + .fg-col select{min-width:0;max-width:100%}
+  .modal.tpl-edit .fg-col .pick-list{min-height:170px;max-height:260px}
   #eAddBlock{display:block;width:100%;margin-top:14px;padding:11px;border:1px dashed var(--border);
     background:transparent;border-radius:12px;font-size:13px;color:var(--muted)}
   #eAddBlock:hover{border-color:var(--accent);color:var(--accent)}
@@ -541,7 +551,7 @@
     padding:16px 30px 26px;background:var(--surface)}
   @media(max-width:760px){
     .modal.form-wide .form-grid{grid-template-columns:minmax(0,1fr)}
-    .modal.form-wide .block-row{grid-template-columns:minmax(0,1fr) 84px 34px;padding:14px}
+    .modal.form-wide .block-row{grid-template-columns:minmax(0,1fr) 84px auto;padding:14px}
     .modal.form-wide{padding:18px 16px}
     .modal.form-wide .fg-col + .fg-col{border-left:0;padding-left:0;margin-left:0;margin-top:10px;
       border-top:1px solid var(--border);padding-top:18px}
@@ -4140,7 +4150,11 @@ function openEditTemplateModal(tplId, groupId) {
     <div class="block-row${isChoice(b) ? " is-choice" : ""}" ${b.taskId && !isChoice(b) ? `data-task-id="${esc(b.taskId)}"` : ""}>
       <input class="be-topic" placeholder="Topic" value="${esc(isChoice(b) ? choiceLabel(b.options) : (b.topic || ""))}" ${isChoice(b) ? "readonly" : ""} autocomplete="off">
       <input class="be-mins" type="number" min="1" max="300" value="${b.minutes}">
-      <button class="icon-btn sm" type="button" data-act="rm-block" title="Remove">✕</button>
+      <div class="b-ctl">
+        <button class="icon-btn sm" type="button" data-act="mv-up" title="Move up" aria-label="Move block up">▲</button>
+        <button class="icon-btn sm" type="button" data-act="mv-down" title="Move down" aria-label="Move block down">▼</button>
+        <button class="icon-btn sm" type="button" data-act="rm-block" title="Remove" aria-label="Remove block">✕</button>
+      </div>
       ${blockDaysMarkup(b.days)}
       <div class="b-actions">
         ${blockLinkMarkup(isChoice(b) ? null : b.taskId)}
@@ -4200,7 +4214,11 @@ function openEditTemplateModal(tplId, groupId) {
     row.innerHTML = `
       <input class="be-topic" placeholder="Topic" autocomplete="off">
       <input class="be-mins" type="number" min="1" max="300" value="${state.settings.focus}">
-      <button class="icon-btn sm" type="button" data-act="rm-block" title="Remove">✕</button>
+      <div class="b-ctl">
+        <button class="icon-btn sm" type="button" data-act="mv-up" title="Move up" aria-label="Move block up">▲</button>
+        <button class="icon-btn sm" type="button" data-act="mv-down" title="Move down" aria-label="Move block down">▼</button>
+        <button class="icon-btn sm" type="button" data-act="rm-block" title="Remove" aria-label="Remove block">✕</button>
+      </div>
       ${blockDaysMarkup([])}
       <div class="b-actions">
         ${blockLinkMarkup(null)}
@@ -4208,6 +4226,7 @@ function openEditTemplateModal(tplId, groupId) {
       </div>`;
     $blocks.appendChild(row);
     $blocks.scrollTop = $blocks.scrollHeight;
+    syncMove();
     row.querySelector(".be-topic").focus();
   };
 
@@ -4254,6 +4273,19 @@ function openEditTemplateModal(tplId, groupId) {
     if (unl) { const row = unl.closest(".block-row"); delete row.dataset.taskId; refreshRowLink(row); return; }
     const clr = e.target.closest("[data-act='bd-clear']");
     if (clr) { clr.closest(".block-row").querySelectorAll(".be-day").forEach(i => { i.checked = false; }); return; }
+    const mv = e.target.closest("[data-act='mv-up'],[data-act='mv-down']");
+    if (mv) {
+      const row = mv.closest(".block-row");
+      if (mv.dataset.act === "mv-up" && row.previousElementSibling) row.parentNode.insertBefore(row, row.previousElementSibling);
+      else if (mv.dataset.act === "mv-down" && row.nextElementSibling) row.parentNode.insertBefore(row.nextElementSibling, row);
+      syncMove();
+      row.classList.add("moved");
+      setTimeout(() => row.classList.remove("moved"), 700);
+      row.scrollIntoView({ block: "nearest", behavior: "smooth" });
+      const keep = row.querySelector(`[data-act="${mv.dataset.act}"]`);
+      if (keep && !keep.disabled) keep.focus();
+      return;
+    }
     const rm = e.target.closest("[data-act='rm-block']");
     if (!rm) return;
     if ($blocks.querySelectorAll(".block-row").length <= 1) {
@@ -4261,7 +4293,19 @@ function openEditTemplateModal(tplId, groupId) {
       return;
     }
     rm.closest(".block-row").remove();
+    syncMove();
   });
+
+  /* disable ▲ on the first block and ▼ on the last */
+  function syncMove() {
+    const rows = [...$blocks.querySelectorAll(".block-row")];
+    rows.forEach((r, i) => {
+      const up = r.querySelector("[data-act='mv-up']"), dn = r.querySelector("[data-act='mv-down']");
+      if (up) up.disabled = i === 0;
+      if (dn) dn.disabled = i === rows.length - 1;
+    });
+  }
+  syncMove();
 
   document.getElementById("eAddBlock").addEventListener("click", addBlockRow);
 
