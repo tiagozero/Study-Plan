@@ -455,6 +455,62 @@
   .form-foot .btn.wide{margin-top:0}
   @media(max-width:700px){ .form-grid{grid-template-columns:1fr} .form-wide .fg-col + .fg-col{margin-top:6px} }
 
+  /* ===== roomier template editor (edit + create) ===== */
+  .modal.form-wide{max-width:1060px;max-height:92vh;padding:26px 30px}
+  .modal.form-wide .form-grid{grid-template-columns:minmax(0,1.45fr) minmax(0,1fr);gap:0 0;align-items:start}
+  .modal.form-wide .fg-col + .fg-col{border-left:1px solid var(--border);padding-left:30px;margin-left:30px}
+  .modal.form-wide .fld{margin-bottom:16px}
+  .modal.form-wide .fld .opt{display:block;margin-top:3px;line-height:1.45}
+  .modal.form-wide .form-grid .block-editor{gap:12px;padding:2px 6px 2px 2px}
+  .modal.form-wide .block-row{
+    grid-template-columns:minmax(0,1fr) 96px 34px;gap:12px 10px;padding:16px;
+    background:var(--surface-2);border-radius:14px}
+  .modal.form-wide .block-row input{padding:10px 12px;font-size:14px}
+  .modal.form-wide .block-row .icon-btn{width:34px;height:34px}
+  .modal.form-wide .bd{gap:6px;padding-top:2px}
+  .modal.form-wide .bd span.bd-d{padding:5px 9px}
+  .b-actions{grid-column:1/-1;display:flex;flex-wrap:wrap;align-items:flex-start;gap:10px 14px;
+    padding-top:12px;border-top:1px dashed var(--border)}
+  .b-actions .bt{grid-column:auto;flex:0 1 auto}
+  .b-actions .bt-list{flex:1 1 100%;order:3}
+  .b-actions .bc{grid-column:auto;flex:0 1 auto}
+  .b-actions .btn,.b-actions .bc>.btn{padding:6px 12px;font-size:12px;border-radius:9px}
+  .block-row.is-choice .b-actions{border-top-color:var(--accent)}
+  .block-row.is-choice .bc{flex:1 1 100%;width:100%;gap:10px;padding:14px;background:var(--surface);
+    border:1px solid var(--border);border-radius:12px}
+  .bc-head{font-size:12px;line-height:1.45}
+  .bc-opt{gap:8px}
+  .bc-acts{gap:10px;padding-top:4px}
+  .bc-pick{padding:6px 10px;max-height:200px}
+  /* fixed-size dialog: the block list and the right column scroll inside it */
+  @media(min-width:761px){
+    .modal.tpl-edit{height:min(88vh,800px);display:flex;flex-direction:column;overflow:hidden}
+    .modal.tpl-edit #modalBody{flex:1;min-height:0;display:flex;flex-direction:column}
+    .modal.tpl-edit .form-grid{flex:1;min-height:0;grid-template-rows:minmax(0,1fr)}
+    .modal.tpl-edit .fg-col{min-height:0;height:100%;display:flex;flex-direction:column;overflow-y:auto;overscroll-behavior:contain}
+    .modal.tpl-edit .fg-col:first-child{overflow:hidden}
+    .modal.tpl-edit .fg-col:first-child .block-editor{flex:1 1 auto;min-height:0;max-height:none;overflow-y:auto}
+    .modal.tpl-edit .fg-col:first-child > *{flex:none}
+    .modal.tpl-edit .fg-col:first-child > .block-editor{flex:1 1 auto}
+    .modal.tpl-edit .form-foot{position:static;margin:14px 0 0;padding:16px 0 0;flex:none}
+  }
+  .fld-row{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:0 12px}
+  @media(max-width:760px){.fld-row{grid-template-columns:1fr}}
+  #eAddBlock{display:block;width:100%;margin-top:14px;padding:11px;border:1px dashed var(--border);
+    background:transparent;border-radius:12px;font-size:13px;color:var(--muted)}
+  #eAddBlock:hover{border-color:var(--accent);color:var(--accent)}
+  .modal.form-wide .form-foot{position:sticky;bottom:-26px;z-index:3;margin:18px -30px -26px;
+    padding:16px 30px 26px;background:var(--surface)}
+  @media(max-width:760px){
+    .modal.form-wide .form-grid{grid-template-columns:minmax(0,1fr)}
+    .modal.form-wide .block-row{grid-template-columns:minmax(0,1fr) 84px 34px;padding:14px}
+    .modal.form-wide{padding:18px 16px}
+    .modal.form-wide .fg-col + .fg-col{border-left:0;padding-left:0;margin-left:0;margin-top:10px;
+      border-top:1px solid var(--border);padding-top:18px}
+    .modal.form-wide .form-grid .block-editor{max-height:none;overflow:visible}
+    .modal.form-wide .form-foot{margin:18px -16px -18px;padding:14px 16px 18px;bottom:-18px}
+  }
+
   /* section pop-up: responsive template grid */
   .tpl-toolbar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:12px}
   .tpl-toolbar .hint{margin:0}
@@ -4048,28 +4104,32 @@ function openEditTemplateModal(tplId, groupId) {
       <input class="be-mins" type="number" min="1" max="300" value="${b.minutes}">
       <button class="icon-btn sm" type="button" data-act="rm-block" title="Remove">✕</button>
       ${blockDaysMarkup(b.days)}
-      ${blockLinkMarkup(isChoice(b) ? null : b.taskId)}
-      <div class="bc">${bcInner(isChoice(b) ? b.options : null)}</div>
+      <div class="b-actions">
+        ${blockLinkMarkup(isChoice(b) ? null : b.taskId)}
+        <div class="bc">${bcInner(isChoice(b) ? b.options : null)}</div>
+      </div>
     </div>`).join("");
 
   openModal("Edit template", `
     <div class="form-grid">
       <div class="fg-col">
-        <label class="fld">Title
-          <input id="eTitle" value="${esc(tpl.title)}" autocomplete="off">
-        </label>
-        <label class="fld">Section
-          <select id="eGroup">
-            ${state.templateGroups.map(g => `
-              <option value="${g.id}" ${g.id === groupId ? "selected" : ""}>${esc(g.name)}</option>
-            `).join("")}
-          </select>
-        </label>
-        <div class="fld" style="margin-bottom:6px">
-          Blocks <span class="opt">— topic, minutes, days (none = every day), an optional checklist task, or <b>⇄ a choice</b> of several tasks</span>
+        <div class="fld-row">
+          <label class="fld">Title
+            <input id="eTitle" value="${esc(tpl.title)}" autocomplete="off">
+          </label>
+          <label class="fld">Section
+            <select id="eGroup">
+              ${state.templateGroups.map(g => `
+                <option value="${g.id}" ${g.id === groupId ? "selected" : ""}>${esc(g.name)}</option>
+              `).join("")}
+            </select>
+          </label>
+        </div>
+        <div class="fld" style="margin-bottom:8px">
+          Blocks <span class="opt" style="display:inline">— no days = every day · <b>⇄</b> offers a choice of tasks</span>
         </div>
         <div class="block-editor" id="eBlocks">${blockRowsHtml}</div>
-        <button class="btn sm" type="button" id="eAddBlock" style="margin-top:8px">+ Add block</button>
+        <button class="btn sm" type="button" id="eAddBlock">＋ Add block</button>
       </div>
       <div class="fg-col">
         <div class="fld" style="margin-bottom:6px">Repeat on <span class="opt">— optional, shows in your Plan every week</span></div>
@@ -4083,7 +4143,7 @@ function openEditTemplateModal(tplId, groupId) {
       <button class="btn primary wide" id="eSave">Save changes</button>
     </div>
   `);
-  { const mEl = overlay.querySelector(".modal"); if (mEl) mEl.classList.add("form-wide"); }
+  { const mEl = overlay.querySelector(".modal"); if (mEl) mEl.classList.add("form-wide", "tpl-edit"); }
 
   initPicker();
   initDayPicker();
@@ -4104,9 +4164,12 @@ function openEditTemplateModal(tplId, groupId) {
       <input class="be-mins" type="number" min="1" max="300" value="${state.settings.focus}">
       <button class="icon-btn sm" type="button" data-act="rm-block" title="Remove">✕</button>
       ${blockDaysMarkup([])}
-      ${blockLinkMarkup(null)}
-      <div class="bc">${bcInner(null)}</div>`;
+      <div class="b-actions">
+        ${blockLinkMarkup(null)}
+        <div class="bc">${bcInner(null)}</div>
+      </div>`;
     $blocks.appendChild(row);
+    $blocks.scrollTop = $blocks.scrollHeight;
     row.querySelector(".be-topic").focus();
   };
 
@@ -5847,7 +5910,7 @@ function openModal(title, html, onClick) {
     modalClickHandler = null;
   }
   const modalEl = overlay.querySelector(".modal");
-  if (modalEl) modalEl.classList.remove("wide", "xwide", "form-wide");
+  if (modalEl) modalEl.classList.remove("wide", "xwide", "form-wide", "tpl-edit");
   modalTitle.textContent = title;
   modalBody.innerHTML = html;
   overlay.hidden = false;
@@ -5864,7 +5927,7 @@ function closeModal() {
   }
   overlay.hidden = true;
   const modalEl = overlay.querySelector(".modal");
-  if (modalEl) modalEl.classList.remove("wide", "xwide", "form-wide");
+  if (modalEl) modalEl.classList.remove("wide", "xwide", "form-wide", "tpl-edit");
   modalBody.innerHTML = "";
   pickerEl = null;
   openSectionId = null;
