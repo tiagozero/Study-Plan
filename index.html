@@ -496,6 +496,44 @@
   }
   .fld-row{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:0 12px}
   @media(max-width:760px){.fld-row{grid-template-columns:1fr}}
+  /* ===== full-screen app layout ===== */
+  html,body{height:100%}
+  .app{max-width:none;width:100%;min-height:100vh;display:flex;flex-direction:column;
+    padding:20px clamp(16px,2.2vw,40px) 28px}
+  .top{margin-bottom:18px}
+  .layout{flex:1;grid-template-columns:clamp(320px,24vw,460px) minmax(0,1fr);gap:clamp(16px,1.8vw,30px)}
+  .ring-wrap{width:min(86%,clamp(196px,18vw,330px))}
+  .ring{width:100%;height:auto}
+  .time{font-size:clamp(38px,3.2vw,56px)}
+  .sub{max-width:80%}
+  #sessionList{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,540px),1fr));gap:14px;align-items:start}
+  #sessionList > *{margin-bottom:0}
+  #sessionList > :only-child{grid-column:1/-1}
+  @media(max-width:860px){ .layout{grid-template-columns:1fr} .app{padding:16px 14px 40px} }
+  @media(min-width:861px){
+    .layout{align-items:stretch}
+    .col-left{display:flex;flex-direction:column}
+    .col-left .card{position:sticky;top:20px;margin-bottom:0;min-height:calc(100vh - 104px);
+      display:flex;flex-direction:column;padding:22px 22px 20px}
+    .col-left .ring-wrap{margin:auto}
+    .col-left .timer-top{margin-bottom:12px}
+    .col-right{display:flex;flex-direction:column;min-width:0}
+    .col-right .tab-panel:not([hidden]){flex:1;margin-bottom:0}
+  }
+  /* ===== timer card: clearer buttons, controls docked at the bottom ===== */
+  .timer-top{margin-bottom:10px}
+  .adjust{margin-top:22px;gap:10px}
+  .adjust .btn{padding:7px 16px;font-size:13px;min-width:78px}
+  .controls{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:18px}
+  .controls #startBtn{grid-column:1/-1;padding:16px;font-size:16px;font-weight:600;letter-spacing:.01em;border-radius:14px}
+  .controls .btn:not(.primary){padding:12px 8px;font-size:14px;border-radius:12px}
+  .controls.second{grid-template-columns:1fr;margin-top:10px}
+  #completeBtn{padding:13px 8px;font-size:14px;border-radius:12px;color:var(--accent);
+    border-color:var(--accent);background:var(--accent-soft)}
+  #completeBtn:disabled{color:var(--muted);border-color:var(--border);background:transparent}
+  .col-left .seg{margin-top:18px;padding:4px;border-radius:13px}
+  .col-left .seg button{padding:10px 8px;font-size:13.5px;border-radius:10px}
+  details.settings{margin-top:16px;padding-top:14px}
   #eAddBlock{display:block;width:100%;margin-top:14px;padding:11px;border:1px dashed var(--border);
     background:transparent;border-radius:12px;font-size:13px;color:var(--muted)}
   #eAddBlock:hover{border-color:var(--accent);color:var(--accent)}
