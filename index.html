@@ -322,6 +322,22 @@
   .ck-chip.tpl{background:var(--accent-soft);color:var(--accent)}
   .ck-chip.over{background:rgba(220,38,38,.12);color:var(--danger)}
   .ck-chip.today{background:rgba(217,119,6,.14);color:var(--warn)}
+  .ck-main{cursor:pointer;min-width:0;border-radius:8px}
+  .ck-main:hover .ck-title{color:var(--accent)}
+  .ck-main:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  .ck-chip.sub{background:var(--surface-2);color:var(--text)}
+  .ck-chip.sub.all{background:var(--accent-soft);color:var(--accent)}
+  /* task detail modal */
+  .td-prog{display:flex;align-items:center;gap:10px;font-size:12px;color:var(--muted);margin:2px 0 8px}
+  .td-prog .ck-bar{flex:1}
+  .td-subs{display:flex;flex-direction:column;gap:2px;margin-bottom:8px}
+  .td-sub{display:grid;grid-template-columns:20px minmax(0,1fr) auto;gap:8px;align-items:center;padding:4px 0}
+  .td-sub input[type=checkbox]{display:block;width:17px;height:17px;margin:0;padding:0;accent-color:var(--accent);cursor:pointer}
+  .td-sub input[type=text]{margin:0;padding:6px 8px;border-color:transparent;background:transparent}
+  .td-sub input[type=text]:hover,.td-sub input[type=text]:focus{border-color:var(--border);background:var(--surface)}
+  .td-sub.done input[type=text]{text-decoration:line-through;color:var(--muted)}
+  .td-empty{font-size:12.5px;color:var(--muted);padding:4px 0 8px}
+  #tdNotes{min-height:120px;resize:vertical;width:100%;font:inherit;line-height:1.5}
   .ck-addrow{display:flex;gap:8px;margin-top:10px}
   .ck-addrow input{margin-top:0}
   .ck-pick{max-height:230px;overflow:auto;border:1px solid var(--border);border-radius:10px;padding:4px;margin-bottom:12px}
@@ -1227,6 +1243,10 @@ function normalise() {
       t.done = !!t.done;
       if (typeof t.due !== "string") t.due = "";
       if (typeof t.created !== "number") t.created = Date.now();
+      if (typeof t.notes !== "string") t.notes = "";
+      t.subs = (Array.isArray(t.subs) ? t.subs : []).filter(x => x && typeof x.title === "string" && x.title.trim())
+        .map(x => ({ id: x.id || uid(), title: x.title, done: !!x.done }));
+      syncParentDone(t, true);
     });
   });
   state.templateGroups.forEach(g => g.templates.forEach(t => t.blocks.forEach(b => {
@@ -4864,6 +4884,16 @@ function promptChoiceIfNeeded() {
   return true;
 }
 
+/* A task with subtasks is checked automatically once every subtask is done,
+   and re-opened if one is unchecked or a new one is added. */
+function syncParentDone(t, quiet) {
+  if (!t.subs || !t.subs.length) return false;
+  const all = t.subs.every(x => x.done);
+  if (all && !t.done) { t.done = true; t.doneAt = Date.now(); if (!quiet) toast(`Task checked off: ${t.title} — all subtasks done`); return true; }
+  if (!all && t.done) { t.done = false; t.doneAt = 0; return true; }
+  return false;
+}
+
 function findTask(id) {
   for (const g of state.checklist) {
     const t = g.tasks.find(x => x.id === id);
@@ -4878,6 +4908,7 @@ function completeTaskFromBlock(b) {
   const t = findTask(b.taskId);
   if (!t || t.done) return;
   t.done = true; t.doneAt = Date.now();
+  (t.subs || []).forEach(x => { x.done = true; });
   save();
   toast(`Task checked off: ${t.title}`);
   if (state.ui.tab === "plan") renderPlan();
@@ -4932,11 +4963,17 @@ function renderChecklist() {
       const tl = links.get(t.id);
       const dueChip = t.due
         ? `<span class="ck-chip ${!t.done && t.due < todayK ? "over" : (!t.done && t.due === todayK ? "today" : "")}">${!t.done && t.due < todayK ? "Overdue · " : ""}${esc(new Date(t.due + "T00:00:00").toLocaleDateString(undefined, { day: "numeric", month: "short" }))}</span>` : "";
+      const nSub = (t.subs || []).length, dSub = (t.subs || []).filter(x => x.done).length;
+      const subChip = nSub ? `<span class="ck-chip sub ${dSub === nSub ? "all" : ""}">☰ ${dSub}/${nSub}</span>` : "";
+      const notesChip = (t.notes || "").trim() ? `<span class="ck-chip" title="Has notes">📝</span>` : "";
       const tplChip = tl ? `<span class="ck-chip tpl" title="Topic in: ${esc(tl.join(", "))}">▦ ${esc(tl[0])}${tl.length > 1 ? ` +${tl.length - 1}` : ""}</span>` : "";
       return `
         <div class="ck-row ${t.done ? "done" : ""}" data-t="${esc(t.id)}">
           <input type="checkbox" data-act="ck-toggle" ${t.done ? "checked" : ""} aria-label="Done">
-          <div><div class="ck-title">${esc(t.title)}</div><div class="ck-meta">${dueChip}${tplChip}</div></div>
+          <div class="ck-main" data-act="ck-open" role="button" tabindex="0" title="Open subtasks &amp; notes">
+            <div class="ck-title">${esc(t.title)}</div>
+            <div class="ck-meta">${subChip}${notesChip}${dueChip}${tplChip}</div>
+          </div>
           <button class="icon-btn sm" data-act="ck-tpl" title="Add to a template as a topic" aria-label="Add to a template">▦</button>
           <button class="icon-btn sm" data-act="ck-edit" title="Edit task" aria-label="Edit task">✎</button>
           <button class="icon-btn sm" data-act="ck-del" title="Delete task" aria-label="Delete task">✕</button>
@@ -4983,7 +5020,7 @@ function addTaskTo(gid) {
   if (!input || !g) return;
   const title = input.value.trim();
   if (!title) { input.focus(); return; }
-  g.tasks.push({ id: uid(), title, done: false, due: "", created: Date.now() });
+  g.tasks.push({ id: uid(), title, done: false, due: "", created: Date.now(), notes: "", subs: [] });
   ckRefresh(gid);
 }
 
@@ -4998,6 +5035,78 @@ function openNameModal(title, label, placeholder, value, okLabel, cb) {
   const go = () => { const v = i.value.trim(); if (!v) { toast("Enter a name"); return; } cb(v); };
   document.getElementById("nmOk").addEventListener("click", go);
   i.addEventListener("keydown", e => { if (e.key === "Enter") go(); });
+}
+
+/* Pop-up with a task's subtasks and notes (changes are saved as you go) */
+function openTaskDetailModal(id) {
+  const t = findTask(id);
+  if (!t) return;
+  if (!Array.isArray(t.subs)) t.subs = [];
+  openModal("Task", `
+    <div class="td-title" style="font-size:16px;font-weight:600;word-break:break-word;margin-bottom:2px">${esc(t.title)}</div>
+    <div class="td-prog" id="tdProg"></div>
+    <div class="td-subs" id="tdSubs"></div>
+    <div class="ck-addrow" style="margin:0 0 14px">
+      <input id="tdAdd" placeholder="Add a subtask and press Enter" autocomplete="off">
+      <button class="btn sm" type="button" id="tdAddBtn">Add</button>
+    </div>
+    <label class="fld">Notes
+      <textarea id="tdNotes" placeholder="Anything worth remembering — links, page numbers, ideas…">${esc(t.notes || "")}</textarea>
+    </label>
+    <button class="btn wide" type="button" id="tdDone">Done</button>`);
+
+  const $subs = document.getElementById("tdSubs"), $prog = document.getElementById("tdProg");
+  const $add = document.getElementById("tdAdd"), $notes = document.getElementById("tdNotes");
+
+  const paint = () => {
+    const n = t.subs.length, d = t.subs.filter(x => x.done).length;
+    $prog.innerHTML = n
+      ? `<span><b>${d}</b> of <b>${n}</b> done</span><div class="ck-bar"><i style="width:${Math.round(d / n * 100)}%"></i></div>` + (t.done ? `<span>✓ Task done</span>` : "")
+      : `<span>${t.done ? "✓ Task done" : "No subtasks yet — add steps below. The task checks itself off when they're all done."}</span>`;
+    $subs.innerHTML = n ? t.subs.map(x => `
+      <div class="td-sub ${x.done ? "done" : ""}" data-s="${esc(x.id)}">
+        <input type="checkbox" data-act="td-toggle" ${x.done ? "checked" : ""} aria-label="Done">
+        <input type="text" data-act="td-title" value="${esc(x.title)}" autocomplete="off">
+        <button class="icon-btn sm" type="button" data-act="td-del" title="Delete subtask" aria-label="Delete subtask">✕</button>
+      </div>`).join("") : "";
+  };
+  const commit = () => { syncParentDone(t); ckRefresh(); paint(); };
+  paint();
+
+  const addSub = () => {
+    const title = $add.value.trim();
+    if (!title) { $add.focus(); return; }
+    t.subs.push({ id: uid(), title, done: false });
+    $add.value = "";
+    commit();
+    $add.focus();
+  };
+  document.getElementById("tdAddBtn").addEventListener("click", addSub);
+  $add.addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); addSub(); } });
+
+  $subs.addEventListener("change", e => {
+    const row = e.target.closest(".td-sub");
+    const sub = row && t.subs.find(x => x.id === row.dataset.s);
+    if (!sub) return;
+    if (e.target.dataset.act === "td-toggle") { sub.done = e.target.checked; commit(); }
+    else if (e.target.dataset.act === "td-title") {
+      const v = e.target.value.trim();
+      if (!v) { e.target.value = sub.title; return; }
+      sub.title = v; save();
+    }
+  });
+  $subs.addEventListener("click", e => {
+    const del = e.target.closest("[data-act='td-del']");
+    if (!del) return;
+    const id2 = del.closest(".td-sub").dataset.s;
+    t.subs = t.subs.filter(x => x.id !== id2);
+    commit();
+  });
+
+  $notes.addEventListener("input", () => { t.notes = $notes.value; save(); });
+  $notes.addEventListener("blur", () => { t.notes = $notes.value; ckRefresh(); });
+  document.getElementById("tdDone").addEventListener("click", () => { t.notes = $notes.value; closeModal(); ckRefresh(); });
+  $add.focus();
 }
 
 function openTaskEditModal(id) {
@@ -5154,6 +5263,7 @@ ckBody.addEventListener("click", e => {
     return;
   }
   if (!tid) return;
+  if (act === "ck-open") { openTaskDetailModal(tid); return; }
   if (act === "ck-tpl")  { openTaskToTemplateModal([tid]); return; }
   if (act === "ck-edit") { openTaskEditModal(tid); return; }
   if (act === "ck-del") {
@@ -5173,10 +5283,18 @@ ckBody.addEventListener("change", e => {
   if (!t) return;
   t.done = cb.checked;
   t.doneAt = cb.checked ? Date.now() : 0;
+  if (cb.checked) (t.subs || []).forEach(x => { x.done = true; });
   ckRefresh();
 });
 
 ckBody.addEventListener("keydown", e => {
+  const main = e.target.closest && e.target.closest(".ck-main");
+  if (main && e.target === main && (e.key === "Enter" || e.key === " ")) {
+    e.preventDefault();
+    const r = main.closest(".ck-row");
+    if (r) openTaskDetailModal(r.dataset.t);
+    return;
+  }
   if (e.key === "Enter" && e.target.classList.contains("ck-add")) {
     e.preventDefault();
     addTaskTo(e.target.dataset.g);
@@ -5254,7 +5372,7 @@ function ckGroup(items) {
   };
   items.forEach(it => {
     const s = sec(it.section || "Tasks");
-    if (it.title) s.tasks.push({ title: it.title, done: !!it.done, due: it.due || "" });
+    if (it.title) s.tasks.push({ title: it.title, done: !!it.done, due: it.due || "", notes: it.notes || "", subs: it.subs || [] });
   });
   return out;
 }
@@ -5262,8 +5380,13 @@ function ckGroup(items) {
 function ckTaskFromJson(x) {
   if (typeof x === "string") return { section: "", title: x.trim(), done: false, due: "" };
   if (x && typeof x === "object") {
+    const subs = (Array.isArray(x.subtasks) ? x.subtasks : (Array.isArray(x.subs) ? x.subs : []))
+      .map(y => typeof y === "string" ? { title: y.trim(), done: false }
+        : (y && typeof y === "object" ? { title: String(y.title ?? y.task ?? y.name ?? "").trim(), done: ckParseDone(y.done ?? y.completed) } : null))
+      .filter(y => y && y.title);
     return { title: String(x.title ?? x.task ?? x.name ?? x.text ?? "").trim(),
-             done: ckParseDone(x.done ?? x.completed), due: ckParseDue(x.due ?? x.deadline ?? x.date ?? "") };
+             done: ckParseDone(x.done ?? x.completed), due: ckParseDue(x.due ?? x.deadline ?? x.date ?? ""),
+             notes: typeof x.notes === "string" ? x.notes : "", subs };
   }
   return null;
 }
@@ -5360,7 +5483,10 @@ function applyChecklistImport(sections, replace) {
       const k = t.title.toLowerCase();
       if (have.has(k)) return;
       have.add(k);
-      g.tasks.push({ id: uid(), title: t.title, done: !!t.done, due: t.due || "", created: Date.now(), ...(t.done ? { doneAt: Date.now() } : {}) });
+      const nt = { id: uid(), title: t.title, done: !!t.done, due: t.due || "", created: Date.now(), notes: t.notes || "",
+        subs: (t.subs || []).map(x => ({ id: uid(), title: x.title, done: !!x.done })), ...(t.done ? { doneAt: Date.now() } : {}) };
+      syncParentDone(nt, true);
+      g.tasks.push(nt);
     });
   });
 }
@@ -5376,7 +5502,9 @@ function ckExportCsv() {
 }
 function ckExportJson() {
   return JSON.stringify({ sections: state.checklist.map(g => ({ name: g.name,
-    tasks: g.tasks.map(t => ({ title: t.title, done: t.done, ...(t.due ? { due: t.due } : {}) })) })) }, null, 2);
+    tasks: g.tasks.map(t => ({ title: t.title, done: t.done, ...(t.due ? { due: t.due } : {}),
+      ...((t.subs || []).length ? { subtasks: t.subs.map(x => ({ title: x.title, done: x.done })) } : {}),
+      ...((t.notes || "").trim() ? { notes: t.notes } : {}) })) })) }, null, 2);
 }
 
 function downloadText(name, text, mime) {
