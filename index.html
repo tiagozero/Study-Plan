@@ -479,6 +479,17 @@
   .block-row.is-choice .bc{flex:1 1 100%;width:100%;gap:10px;padding:14px;background:var(--surface);
     border:1px solid var(--border);border-radius:12px}
   .bc-head{font-size:12px;line-height:1.45}
+  /* split a block into equal parts */
+  .bsplit{flex:1 1 100%;order:4;display:flex;flex-wrap:wrap;align-items:flex-end;gap:10px 12px;padding:12px;
+    background:var(--surface);border:1px solid var(--accent);border-radius:12px}
+  .bsplit[hidden]{display:none}
+  .bsplit label{display:flex;flex-direction:column;gap:4px;font-size:11.5px;color:var(--muted)}
+  .bsplit input{width:92px;margin:0}
+  .bsplit .bs-prev{flex:1 1 100%;font-size:12px;color:var(--muted);line-height:1.45}
+  .bsplit .bs-prev b{color:var(--accent);font-weight:600}
+  .bgap{display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--muted)}
+  .bgap b{color:var(--accent);font-weight:500}
+  .bgap:empty{display:none}
   .bc-opt{gap:8px}
   .bc-acts{gap:10px;padding-top:4px}
   .bc-pick{padding:6px 10px;max-height:200px}
@@ -1110,6 +1121,14 @@ function getBreakMins(s, isLong, explicitOverride) {
   return isLong ? state.settings.long : state.settings.short;
 }
 
+/* A block can carry its own interval (gap = minutes of break right after it).
+   It overrides the global / window break for that one gap; 0 = back to back. */
+function gapAfter(s, i, isLong, explicitOverride) {
+  const b = s && s.blocks && s.blocks[i];
+  if (b && typeof b.gap === "number" && b.gap >= 0) return b.gap;
+  return getBreakMins(s, isLong, explicitOverride);
+}
+
 /* ---------- PERSISTENCE ---------- */
 function load() {
   try {
@@ -1489,7 +1508,7 @@ function effectiveMinutes(workMinutes, blockCount, mode, s, explicitOverride) {
   const every = state.settings.longEvery;
   let total = workMinutes;
   for (let i = 1; i <= blockCount - 1; i++) {
-    total += getBreakMins(s, i % every === 0, explicitOverride);
+    total += gapAfter(s, i - 1, i % every === 0, explicitOverride);
   }
   return total;
 }
@@ -1508,7 +1527,7 @@ function remainingEffective(s, mode) {
   const startGap = Math.max(0, firstUndone - 1);
   let breakMin = 0;
   for (let i = startGap; i <= n - 2; i++) {
-    breakMin += getBreakMins(s, (i + 1) % every === 0);
+    breakMin += gapAfter(s, i, (i + 1) % every === 0);
   }
   return remainWork + breakMin;
 }
@@ -1529,7 +1548,7 @@ function loadPhase() {
     if (timer.phase === "work") {
       timer.total = b.minutes * 60;
     } else {
-      timer.total = getBreakMins(s, timer.longBreak) * 60;
+      timer.total = gapAfter(s, timer.blockIndex, timer.longBreak) * 60;
     }
     timer.remaining = timer.total;
   }
@@ -1599,7 +1618,7 @@ function shouldSkipBreak(s, nextBlockIndex) {
   if (nowSec < startSec || nowSec >= endSec) return false;
 
   const isLong = ((nextBlockIndex) % state.settings.longEvery === 0);
-  const breakSecs = getBreakMins(s, isLong) * 60;
+  const breakSecs = gapAfter(s, nextBlockIndex - 1, isLong) * 60;
 
   const remainWorkSecs = s.blocks.slice(nextBlockIndex)
     .reduce((a, x) => a + x.minutes * 60, 0);
@@ -1608,7 +1627,7 @@ function shouldSkipBreak(s, nextBlockIndex) {
   const n = s.blocks.length;
   for (let i = nextBlockIndex; i <= n - 2; i++) {
     const lng = ((i + 1) % state.settings.longEvery === 0);
-    futureBreakSecs += getBreakMins(s, lng) * 60;
+    futureBreakSecs += gapAfter(s, i, lng) * 60;
   }
 
   return (nowSec + breakSecs + remainWorkSecs + futureBreakSecs) > endSec;
@@ -1644,7 +1663,15 @@ function endPhase(opts) {
       const nextIdx = timer.blockIndex + 1;
       const isLong = ((nextIdx) % state.settings.longEvery === 0);
 
-      if (shouldSkipBreak(s, nextIdx)) {
+      if (gapAfter(s, nextIdx - 1, isLong) === 0) {
+        timer.blockIndex = nextIdx;
+        timer.phase = "work";
+        timer.longBreak = false;
+        loadPhase();
+        timer.running  = wasRunning;
+        timer.lastTick = Date.now();
+        if (!silent) beep(760, 0.35);
+      } else if (shouldSkipBreak(s, nextIdx)) {
         timer.blockIndex = nextIdx;
         timer.phase = "work";
         timer.longBreak = false;
@@ -2883,21 +2910,22 @@ function openWindowModal(editId) {
           const keep = match && match.chosen;
           return { topic: keep ? match.topic : choiceLabel(b.options), minutes: b.minutes,
                    taskId: keep ? match.taskId : undefined, options: b.options.map(o => ({ ...o })),
-                   chosen: !!keep, match };
+                   chosen: !!keep, gap: b.gap, match };
         }
         const topic = b.topic || t.title;
         const match = old.find(o => !used.has(o) && o.topic === topic && o.minutes === b.minutes);
         if (match) used.add(match);
-        return { topic, minutes: b.minutes, taskId: b.taskId, match };
+        return { topic, minutes: b.minutes, taskId: b.taskId, gap: b.gap, match };
       });
 
       if (old.length && fresh.every(f => f.match) && old.length === fresh.length) {
-        old.forEach(o => { o.tplTitle = t.title; newBlocks.push(o); });
+        old.forEach((o, k) => { o.tplTitle = t.title; const g = fresh[k] && fresh[k].gap; if (typeof g === "number") o.gap = g; else delete o.gap; newBlocks.push(o); });
       } else {
         fresh.forEach(f => newBlocks.push({
           topic: f.topic,
           minutes: f.minutes,
           ...(f.taskId ? { taskId: f.taskId } : {}),
+          ...(typeof f.gap === "number" ? { gap: f.gap } : {}),
           ...(f.options ? { options: f.options, chosen: f.chosen } : {}),
           done: f.match ? !!f.match.done : false,
           tpl: t.id,
@@ -3002,7 +3030,7 @@ function buildSchedule(s) {
     t = end;
     let brk = 0;
     if (pomodoro && i < n - 1) {
-      brk = getBreakMins(s, (i + 1) % every === 0) * 60000;
+      brk = gapAfter(s, i, (i + 1) % every === 0) * 60000;
       t += brk;
     }
     return { b, i, start, end, brk };
@@ -4142,12 +4170,31 @@ function openScheduleModal(tplId) {
   });
 }
 
+function gapStateHtml(g) {
+  return typeof g === "number"
+    ? (g > 0 ? `Interval after: <b>${g} min</b>` : `<b>No break</b> after`) + ` <button class="bt-unlink" type="button" data-act="bg-clear">reset</button>`
+    : "";
+}
+/* Split `total` minutes into n parts that add up exactly (extra minutes go to the first parts). */
+function splitMinutes(total, n) {
+  const base = Math.floor(total / n), extra = total - base * n;
+  return Array.from({ length: n }, (_, i) => base + (i < extra ? 1 : 0));
+}
+function splitPreviewHtml(total, n, gap) {
+  if (!(n >= 1) || n > total) return `Each part needs at least 1 minute (this block has ${total}).`;
+  const parts = splitMinutes(total, n);
+  const even = parts.every(x => x === parts[0]);
+  const lbl = n === 1 ? `${total} min` : (even ? `${n} × <b>${parts[0]} min</b>` : `<b>${parts.join(" + ")} min</b>`);
+  const g = gap === "" ? "the usual break" : (+gap === 0 ? "no break" : `a <b>${+gap} min</b> interval`);
+  return n === 1 ? `Keeps ${lbl}, with ${g} after it.` : `${lbl}, with ${g} between parts.`;
+}
+
 function openEditTemplateModal(tplId, groupId) {
   const tpl = findTemplate(tplId);
   if (!tpl) return;
 
   const blockRowsHtml = tpl.blocks.map(b => `
-    <div class="block-row${isChoice(b) ? " is-choice" : ""}" ${b.taskId && !isChoice(b) ? `data-task-id="${esc(b.taskId)}"` : ""}>
+    <div class="block-row${isChoice(b) ? " is-choice" : ""}" ${b.taskId && !isChoice(b) ? `data-task-id="${esc(b.taskId)}"` : ""} ${typeof b.gap === "number" ? `data-gap="${b.gap}"` : ""}>
       <input class="be-topic" placeholder="Topic" value="${esc(isChoice(b) ? choiceLabel(b.options) : (b.topic || ""))}" ${isChoice(b) ? "readonly" : ""} autocomplete="off">
       <input class="be-mins" type="number" min="1" max="300" value="${b.minutes}">
       <div class="b-ctl">
@@ -4159,6 +4206,15 @@ function openEditTemplateModal(tplId, groupId) {
       <div class="b-actions">
         ${blockLinkMarkup(isChoice(b) ? null : b.taskId)}
         <div class="bc">${bcInner(isChoice(b) ? b.options : null)}</div>
+        <button class="btn sm" type="button" data-act="bs-open" title="Split this block into equal parts, with an optional interval">✂ Split</button>
+        <span class="bgap">${gapStateHtml(b.gap)}</span>
+        <div class="bsplit" hidden>
+          <label>Parts<input class="bs-n" type="number" min="1" max="20" value="2"></label>
+          <label>Interval (min)<input class="bs-gap" type="number" min="0" max="120" placeholder="default"></label>
+          <button class="btn primary sm" type="button" data-act="bs-apply">Apply</button>
+          <button class="btn sm" type="button" data-act="bs-cancel">Cancel</button>
+          <div class="bs-prev"></div>
+        </div>
       </div>
     </div>`).join("");
 
@@ -4201,7 +4257,8 @@ function openEditTemplateModal(tplId, groupId) {
   initDayPicker();
   initTplWindow(() => [...document.querySelectorAll("#eBlocks .block-row")].map(r => ({
     topic: r.querySelector(".be-topic").value.trim(),
-    minutes: Math.max(1, Math.min(300, +r.querySelector(".be-mins").value || 25))
+    minutes: Math.max(1, Math.min(300, +r.querySelector(".be-mins").value || 25)),
+    ...(r.dataset.gap !== undefined ? { gap: +r.dataset.gap } : {})
   })));
 
   const $blocks = document.getElementById("eBlocks");
@@ -4223,6 +4280,15 @@ function openEditTemplateModal(tplId, groupId) {
       <div class="b-actions">
         ${blockLinkMarkup(null)}
         <div class="bc">${bcInner(null)}</div>
+        <button class="btn sm" type="button" data-act="bs-open" title="Split this block into equal parts, with an optional interval">✂ Split</button>
+        <span class="bgap">${gapStateHtml(undefined)}</span>
+        <div class="bsplit" hidden>
+          <label>Parts<input class="bs-n" type="number" min="1" max="20" value="2"></label>
+          <label>Interval (min)<input class="bs-gap" type="number" min="0" max="120" placeholder="default"></label>
+          <button class="btn primary sm" type="button" data-act="bs-apply">Apply</button>
+          <button class="btn sm" type="button" data-act="bs-cancel">Cancel</button>
+          <div class="bs-prev"></div>
+        </div>
       </div>`;
     $blocks.appendChild(row);
     $blocks.scrollTop = $blocks.scrollHeight;
@@ -4256,6 +4322,98 @@ function openEditTemplateModal(tplId, groupId) {
     const o = inp.closest(".bc-opt");
     if (o.dataset.taskId) { delete o.dataset.taskId; const l = o.querySelector(".bc-link"); if (l) l.remove(); }
     bcSyncLabel(inp.closest(".block-row"));
+  });
+
+  /* ----- split a block into equal parts ----- */
+  const splitPrev = row => {
+    const total = Math.max(1, Math.min(300, +row.querySelector(".be-mins").value || 25));
+    const n = Math.max(1, Math.min(20, Math.floor(+row.querySelector(".bs-n").value) || 1));
+    row.querySelector(".bs-prev").innerHTML = splitPreviewHtml(total, n, row.querySelector(".bs-gap").value.trim());
+  };
+  $blocks.addEventListener("input", e => {
+    if (e.target.closest(".bsplit")) splitPrev(e.target.closest(".block-row"));
+  });
+  $blocks.addEventListener("keydown", e => {
+    if (e.key === "Enter" && e.target.closest(".bsplit")) {
+      e.preventDefault();
+      e.target.closest(".bsplit").querySelector("[data-act='bs-apply']").click();
+    }
+  });
+  $blocks.addEventListener("click", e => {
+    const so = e.target.closest("[data-act='bs-open']");
+    if (so) {
+      const row = so.closest(".block-row"), panel = row.querySelector(".bsplit");
+      panel.hidden = !panel.hidden;
+      if (!panel.hidden) {
+        if (row.dataset.gap !== undefined) row.querySelector(".bs-gap").value = row.dataset.gap;
+        splitPrev(row);
+        row.querySelector(".bs-n").focus();
+        row.querySelector(".bs-n").select();
+      }
+      return;
+    }
+    const sc = e.target.closest("[data-act='bs-cancel']");
+    if (sc) { sc.closest(".bsplit").hidden = true; return; }
+    const gc = e.target.closest("[data-act='bg-clear']");
+    if (gc) {
+      const row = gc.closest(".block-row");
+      delete row.dataset.gap;
+      row.querySelector(".bgap").innerHTML = "";
+      return;
+    }
+    const sa = e.target.closest("[data-act='bs-apply']");
+    if (sa) {
+      const row = sa.closest(".block-row");
+      const total = Math.max(1, Math.min(300, +row.querySelector(".be-mins").value || 25));
+      const n = Math.max(1, Math.min(20, Math.floor(+row.querySelector(".bs-n").value) || 1));
+      const gRaw = row.querySelector(".bs-gap").value.trim();
+      const gap = gRaw === "" ? null : Math.max(0, Math.min(120, Math.round(+gRaw) || 0));
+      if (n > total) { toast("Each part needs at least 1 minute"); return; }
+      if (row.classList.contains("is-choice") && n > 1) { toast("Split a single task — not a “choose between” block"); return; }
+
+      /* n = 1 just sets the interval after this block */
+      if (n === 1) {
+        if (gap === null) delete row.dataset.gap; else row.dataset.gap = gap;
+        row.querySelector(".bgap").innerHTML = gapStateHtml(gap === null ? undefined : gap);
+        row.querySelector(".bsplit").hidden = true;
+        return;
+      }
+
+      const mins = splitMinutes(total, n);
+      const topic = row.querySelector(".be-topic").value;
+      const days = readBlockDays(row);
+      const taskId = row.dataset.taskId;
+      const lastGap = row.dataset.gap;           /* the original break after the whole task */
+      const rows = [row];
+      for (let k = 1; k < n; k++) {
+        const r = document.createElement("div");
+        r.className = "block-row";
+        r.innerHTML = row.innerHTML;
+        rows.push(r);
+      }
+      let ref = row;
+      rows.slice(1).forEach(r => { ref.after(r); ref = r; });
+      rows.forEach((r, k) => {
+        const last = k === n - 1;
+        r.querySelector(".be-topic").value = topic;
+        r.querySelector(".be-mins").value = mins[k];
+        r.querySelectorAll(".be-day").forEach(i => { i.checked = days.includes(+i.value); });
+        /* a linked checklist task is ticked off when its last part is done */
+        if (taskId && last) r.dataset.taskId = taskId; else delete r.dataset.taskId;
+        refreshRowLink(r);
+        const g = last ? lastGap : (gap === null ? undefined : String(gap));
+        if (g === undefined) delete r.dataset.gap; else r.dataset.gap = g;
+        r.querySelector(".bgap").innerHTML = gapStateHtml(g === undefined ? undefined : +g);
+        r.querySelector(".bsplit").hidden = true;
+        r.querySelector(".bs-n").value = 2;
+        r.querySelector(".bs-gap").value = "";
+        r.querySelector(".bt-list").hidden = true;
+      });
+      syncMove();
+      rows.forEach(r => { r.classList.add("moved"); setTimeout(() => r.classList.remove("moved"), 900); });
+      toast(`Split into ${n} parts`);
+      return;
+    }
   });
 
   $blocks.addEventListener("click", e => {
@@ -4317,12 +4475,13 @@ function openEditTemplateModal(tplId, groupId) {
     const blocks = [...$blocks.querySelectorAll(".block-row")].map(r => {
       const minutes = Math.max(1, Math.min(300, +r.querySelector(".be-mins").value || 25));
       const days = readBlockDays(r);
+      const gapX = r.dataset.gap !== undefined && r.dataset.gap !== "" ? { gap: Math.max(0, Math.min(120, +r.dataset.gap || 0)) } : {};
       const opts = r.classList.contains("is-choice") ? bcRead(r) : [];
-      if (opts.length > 1) return { topic: choiceLabel(opts), minutes, days, options: opts };
-      if (opts.length === 1) return { topic: opts[0].topic, minutes, days, ...(opts[0].taskId ? { taskId: opts[0].taskId } : {}) };
+      if (opts.length > 1) return { topic: choiceLabel(opts), minutes, days, ...gapX, options: opts };
+      if (opts.length === 1) return { topic: opts[0].topic, minutes, days, ...gapX, ...(opts[0].taskId ? { taskId: opts[0].taskId } : {}) };
       return {
         topic: r.classList.contains("is-choice") ? "" : r.querySelector(".be-topic").value.trim(),
-        minutes, days,
+        minutes, days, ...gapX,
         ...(r.dataset.taskId && !r.classList.contains("is-choice") ? { taskId: r.dataset.taskId } : {})
       };
     });
@@ -4621,8 +4780,10 @@ dashSeg.addEventListener("click", e => {
    automatically when that block is finished in a session. */
 /* A copy always starts "undecided": a choice block keeps its alternatives but not the pick. */
 const cpBlock = b => isChoice(b)
-  ? { topic: choiceLabel(b.options), minutes: b.minutes, options: b.options.map(o => ({ ...o })) }
-  : { topic: b.topic, minutes: b.minutes, ...(b.taskId ? { taskId: b.taskId } : {}) };
+  ? { topic: choiceLabel(b.options), minutes: b.minutes, options: b.options.map(o => ({ ...o })),
+      ...(typeof b.gap === "number" && b.gap >= 0 ? { gap: b.gap } : {}) }
+  : { topic: b.topic, minutes: b.minutes, ...(b.taskId ? { taskId: b.taskId } : {}),
+      ...(typeof b.gap === "number" && b.gap >= 0 ? { gap: b.gap } : {}) };
 
 /* ---------- CHOICE BLOCKS ----------
    A block with options[] (2+) is a "pick one" slot: several tasks are added at once and
@@ -4635,6 +4796,8 @@ function cleanOptions(o) {
 }
 function normBlockOptions(b) {
   if (!b || typeof b !== "object") return;
+  if (typeof b.gap === "number" && isFinite(b.gap) && b.gap >= 0) b.gap = Math.min(120, Math.round(b.gap));
+  else delete b.gap;
   const o = cleanOptions(b.options);
   if (o.length > 1) { b.options = o; b.chosen = !!b.chosen; }
   else { delete b.options; delete b.chosen; }
