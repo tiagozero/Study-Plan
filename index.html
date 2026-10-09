@@ -337,6 +337,8 @@
   .td-sub input[type=text]:hover,.td-sub input[type=text]:focus{border-color:var(--border);background:var(--surface)}
   .td-sub.done input[type=text]{text-decoration:line-through;color:var(--muted)}
   .td-empty{font-size:12.5px;color:var(--muted);padding:4px 0 8px}
+  .td-imp{margin-top:8px;padding:10px 12px;border:1px solid var(--border);border-radius:10px}
+  .td-imp textarea{margin-top:8px}
   #tdNotes{min-height:120px;resize:vertical;width:100%;font:inherit;line-height:1.5}
   .ck-addrow{display:flex;gap:8px;margin-top:10px}
   .ck-addrow input{margin-top:0}
@@ -5046,9 +5048,28 @@ function openTaskDetailModal(id) {
     <div class="td-title" style="font-size:16px;font-weight:600;word-break:break-word;margin-bottom:2px">${esc(t.title)}</div>
     <div class="td-prog" id="tdProg"></div>
     <div class="td-subs" id="tdSubs"></div>
-    <div class="ck-addrow" style="margin:0 0 14px">
+    <div class="ck-addrow" style="margin:0 0 8px">
       <input id="tdAdd" placeholder="Add a subtask and press Enter" autocomplete="off">
       <button class="btn sm" type="button" id="tdAddBtn">Add</button>
+    </div>
+    <div style="margin:0 0 14px">
+      <button class="bt-unlink" type="button" id="tdImpToggle" aria-expanded="false">⇪ Import subtasks from a CSV / JSON file…</button>
+      <div class="td-imp" id="tdImp" hidden>
+        <div class="bk-file">
+          <div class="bk-file-row">
+            <label class="btn bk-browse" for="tdFile">Browse…</label>
+            <span class="bk-fname" id="tdFileName">No file selected</span>
+          </div>
+          <input type="file" id="tdFile" class="bk-file-in" accept=".csv,.json,.txt,text/csv,application/json,text/plain,*/*">
+        </div>
+        <textarea id="tdImpText" rows="4" spellcheck="false" placeholder="…or paste subtasks here: a JSON list, a CSV with a “subtask” column, or one per line"></textarea>
+        <div class="preview" id="tdImpPrev"></div>
+        <div class="ck-tplrow" style="margin-top:8px">
+          <button class="btn primary sm" type="button" id="tdImpGo" disabled>Add subtasks</button>
+          <button class="btn sm" type="button" data-sub-tpl="csv">Download CSV example</button>
+          <button class="btn sm" type="button" data-sub-tpl="json">Download JSON example</button>
+        </div>
+      </div>
     </div>
     <label class="fld">Notes
       <textarea id="tdNotes" placeholder="Anything worth remembering — links, page numbers, ideas…">${esc(t.notes || "")}</textarea>
@@ -5101,6 +5122,61 @@ function openTaskDetailModal(id) {
     const id2 = del.closest(".td-sub").dataset.s;
     t.subs = t.subs.filter(x => x.id !== id2);
     commit();
+  });
+
+  /* ----- import subtasks from a file / pasted text ----- */
+  const $imp = document.getElementById("tdImp"), $impText = document.getElementById("tdImpText"),
+        $impPrev = document.getElementById("tdImpPrev"), $impGo = document.getElementById("tdImpGo");
+  let impParsed = { subs: [] };
+  const impRefresh = () => {
+    impParsed = ckParseSubtasksText($impText.value, t.title);
+    const have = new Set(t.subs.map(x => x.title.trim().toLowerCase()));
+    const seen = new Set(have);
+    impParsed.fresh = impParsed.subs.filter(x => { const k = x.title.toLowerCase(); if (seen.has(k)) return false; seen.add(k); return true; });
+    const skipped = impParsed.subs.length - impParsed.fresh.length;
+    if (impParsed.error) { $impPrev.innerHTML = `<div class="prev-empty">${esc(impParsed.error)}</div>`; $impGo.disabled = true; return; }
+    if (!impParsed.subs.length) {
+      $impPrev.innerHTML = `<div class="prev-empty">${$impText.value.trim() ? "No subtasks found in that text" : "Nothing to import yet"}</div>`;
+      $impGo.disabled = true; return;
+    }
+    const shown = impParsed.fresh.slice(0, 8);
+    $impPrev.innerHTML =
+      `<div class="prev-item"><b>${impParsed.format} · ${impParsed.fresh.length} new subtask${impParsed.fresh.length !== 1 ? "s" : ""}</b><span>${skipped ? skipped + " already there" : ""}</span></div>` +
+      shown.map(x => `<div class="prev-item"><span>${x.done ? "☑" : "☐"} ${esc(x.title)}</span></div>`).join("") +
+      (impParsed.fresh.length > shown.length ? `<div class="prev-more">… and ${impParsed.fresh.length - shown.length} more</div>` : "");
+    $impGo.disabled = !impParsed.fresh.length;
+    $impGo.textContent = impParsed.fresh.length ? `Add ${impParsed.fresh.length} subtask${impParsed.fresh.length !== 1 ? "s" : ""}` : "Add subtasks";
+  };
+  document.getElementById("tdImpToggle").addEventListener("click", e => {
+    $imp.hidden = !$imp.hidden;
+    e.currentTarget.setAttribute("aria-expanded", String(!$imp.hidden));
+    if (!$imp.hidden) $impText.focus();
+  });
+  let impT = null;
+  $impText.addEventListener("input", () => { clearTimeout(impT); impT = setTimeout(impRefresh, 100); });
+  document.getElementById("tdFile").addEventListener("change", async e => {
+    const f = e.target.files && e.target.files[0];
+    if (!f) return;
+    document.getElementById("tdFileName").textContent = f.name;
+    try { $impText.value = await readFileText(f); }
+    catch (err) { toast("Could not read that file — try pasting its contents"); }
+    e.target.value = "";
+    impRefresh();
+  });
+  $impGo.addEventListener("click", () => {
+    if (!impParsed.fresh || !impParsed.fresh.length) return;
+    impParsed.fresh.forEach(x => t.subs.push({ id: uid(), title: x.title, done: !!x.done }));
+    const n = impParsed.fresh.length;
+    $impText.value = ""; impRefresh();
+    commit();
+    toast(`Added ${n} subtask${n !== 1 ? "s" : ""}`);
+  });
+  $imp.addEventListener("click", e => {
+    const b = e.target.closest("[data-sub-tpl]");
+    if (!b) return;
+    const csv = b.dataset.subTpl === "csv";
+    toast(csv ? (downloadText("subtasks-template.csv", "\uFEFF" + CK_SUB_CSV_TEMPLATE + "\n", "text/csv") ? "Example downloaded" : "Download blocked")
+              : (downloadText("subtasks-template.json", CK_SUB_JSON_TEMPLATE + "\n", "application/json") ? "Example downloaded" : "Download blocked"));
   });
 
   $notes.addEventListener("input", () => { t.notes = $notes.value; save(); });
@@ -5303,11 +5379,13 @@ ckBody.addEventListener("keydown", e => {
 
 /* ---------- CHECKLIST IMPORT / EXPORT (CSV + JSON) ---------- */
 const CK_CSV_TEMPLATE =
-`section,task,done,due
-Exam prep,Read chapter 4,no,2026-11-10
-Exam prep,Solve a past paper,no,
-Admin,Book the exam slot,yes,
-Admin,Print study notes,no,2026-11-05`;
+`section,task,done,due,notes,subtask,subtask_done
+Exam prep,Read chapter 4,no,2026-11-10,Focus on the summary,Skim the headings,yes
+Exam prep,Read chapter 4,no,2026-11-10,,Take notes,no
+Exam prep,Read chapter 4,no,2026-11-10,,Answer the review questions,no
+Exam prep,Solve a past paper,no,,,,
+Admin,Book the exam slot,yes,,,,
+Admin,Print study notes,no,2026-11-05,,,`;
 
 const CK_JSON_TEMPLATE =
 `{
@@ -5315,7 +5393,16 @@ const CK_JSON_TEMPLATE =
     {
       "name": "Exam prep",
       "tasks": [
-        { "title": "Read chapter 4", "due": "2026-11-10" },
+        {
+          "title": "Read chapter 4",
+          "due": "2026-11-10",
+          "notes": "Focus on the summary",
+          "subtasks": [
+            { "title": "Skim the headings", "done": true },
+            "Take notes",
+            "Answer the review questions"
+          ]
+        },
         { "title": "Solve a past paper", "done": false }
       ]
     },
@@ -5325,6 +5412,23 @@ const CK_JSON_TEMPLATE =
     }
   ]
 }`;
+
+/* just the subtasks of ONE task (used by "Import subtasks" inside a task) */
+const CK_SUB_JSON_TEMPLATE =
+`[
+  { "title": "Skim the headings", "done": true },
+  "Take notes",
+  "Answer the review questions"
+]`;
+const CK_SUB_CSV_TEMPLATE =
+`subtask,done
+Skim the headings,yes
+Take notes,no
+Answer the review questions,no`;
+
+const CK_SUB_HEAD = ["subtask", "subtasks", "sub-task", "sub task", "sub", "step", "steps", "subtarefa", "subtarefas", "etapa", "etapas"];
+const CK_SUBDONE_HEAD = ["subtask_done", "subtask done", "subtaskdone", "subtask status", "subtask_status", "subtask completed",
+                         "sub_done", "sub done", "subdone", "subtarefa_concluida", "subtarefa concluida"];
 
 function ckParseDone(v) {
   if (typeof v === "boolean") return v;
@@ -5372,7 +5476,17 @@ function ckGroup(items) {
   };
   items.forEach(it => {
     const s = sec(it.section || "Tasks");
-    if (it.title) s.tasks.push({ title: it.title, done: !!it.done, due: it.due || "", notes: it.notes || "", subs: it.subs || [] });
+    if (!it.title) return;
+    const k = it.title.toLowerCase();
+    let t = s.tasks.find(x => x.title.toLowerCase() === k);
+    if (!t) { t = { title: it.title, done: !!it.done, due: it.due || "", notes: it.notes || "", subs: [] }; s.tasks.push(t); }
+    else {                                   /* same task on several rows: keep the first values, collect the subtasks */
+      if (!t.due && it.due) t.due = it.due;
+      if (!t.notes && it.notes) t.notes = it.notes;
+    }
+    (it.subs || []).forEach(x => {
+      if (x.title && !t.subs.some(y => y.title.toLowerCase() === x.title.toLowerCase())) t.subs.push({ title: x.title, done: !!x.done });
+    });
   });
   return out;
 }
@@ -5380,13 +5494,13 @@ function ckGroup(items) {
 function ckTaskFromJson(x) {
   if (typeof x === "string") return { section: "", title: x.trim(), done: false, due: "" };
   if (x && typeof x === "object") {
-    const subs = (Array.isArray(x.subtasks) ? x.subtasks : (Array.isArray(x.subs) ? x.subs : []))
+    const subs = (Array.isArray(x.subtasks) ? x.subtasks : (Array.isArray(x.subs) ? x.subs : (Array.isArray(x.steps) ? x.steps : [])))
       .map(y => typeof y === "string" ? { title: y.trim(), done: false }
         : (y && typeof y === "object" ? { title: String(y.title ?? y.task ?? y.name ?? "").trim(), done: ckParseDone(y.done ?? y.completed) } : null))
       .filter(y => y && y.title);
     return { title: String(x.title ?? x.task ?? x.name ?? x.text ?? "").trim(),
              done: ckParseDone(x.done ?? x.completed), due: ckParseDue(x.due ?? x.deadline ?? x.date ?? ""),
-             notes: typeof x.notes === "string" ? x.notes : "", subs };
+             notes: typeof (x.notes ?? x.note) === "string" ? (x.notes ?? x.note) : "", subs };
   }
   return null;
 }
@@ -5403,9 +5517,8 @@ function ckSectionsFromJson(v) {
       return ckGroup(v.filter(x => x && typeof x === "object").flatMap(mapSec));
     }
     return ckGroup(v.filter(x => x && typeof x === "object").map(r => ({   // flat rows
-      section: String(r.section ?? r.group ?? r.category ?? "").trim(),
-      title: String(r.title ?? r.task ?? r.name ?? "").trim(),
-      done: ckParseDone(r.done ?? r.completed), due: ckParseDue(r.due ?? r.deadline ?? "") })));
+      ...ckTaskFromJson(r),
+      section: String(r.section ?? r.group ?? r.category ?? "").trim() })));
   }
   if (v && typeof v === "object") {
     const arr = v.sections ?? v.checklist ?? v.groups;
@@ -5425,7 +5538,10 @@ function ckSectionsFromCsv(text) {
     section: ["section", "sections", "group", "category", "seção", "secao", "categoria", "grupo"],
     title:   ["task", "tasks", "title", "name", "item", "tarefa", "tarefas", "titulo", "título"],
     done:    ["done", "completed", "complete", "status", "concluída", "concluida", "concluído", "concluido", "feito"],
-    due:     ["due", "due date", "duedate", "deadline", "date", "prazo", "vencimento"]
+    due:     ["due", "due date", "duedate", "deadline", "date", "prazo", "vencimento"],
+    notes:   ["notes", "note", "notas", "nota", "observações", "observacoes"],
+    sub:     CK_SUB_HEAD,
+    subdone: CK_SUBDONE_HEAD
   };
   const head = rows[0].map(c => c.trim().toLowerCase());
   const col = {};
@@ -5435,11 +5551,16 @@ function ckSectionsFromCsv(text) {
   else if (rows[0].length >= 2) { col.section = 0; col.title = 1; col.done = 2; col.due = 3; }
   else { col.title = 0; }
   const get = (r, k) => (col[k] !== undefined && r[col[k]] !== undefined) ? r[col[k]].trim() : "";
-  let last = "";
+  let last = "", lastTitle = "";
   const items = body.map(r => {
     const sec = get(r, "section");
+    if (sec && sec !== last) lastTitle = "";
     if (sec) last = sec;
-    return { section: sec || last, title: get(r, "title"), done: ckParseDone(get(r, "done")), due: ckParseDue(get(r, "due")) };
+    let title = get(r, "title");
+    const subT = get(r, "sub");
+    if (title) lastTitle = title; else if (subT) title = lastTitle;     /* blank task + subtask = continue the task above */
+    return { section: sec || last, title, done: ckParseDone(get(r, "done")), due: ckParseDue(get(r, "due")),
+             notes: get(r, "notes"), subs: subT ? [{ title: subT, done: ckParseDone(get(r, "subdone")) }] : [] };
   });
   return ckGroup(items);
 }
@@ -5455,19 +5576,22 @@ function parseChecklistText(raw) {
   return { sections: ckSectionsFromCsv(text), format: "CSV", error: "" };
 }
 
-/* how many sections/tasks would be new vs already there */
+/* how many sections/tasks/subtasks would be new vs already there */
 function ckImportStats(sections, replace) {
-  let newSec = 0, newTasks = 0, dupes = 0;
-  sections.forEach(s => {
-    const ex = replace ? null : state.checklist.find(g => g.name.trim().toLowerCase() === s.name.toLowerCase());
+  let newSec = 0, newTasks = 0, dupes = 0, newSubs = 0;
+  sections.forEach(sc => {
+    const ex = replace ? null : state.checklist.find(g => g.name.trim().toLowerCase() === sc.name.toLowerCase());
     if (!ex) newSec++;
-    const have = new Set(ex ? ex.tasks.map(t => t.title.trim().toLowerCase()) : []);
-    s.tasks.forEach(t => {
-      const k = t.title.toLowerCase();
-      if (have.has(k)) dupes++; else { have.add(k); newTasks++; }
+    sc.tasks.forEach(t => {
+      const et = ex ? ex.tasks.find(x => x.title.trim().toLowerCase() === t.title.toLowerCase()) : null;
+      if (et) {
+        dupes++;
+        const have = new Set((et.subs || []).map(x => x.title.trim().toLowerCase()));
+        newSubs += (t.subs || []).filter(x => !have.has(x.title.toLowerCase())).length;
+      } else { newTasks++; newSubs += (t.subs || []).length; }
     });
   });
-  return { newSec, newTasks, dupes };
+  return { newSec, newTasks, dupes, newSubs };
 }
 
 function applyChecklistImport(sections, replace) {
@@ -5478,11 +5602,18 @@ function applyChecklistImport(sections, replace) {
   sections.forEach(s => {
     let g = state.checklist.find(x => x.name.trim().toLowerCase() === s.name.toLowerCase());
     if (!g) { g = { id: uid(), name: s.name, collapsed: false, tasks: [] }; state.checklist.push(g); }
-    const have = new Set(g.tasks.map(t => t.title.trim().toLowerCase()));
     s.tasks.forEach(t => {
       const k = t.title.toLowerCase();
-      if (have.has(k)) return;
-      have.add(k);
+      const ex = g.tasks.find(x => x.title.trim().toLowerCase() === k);
+      if (ex) {                         /* task already there: only add the subtasks / notes it is missing */
+        if (!Array.isArray(ex.subs)) ex.subs = [];
+        (t.subs || []).forEach(x => {
+          if (!ex.subs.some(y => y.title.trim().toLowerCase() === x.title.toLowerCase())) ex.subs.push({ id: uid(), title: x.title, done: !!x.done });
+        });
+        if (!(ex.notes || "").trim() && t.notes) ex.notes = t.notes;
+        syncParentDone(ex, true);
+        return;
+      }
       const nt = { id: uid(), title: t.title, done: !!t.done, due: t.due || "", created: Date.now(), notes: t.notes || "",
         subs: (t.subs || []).map(x => ({ id: uid(), title: x.title, done: !!x.done })), ...(t.done ? { doneAt: Date.now() } : {}) };
       syncParentDone(nt, true);
@@ -5493,12 +5624,18 @@ function applyChecklistImport(sections, replace) {
 
 function ckExportRows() {
   return state.checklist.flatMap(g => g.tasks.length
-    ? g.tasks.map(t => ({ section: g.name, title: t.title, done: t.done, due: t.due || "" }))
-    : [{ section: g.name, title: "", done: false, due: "" }]);
+    ? g.tasks.flatMap(t => {
+        const base = { section: g.name, title: t.title, done: t.done, due: t.due || "" };
+        const subs = t.subs || [];
+        if (!subs.length) return [{ ...base, notes: t.notes || "", sub: "", subDone: false }];
+        return subs.map((x, i) => ({ ...base, notes: i === 0 ? (t.notes || "") : "", sub: x.title, subDone: !!x.done }));
+      })
+    : [{ section: g.name, title: "", done: false, due: "", notes: "", sub: "", subDone: false }]);
 }
 function ckExportCsv() {
   const q = v => /[",;\n\r]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v;
-  return "section,task,done,due\n" + ckExportRows().map(r => [q(r.section), q(r.title), r.done ? "yes" : "no", r.due].join(",")).join("\n");
+  return "section,task,done,due,notes,subtask,subtask_done\n" + ckExportRows().map(r =>
+    [q(r.section), q(r.title), r.done ? "yes" : "no", r.due, q(r.notes), q(r.sub), r.sub ? (r.subDone ? "yes" : "no") : ""].join(",")).join("\n");
 }
 function ckExportJson() {
   return JSON.stringify({ sections: state.checklist.map(g => ({ name: g.name,
@@ -5544,9 +5681,67 @@ function readFileText(file) {
   });
 }
 
+/* Parse a file/pasted text holding the subtasks of ONE task.
+   Accepts: JSON list / {subtasks:[…]} / a whole checklist JSON, a CSV with a "subtask" column
+   (or a one-column CSV), or plain lines ("- item", "[x] item"). */
+function ckParseSubtasksText(raw, taskTitle) {
+  const text = String(raw || "").replace(/^\uFEFF/, "").trim();
+  if (!text) return { subs: [], format: "", error: "" };
+  const want = String(taskTitle || "").trim().toLowerCase();
+  const toSub = y => typeof y === "string" ? { title: y.trim(), done: false }
+    : (y && typeof y === "object" ? { title: String(y.title ?? y.task ?? y.name ?? y.text ?? "").trim(), done: ckParseDone(y.done ?? y.completed) } : null);
+  const clean = list => list.map(toSub).filter(x => x && x.title);
+
+  if (text[0] === "{" || text[0] === "[") {
+    let v;
+    try { v = JSON.parse(text); } catch (e) { return { subs: [], format: "JSON", error: "That JSON isn't valid: " + e.message }; }
+    const hasSubs = x => x && typeof x === "object" && (Array.isArray(x.subtasks) || Array.isArray(x.subs) || Array.isArray(x.steps));
+    let list = null;
+    if (Array.isArray(v) && !v.some(hasSubs)) list = v;
+    else if (!Array.isArray(v) && hasSubs(v)) list = v.subtasks ?? v.subs ?? v.steps;
+    else {                                       /* a whole checklist / list of tasks: find this task */
+      const tasks = ckSectionsFromJson(v).flatMap(sc => sc.tasks);
+      const withSubs = tasks.filter(t => t.subs.length);
+      const hit = tasks.find(t => t.title.toLowerCase() === want && t.subs.length) || (withSubs.length === 1 ? withSubs[0] : null);
+      if (!hit) return { subs: [], format: "JSON", error: `Couldn't find subtasks for “${taskTitle}” in that file.` };
+      list = hit.subs;
+    }
+    return { subs: clean(list), format: "JSON", error: "" };
+  }
+
+  const lines = text.split(/\r?\n/).filter(l => l.trim());
+  const first = lines[0];
+  const delim = [";", "\t", ","].map(d => [d, first.split(d).length]).sort((a, b) => b[1] - a[1])[0][0];
+  const head = first.split(delim).map(c => c.trim().replace(/^"|"$/g, "").toLowerCase());
+  const GENERIC = ["title", "name", "item", "task", "tasks"];
+  const iSub = head.findIndex(h => CK_SUB_HEAD.includes(h));
+  const iOnly = head.length === 1 && GENERIC.includes(head[0]) ? 0 : -1;
+  if (iSub >= 0 || iOnly >= 0) {
+    const rows = ckCsvRows(text, delim).slice(1);
+    const c = iSub >= 0 ? iSub : iOnly;
+    const iTitle = head.findIndex((h, i) => i !== c && ["task", "tasks", "title", "name", "tarefa"].includes(h));
+    let iDone = head.findIndex(h => CK_SUBDONE_HEAD.includes(h));
+    if (iDone < 0 && iTitle < 0) iDone = head.findIndex((h, i) => i !== c && ["done", "completed", "complete", "status", "feito"].includes(h));
+    let use = rows;
+    if (iTitle >= 0) {                           /* a multi-task file: keep this task's rows (blank task = same as above) */
+      let cur = "";
+      const tagged = rows.map(r => { const t = (r[iTitle] || "").trim(); if (t) cur = t; return [cur.toLowerCase(), r]; });
+      if (tagged.some(([t]) => t === want)) use = tagged.filter(([t]) => t === want).map(([, r]) => r);
+    }
+    const subs = use.map(r => ({ title: (r[c] || "").trim(), done: iDone >= 0 ? ckParseDone(r[iDone]) : false })).filter(x => x.title);
+    return { subs, format: "CSV", error: "" };
+  }
+  /* plain lines */
+  const subs = lines.map(l => {
+    const m = l.match(/^\s*(?:[-*•–]\s+|\d+[.)]\s+)?(?:\[([ xX✓✔]?)\]\s*)?(.*)$/);
+    return { title: (m[2] || "").trim(), done: !!(m[1] && m[1].trim()) };
+  }).filter(x => x.title);
+  return { subs, format: "Text", error: "" };
+}
+
 function openChecklistIOModal() {
   openModal("Import / Export checklist", `
-    <p class="hint">Upload a <b>CSV</b> or <b>JSON</b> file with sections and tasks, or paste its contents below.</p>
+    <p class="hint">Upload a <b>CSV</b> or <b>JSON</b> file with sections, tasks and <b>subtasks</b>, or paste its contents below. Tasks you already have only receive the subtasks and notes they're missing.</p>
 
     <div class="bk-file">
       <div class="bk-file-row">
@@ -5581,7 +5776,7 @@ function openChecklistIOModal() {
         <button class="btn sm" type="button" data-tpl="csv-dl">Download .csv</button>
         <button class="btn sm" type="button" data-tpl="csv-use">Edit here</button>
       </div>
-      <p class="hint" style="margin:8px 0 0"><code>done</code> (yes/no) and <code>due</code> (YYYY-MM-DD or DD/MM/YYYY) are optional. A blank section reuses the one above. Files separated by <code>;</code> work too.</p>
+      <p class="hint" style="margin:8px 0 0"><code>done</code> (yes/no), <code>due</code> (YYYY-MM-DD or DD/MM/YYYY), <code>notes</code>, <code>subtask</code> and <code>subtask_done</code> are optional. Use one row per subtask — repeat the task on each row, or leave <code>task</code> blank to continue the task above. A blank section reuses the one above. Files separated by <code>;</code> work too.</p>
 
       <h4>JSON template</h4>
       <pre>${esc(CK_JSON_TEMPLATE)}</pre>
@@ -5590,7 +5785,7 @@ function openChecklistIOModal() {
         <button class="btn sm" type="button" data-tpl="json-dl">Download .json</button>
         <button class="btn sm" type="button" data-tpl="json-use">Edit here</button>
       </div>
-      <p class="hint" style="margin:8px 0 0">Tasks can be plain text or objects with <code>title</code>, <code>done</code> and <code>due</code>.</p>
+      <p class="hint" style="margin:8px 0 0">Tasks can be plain text or objects with <code>title</code>, <code>done</code>, <code>due</code>, <code>notes</code> and <code>subtasks</code> (a list of text or <code>{ "title", "done" }</code>).</p>
     </div>
   `);
 
@@ -5610,10 +5805,11 @@ function openChecklistIOModal() {
     const shown = parsed.sections.slice(0, 20);
     $prev.innerHTML =
       `<div class="prev-item"><b>${parsed.format} · ${st.newSec} new section${st.newSec !== 1 ? "s" : ""}, ${st.newTasks} new task${st.newTasks !== 1 ? "s" : ""}</b>
-         <span>${st.dupes ? st.dupes + " already there" : ""}</span></div>` +
-      shown.map(s => `<div class="prev-item"><b>${esc(s.name)}</b><span>${s.tasks.length} task${s.tasks.length !== 1 ? "s" : ""}</span></div>`).join("") +
+         <span>${[st.newSubs ? st.newSubs + " new subtask" + (st.newSubs !== 1 ? "s" : "") : "", st.dupes ? st.dupes + " task" + (st.dupes !== 1 ? "s" : "") + " already there" : ""].filter(Boolean).join(" · ")}</span></div>` +
+      shown.map(s => { const ns = s.tasks.reduce((a, t) => a + (t.subs || []).length, 0);
+        return `<div class="prev-item"><b>${esc(s.name)}</b><span>${s.tasks.length} task${s.tasks.length !== 1 ? "s" : ""}${ns ? ` · ${ns} subtask${ns !== 1 ? "s" : ""}` : ""}</span></div>`; }).join("") +
       (parsed.sections.length > shown.length ? `<div class="prev-more">… and ${parsed.sections.length - shown.length} more</div>` : "");
-    $go.disabled = !(st.newSec || st.newTasks);
+    $go.disabled = !(st.newSec || st.newTasks || st.newSubs);
     $go.textContent = replace ? "Replace checklist" : "Import";
   }
 
@@ -5641,7 +5837,7 @@ function openChecklistIOModal() {
     closeModal();
     renderPlan();
     renderTemplates();
-    toast(`Imported ${st.newTasks} task${st.newTasks !== 1 ? "s" : ""} in ${parsed.sections.length} section${parsed.sections.length !== 1 ? "s" : ""}`);
+    toast(`Imported ${st.newTasks} task${st.newTasks !== 1 ? "s" : ""}${st.newSubs ? ` and ${st.newSubs} subtask${st.newSubs !== 1 ? "s" : ""}` : ""} in ${parsed.sections.length} section${parsed.sections.length !== 1 ? "s" : ""}`);
   });
 
   document.getElementById("ckShowTpl").addEventListener("click", e => {
