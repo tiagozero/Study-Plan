@@ -312,7 +312,16 @@
   .ck-name{flex:1;min-width:0;font-weight:600;font-size:14px;cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .ck-count{font-size:12px;color:var(--muted);margin-right:4px;white-space:nowrap}
   .ck-body{border-top:1px solid var(--border);padding:2px 10px 10px}
-  .ck-row{display:grid;grid-template-columns:20px minmax(0,1fr) auto auto auto auto;gap:6px;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)}
+  .ck-item{border-bottom:1px solid var(--border)}
+  .ck-row{display:grid;grid-template-columns:20px 20px minmax(0,1fr) auto auto auto auto;gap:6px;align-items:center;padding:8px 0}
+  .ck-caret{display:flex;align-items:center;justify-content:center;width:20px;height:24px;padding:0;border:0;border-radius:6px;background:transparent;color:var(--muted);cursor:pointer;font-size:12px;transition:transform .15s,background .15s}
+  .ck-caret:hover{background:var(--surface-2);color:var(--text)}
+  .ck-caret.open{transform:rotate(90deg)}
+  .ck-tsubs{margin:0 0 10px 46px}
+  .ck-tsubs .td-sub{grid-template-columns:20px minmax(0,1fr) auto}
+  .ck-tsubs .td-sub input[type=text]{font-size:13.5px;padding:5px 8px}
+  .ck-tsubs .ck-addrow{margin-top:4px}
+  .ck-tsubs .ck-addrow input{font-size:12.5px;padding:6px 8px}
   .ck-row input[type=checkbox]{display:block;width:17px;height:17px;margin:0;padding:0;accent-color:var(--accent);cursor:pointer}
   .ck-title{font-size:14px;word-break:break-word}
   .ck-row.done .ck-title{text-decoration:line-through;color:var(--muted)}
@@ -377,6 +386,16 @@
   .td-sub input[type=text]{margin:0;padding:6px 8px;border-color:transparent;background:transparent}
   .td-sub input[type=text]:hover,.td-sub input[type=text]:focus{border-color:var(--border);background:var(--surface)}
   .td-sub.done input[type=text]{text-decoration:line-through;color:var(--muted)}
+  .td-child{margin-left:28px;padding:2px 0}
+  .td-child input[type=text]{font-size:13px}
+  .td-kids{display:flex;gap:2px;align-items:center}
+  .td-kidadd{margin:2px 0 6px 28px}
+  .td-kidadd input{font-size:12.5px;padding:6px 8px}
+  .tw-pk-kid{padding-left:54px;font-size:12px;color:var(--muted)}
+  .bulk-box{display:flex;flex-direction:column;gap:6px;align-items:flex-start;margin:6px 0 2px}
+  .bulk-box[hidden]{display:none}
+  .bulk-box textarea{width:100%;font-size:13px;margin:0}
+  [data-bulkroot] > .bt-unlink{margin-top:6px;font-size:12.5px}
   .td-empty{font-size:12.5px;color:var(--muted);padding:4px 0 8px}
   .td-imp{margin-top:8px;padding:10px 12px;border:1px solid var(--border);border-radius:10px}
   .td-imp textarea{margin-top:8px}
@@ -1277,8 +1296,7 @@ function normalise() {
       if (typeof t.due !== "string") t.due = "";
       if (typeof t.created !== "number") t.created = Date.now();
       if (typeof t.notes !== "string") t.notes = "";
-      t.subs = (Array.isArray(t.subs) ? t.subs : []).filter(x => x && typeof x.title === "string" && x.title.trim())
-        .map(x => ({ id: x.id || uid(), title: x.title, done: !!x.done }));
+      t.subs = normSubs(t.subs);
       syncParentDone(t, true);
     });
   });
@@ -4929,6 +4947,60 @@ function promptChoiceIfNeeded() {
   return true;
 }
 
+/* adding several subtasks at once: one per line (bullets, numbers and [ ] markers are ignored) */
+function splitLines(text) {
+  return String(text || "").split(/\r?\n/)
+    .map(l => l.replace(/^\s*(?:[-*\u2022]|\d+[.)]|\[[ xX]?\])\s+/, "").trim())
+    .filter(Boolean);
+}
+const bulkHtml = act => `
+  <button class="bt-unlink" type="button" data-act="${act}tog" aria-expanded="false">+ Add several at once</button>
+  <div class="bulk-box" hidden>
+    <textarea class="bulk-ta" rows="4" spellcheck="false" placeholder="One subtask per line — you can also paste a list"></textarea>
+    <button class="btn primary sm" type="button" data-act="${act}go">Add all</button>
+  </div>`;
+function bulkToggle(btn) {
+  const box = btn.nextElementSibling;
+  if (!box) return;
+  box.hidden = !box.hidden;
+  btn.setAttribute("aria-expanded", String(!box.hidden));
+  if (!box.hidden) box.querySelector("textarea").focus();
+}
+/* pasting a multi-line list into an "add subtask" box moves it into the multi-add box */
+document.addEventListener("paste", e => {
+  const t = e.target;
+  if (!t || !t.matches || !t.matches(".ck-subin, .tw-subadd, #tdAdd")) return;
+  const lines = splitLines(((e.clipboardData || window.clipboardData) || { getData: () => "" }).getData("text"));
+  if (lines.length < 2) return;
+  const root = t.closest("[data-bulkroot]"), box = root && root.querySelector(".bulk-box");
+  if (!box) return;
+  e.preventDefault();
+  box.hidden = false;
+  const btn = box.previousElementSibling; if (btn) btn.setAttribute("aria-expanded", "true");
+  const ta = box.querySelector("textarea");
+  ta.value = (ta.value.trim() ? ta.value.trim() + "\n" : "") + lines.join("\n");
+  ta.focus();
+});
+const subsAdded = n => `Added ${n} subtask${n !== 1 ? "s" : ""}`;
+
+/* Subtasks can have their own subtasks (one extra level): sub.subs = [{id,title,done}] */
+function subSync(x) { if (x.subs && x.subs.length) x.done = x.subs.every(c => c.done); }
+function setSubsDone(list, v) { (list || []).forEach(x => { x.done = v; (x.subs || []).forEach(c => { c.done = v; }); }); }
+function subCounts(list) {
+  let n = 0, d = 0;
+  (list || []).forEach(x => { n++; if (x.done) d++; (x.subs || []).forEach(c => { n++; if (c.done) d++; }); });
+  return { n, d };
+}
+function normSubs(list) {
+  return (Array.isArray(list) ? list : []).filter(x => x && typeof x.title === "string" && x.title.trim()).map(x => {
+    const o = { id: x.id || uid(), title: x.title.trim(), done: !!x.done };
+    const kids = (Array.isArray(x.subs) ? x.subs : []).filter(c => c && typeof c.title === "string" && c.title.trim())
+      .map(c => ({ id: c.id || uid(), title: c.title.trim(), done: !!c.done }));
+    if (kids.length) { o.subs = kids; subSync(o); }
+    return o;
+  });
+}
+
 /* A task with subtasks is checked automatically once every subtask is done,
    and re-opened if one is unchecked or a new one is added. */
 function syncParentDone(t, quiet) {
@@ -4969,6 +5041,8 @@ function templateLinks() {
   return m;
 }
 
+const ckKidOpen = new Set();                 // subtasks whose "add sub-subtask" box is shown
+
 function renderChecklist() {
   const all = state.checklist.flatMap(g => g.tasks);
   const done = all.filter(t => t.done).length;
@@ -4982,6 +5056,7 @@ function renderChecklist() {
       <div class="ck-prog">${all.length ? `<b>${done}</b> of <b>${all.length}</b> done · ${pct}%` : "No tasks yet"}
         <div class="ck-bar"><i style="width:${pct}%"></i></div></div>
       <button class="btn sm" data-act="ck-hide">${hide ? "Show completed" : "Hide completed"}</button>
+      <button class="btn sm" data-act="ck-foldall" title="Open or close every task's subtasks">${all.some(t => t.open) ? "Collapse all" : "Expand all"}</button>
       <button class="btn sm" data-act="ck-target" title="Plan your tasks week by week over a date range">Target Week Planner</button>
       <button class="btn sm" data-act="ck-io">Import / Export</button>
       <button class="btn primary sm" data-act="ck-newsec">+ Section</button>
@@ -4998,12 +5073,50 @@ function renderChecklist() {
       const tl = links.get(t.id);
       const dueChip = t.due
         ? `<span class="ck-chip ${!t.done && t.due < todayK ? "over" : (!t.done && t.due === todayK ? "today" : "")}">${!t.done && t.due < todayK ? "Overdue · " : ""}${esc(new Date(t.due + "T00:00:00").toLocaleDateString(undefined, { day: "numeric", month: "short" }))}</span>` : "";
-      const nSub = (t.subs || []).length, dSub = (t.subs || []).filter(x => x.done).length;
+      const { n: nSub, d: dSub } = subCounts(t.subs);
       const subChip = nSub ? `<span class="ck-chip sub ${dSub === nSub ? "all" : ""}">☰ ${dSub}/${nSub}</span>` : "";
       const notesChip = (t.notes || "").trim() ? `<span class="ck-chip" title="Has notes">📝</span>` : "";
       const tplChip = tl ? `<span class="ck-chip tpl" title="Topic in: ${esc(tl.join(", "))}">▦ ${esc(tl[0])}${tl.length > 1 ? ` +${tl.length - 1}` : ""}</span>` : "";
+      const open = !!t.open;
+      const inline = open ? `
+        <div class="ck-tsubs">
+          ${t.subs.map(x => {
+            const kids = x.subs || [];
+            return `
+            <div class="ck-sg" data-s="${esc(x.id)}">
+              <div class="td-sub ${x.done ? "done" : ""}">
+                <input type="checkbox" data-act="ck-st" ${x.done ? "checked" : ""} aria-label="Subtask done">
+                <input type="text" data-act="ck-stitle" value="${esc(x.title)}" autocomplete="off" aria-label="Subtask">
+                <span class="td-kids">
+                  <button class="icon-btn sm" type="button" data-act="ck-skid" title="Add a sub-subtask" aria-label="Add a sub-subtask">+</button>
+                  <button class="icon-btn sm" type="button" data-act="ck-sdel" title="Delete subtask" aria-label="Delete subtask">✕</button>
+                </span>
+              </div>
+              ${kids.map(c => `
+              <div class="td-sub td-child ${c.done ? "done" : ""}" data-c="${esc(c.id)}">
+                <input type="checkbox" data-act="ck-ct" ${c.done ? "checked" : ""} aria-label="Done">
+                <input type="text" data-act="ck-ctitle" value="${esc(c.title)}" autocomplete="off" aria-label="Sub-subtask">
+                <button class="icon-btn sm" type="button" data-act="ck-cdel" title="Delete" aria-label="Delete sub-subtask">✕</button>
+              </div>`).join("")}
+              ${ckKidOpen.has(x.id) || kids.length ? `
+              <div class="ck-addrow td-kidadd">
+                <input class="ck-kidin" data-s="${esc(x.id)}" placeholder="Add a sub-subtask, press Enter" autocomplete="off">
+                <button class="btn sm" type="button" data-act="ck-kidgo">Add</button>
+              </div>` : ""}
+            </div>`;
+          }).join("")}
+          <div data-bulkroot>
+            <div class="ck-addrow">
+              <input class="ck-subin" placeholder="Add a subtask, press Enter" autocomplete="off">
+              <button class="btn sm" type="button" data-act="ck-subgo">Add</button>
+            </div>
+            ${bulkHtml("ck-bulk")}
+          </div>
+        </div>` : "";
       return `
+       <div class="ck-item" data-t="${esc(t.id)}">
         <div class="ck-row ${t.done ? "done" : ""}" data-t="${esc(t.id)}">
+          <button class="ck-caret ${open ? "open" : ""}" type="button" data-act="ck-tog" aria-expanded="${open}" title="${open ? "Hide" : "Show"} subtasks" aria-label="Toggle subtasks">▸</button>
           <input type="checkbox" data-act="ck-toggle" ${t.done ? "checked" : ""} aria-label="Done">
           <div class="ck-main" data-act="ck-open" role="button" tabindex="0" title="Open subtasks &amp; notes">
             <div class="ck-title">${esc(t.title)}</div>
@@ -5013,7 +5126,8 @@ function renderChecklist() {
           <button class="icon-btn sm" data-act="ck-tpl" title="Add to a template as a topic" aria-label="Add to a template">▦</button>
           <button class="icon-btn sm" data-act="ck-edit" title="Edit task" aria-label="Edit task">✎</button>
           <button class="icon-btn sm" data-act="ck-del" title="Delete task" aria-label="Delete task">✕</button>
-        </div>`;
+        </div>${inline}
+       </div>`;
     }).join("");
     const body = g.collapsed ? "" : `
       <div class="ck-body">
@@ -5082,9 +5196,12 @@ function openTaskDetailModal(id) {
     <div class="td-title" style="font-size:16px;font-weight:600;word-break:break-word;margin-bottom:2px">${esc(t.title)}</div>
     <div class="td-prog" id="tdProg"></div>
     <div class="td-subs" id="tdSubs"></div>
-    <div class="ck-addrow" style="margin:0 0 8px">
-      <input id="tdAdd" placeholder="Add a subtask and press Enter" autocomplete="off">
-      <button class="btn sm" type="button" id="tdAddBtn">Add</button>
+    <div data-bulkroot id="tdRoot" style="margin:0 0 8px">
+      <div class="ck-addrow">
+        <input id="tdAdd" placeholder="Add a subtask and press Enter" autocomplete="off">
+        <button class="btn sm" type="button" id="tdAddBtn">Add</button>
+      </div>
+      ${bulkHtml("td-bulk")}
     </div>
     <div style="margin:0 0 14px">
       <button class="bt-unlink" type="button" id="tdImpToggle" aria-expanded="false">⇪ Import subtasks from a CSV / JSON file…</button>
@@ -5113,17 +5230,37 @@ function openTaskDetailModal(id) {
   const $subs = document.getElementById("tdSubs"), $prog = document.getElementById("tdProg");
   const $add = document.getElementById("tdAdd"), $notes = document.getElementById("tdNotes");
 
+  const kidOpen = new Set();                 // subtasks whose "add sub-subtask" box is shown
   const paint = () => {
-    const n = t.subs.length, d = t.subs.filter(x => x.done).length;
+    const { n, d } = subCounts(t.subs);
     $prog.innerHTML = n
       ? `<span><b>${d}</b> of <b>${n}</b> done</span><div class="ck-bar"><i style="width:${Math.round(d / n * 100)}%"></i></div>` + (t.done ? `<span>✓ Task done</span>` : "")
       : `<span>${t.done ? "✓ Task done" : "No subtasks yet — add steps below. The task checks itself off when they're all done."}</span>`;
-    $subs.innerHTML = n ? t.subs.map(x => `
-      <div class="td-sub ${x.done ? "done" : ""}" data-s="${esc(x.id)}">
-        <input type="checkbox" data-act="td-toggle" ${x.done ? "checked" : ""} aria-label="Done">
-        <input type="text" data-act="td-title" value="${esc(x.title)}" autocomplete="off">
-        <button class="icon-btn sm" type="button" data-act="td-del" title="Delete subtask" aria-label="Delete subtask">✕</button>
-      </div>`).join("") : "";
+    $subs.innerHTML = t.subs.map(x => {
+      const kids = x.subs || [];
+      return `
+      <div class="td-grp" data-s="${esc(x.id)}">
+        <div class="td-sub ${x.done ? "done" : ""}" data-s="${esc(x.id)}">
+          <input type="checkbox" data-act="td-toggle" ${x.done ? "checked" : ""} aria-label="Done">
+          <input type="text" data-act="td-title" value="${esc(x.title)}" autocomplete="off">
+          <span class="td-kids">
+            <button class="icon-btn sm" type="button" data-act="td-kid" title="Add a sub-subtask" aria-label="Add a sub-subtask">+</button>
+            <button class="icon-btn sm" type="button" data-act="td-del" title="Delete subtask" aria-label="Delete subtask">✕</button>
+          </span>
+        </div>
+        ${kids.map(c => `
+        <div class="td-sub td-child ${c.done ? "done" : ""}" data-c="${esc(c.id)}">
+          <input type="checkbox" data-act="td-ctoggle" ${c.done ? "checked" : ""} aria-label="Done">
+          <input type="text" data-act="td-ctitle" value="${esc(c.title)}" autocomplete="off">
+          <button class="icon-btn sm" type="button" data-act="td-cdel" title="Delete" aria-label="Delete sub-subtask">✕</button>
+        </div>`).join("")}
+        ${kidOpen.has(x.id) || kids.length ? `
+        <div class="ck-addrow td-kidadd">
+          <input class="td-kidin" data-s="${esc(x.id)}" placeholder="Add a sub-subtask, press Enter" autocomplete="off">
+          <button class="btn sm" type="button" data-act="td-kidgo">Add</button>
+        </div>` : ""}
+      </div>`;
+    }).join("");
   };
   const commit = () => { syncParentDone(t); ckRefresh(); paint(); };
   paint();
@@ -5139,23 +5276,74 @@ function openTaskDetailModal(id) {
   document.getElementById("tdAddBtn").addEventListener("click", addSub);
   $add.addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); addSub(); } });
 
+  document.getElementById("tdRoot").addEventListener("click", e => {
+    const b = e.target.closest("[data-act]");
+    if (!b) return;
+    if (b.dataset.act === "td-bulktog") bulkToggle(b);
+    else if (b.dataset.act === "td-bulkgo") {
+      const ta = b.parentNode.querySelector("textarea"), lines = splitLines(ta.value);
+      if (!lines.length) { ta.focus(); return; }
+      lines.forEach(title => t.subs.push({ id: uid(), title, done: false }));
+      commit(); toast(subsAdded(lines.length));
+    }
+  });
+  const addKid = grp => {
+    const sub = t.subs.find(x => x.id === grp.dataset.s), input = grp.querySelector(".td-kidin");
+    if (!sub || !input) return;
+    const title = input.value.trim();
+    if (!title) { input.focus(); return; }
+    (sub.subs = sub.subs || []).push({ id: uid(), title, done: false });
+    subSync(sub);
+    kidOpen.add(sub.id);
+    commit();
+    const again = $subs.querySelector(`.td-grp[data-s="${sub.id}"] .td-kidin`);
+    if (again) again.focus();
+  };
+
   $subs.addEventListener("change", e => {
     const row = e.target.closest(".td-sub");
-    const sub = row && t.subs.find(x => x.id === row.dataset.s);
+    const grp = row && row.closest(".td-grp");
+    const sub = grp && t.subs.find(x => x.id === grp.dataset.s);
     if (!sub) return;
-    if (e.target.dataset.act === "td-toggle") { sub.done = e.target.checked; commit(); }
-    else if (e.target.dataset.act === "td-title") {
+    const act = e.target.dataset.act;
+    if (act === "td-toggle") { sub.done = e.target.checked; (sub.subs || []).forEach(c => { c.done = sub.done; }); commit(); }
+    else if (act === "td-title") {
       const v = e.target.value.trim();
       if (!v) { e.target.value = sub.title; return; }
       sub.title = v; save();
+    } else if (act === "td-ctoggle" || act === "td-ctitle") {
+      const c = (sub.subs || []).find(x => x.id === row.dataset.c);
+      if (!c) return;
+      if (act === "td-ctoggle") { c.done = e.target.checked; subSync(sub); commit(); }
+      else {
+        const v = e.target.value.trim();
+        if (!v) { e.target.value = c.title; return; }
+        c.title = v; save();
+      }
     }
   });
   $subs.addEventListener("click", e => {
-    const del = e.target.closest("[data-act='td-del']");
-    if (!del) return;
-    const id2 = del.closest(".td-sub").dataset.s;
-    t.subs = t.subs.filter(x => x.id !== id2);
-    commit();
+    const el = e.target.closest("[data-act]");
+    const grp = el && el.closest(".td-grp");
+    const sub = grp && t.subs.find(x => x.id === grp.dataset.s);
+    if (!sub) return;
+    const act = el.dataset.act;
+    if (act === "td-del") { t.subs = t.subs.filter(x => x.id !== sub.id); kidOpen.delete(sub.id); commit(); }
+    else if (act === "td-kid") {
+      kidOpen.add(sub.id); paint();
+      const i = $subs.querySelector(`.td-grp[data-s="${sub.id}"] .td-kidin`);
+      if (i) i.focus();
+    } else if (act === "td-kidgo") addKid(grp);
+    else if (act === "td-cdel") {
+      const cid = el.closest(".td-sub").dataset.c;
+      sub.subs = (sub.subs || []).filter(c => c.id !== cid);
+      if (!sub.subs.length) delete sub.subs;
+      subSync(sub);
+      commit();
+    }
+  });
+  $subs.addEventListener("keydown", e => {
+    if (e.key === "Enter" && e.target.classList.contains("td-kidin")) { e.preventDefault(); addKid(e.target.closest(".td-grp")); }
   });
 
   /* ----- import subtasks from a file / pasted text ----- */
@@ -5339,10 +5527,15 @@ ckBody.addEventListener("click", e => {
   const act = el.dataset.act;
   const sec = el.closest("[data-g].ck-sec");
   const g = sec ? state.checklist.find(x => x.id === sec.dataset.g) : null;
-  const row = el.closest(".ck-row");
-  const tid = row ? row.dataset.t : null;
+  const item = el.closest(".ck-item");
+  const tid = item ? item.dataset.t : null;
 
-  if (act === "ck-toggle") return;               // handled on change
+  if (["ck-toggle", "ck-st", "ck-stitle", "ck-ct", "ck-ctitle"].includes(act)) return;   // handled on change
+  if (act === "ck-foldall") {
+    const any = state.checklist.some(g => g.tasks.some(t => t.open));
+    state.checklist.forEach(g => g.tasks.forEach(t => { t.open = any ? false : (t.subs || []).length > 0; }));
+    save(); renderChecklist(); return;
+  }
   if (act === "ck-hide") { state.ui.ckHideDone = !state.ui.ckHideDone; save(); renderChecklist(); return; }
   if (act === "ck-newsec") {
     openNameModal("New section", "Section name", "e.g. Exam prep", "", "Create section", name => {
@@ -5374,6 +5567,36 @@ ckBody.addEventListener("click", e => {
     return;
   }
   if (!tid) return;
+  const ct = findTask(tid);
+  if (act === "ck-tog" && ct) { ct.open = !ct.open; save(); renderChecklist(); return; }
+  if (ct && act === "ck-bulktog") { bulkToggle(el); return; }
+  if (ct && act === "ck-bulkgo") {
+    const lines = splitLines(item.querySelector(".bulk-ta").value);
+    if (!lines.length) { item.querySelector(".bulk-ta").focus(); return; }
+    lines.forEach(title => ct.subs.push({ id: uid(), title, done: false }));
+    syncParentDone(ct); ckRefresh(); toast(subsAdded(lines.length));
+    return;
+  }
+  if (ct && (act === "ck-subgo" || act === "ck-kidgo" || act === "ck-skid" || act === "ck-sdel" || act === "ck-cdel")) {
+    const sg = el.closest(".ck-sg");
+    const sub = sg ? ct.subs.find(x => x.id === sg.dataset.s) : null;
+    if (act === "ck-subgo") { ckInlineAddSub(item, ct); return; }
+    if (!sub) return;
+    if (act === "ck-kidgo") { ckInlineAddKid(item, ct, sub); return; }
+    if (act === "ck-skid") {
+      ckKidOpen.add(sub.id); renderChecklist();
+      const i = ckBody.querySelector(`.ck-kidin[data-s="${sub.id}"]`); if (i) i.focus();
+      return;
+    }
+    if (act === "ck-sdel") { ct.subs = ct.subs.filter(x => x.id !== sub.id); ckKidOpen.delete(sub.id); syncParentDone(ct); ckRefresh(); return; }
+    if (act === "ck-cdel") {
+      const cid = el.closest(".td-sub").dataset.c;
+      sub.subs = (sub.subs || []).filter(c => c.id !== cid);
+      if (!sub.subs.length) delete sub.subs;
+      subSync(sub); syncParentDone(ct); ckRefresh();
+      return;
+    }
+  }
   if (act === "ck-open") { openTaskDetailModal(tid); return; }
   if (act === "ck-tpl")  { openTaskToTemplateModal([tid]); return; }
   if (act === "ck-week") { openTaskToWeekModal(tid); return; }
@@ -5387,7 +5610,41 @@ ckBody.addEventListener("click", e => {
   }
 });
 
+function ckInlineAddSub(item, t) {
+  const input = item.querySelector(".ck-subin"), title = input && input.value.trim();
+  if (!title) { if (input) input.focus(); return; }
+  t.subs.push({ id: uid(), title, done: false });
+  syncParentDone(t);
+  ckRefresh();
+  const i = ckBody.querySelector(`.ck-item[data-t="${t.id}"] .ck-subin`); if (i) i.focus();
+}
+function ckInlineAddKid(item, t, sub) {
+  const input = item.querySelector(`.ck-kidin[data-s="${sub.id}"]`), title = input && input.value.trim();
+  if (!title) { if (input) input.focus(); return; }
+  (sub.subs = sub.subs || []).push({ id: uid(), title, done: false });
+  subSync(sub); ckKidOpen.add(sub.id);
+  syncParentDone(t);
+  ckRefresh();
+  const i = ckBody.querySelector(`.ck-kidin[data-s="${sub.id}"]`); if (i) i.focus();
+}
+
 ckBody.addEventListener("change", e => {
+  const inl = e.target.closest("[data-act^='ck-s'],[data-act^='ck-c']");
+  if (inl && ["ck-st", "ck-stitle", "ck-ct", "ck-ctitle"].includes(inl.dataset.act)) {
+    const item = inl.closest(".ck-item"), t = item && findTask(item.dataset.t);
+    const sg = inl.closest(".ck-sg"), sub = t && sg && t.subs.find(x => x.id === sg.dataset.s);
+    if (!sub) return;
+    const act = inl.dataset.act;
+    if (act === "ck-st") { sub.done = inl.checked; (sub.subs || []).forEach(c => { c.done = sub.done; }); syncParentDone(t); ckRefresh(); }
+    else if (act === "ck-stitle") { const v = inl.value.trim(); if (v) { sub.title = v; save(); } else inl.value = sub.title; }
+    else {
+      const c = (sub.subs || []).find(x => x.id === inl.closest(".td-sub").dataset.c);
+      if (!c) return;
+      if (act === "ck-ct") { c.done = inl.checked; subSync(sub); syncParentDone(t); ckRefresh(); }
+      else { const v = inl.value.trim(); if (v) { c.title = v; save(); } else inl.value = c.title; }
+    }
+    return;
+  }
   const cb = e.target.closest("[data-act='ck-toggle']");
   if (!cb) return;
   const row = cb.closest(".ck-row");
@@ -5395,7 +5652,7 @@ ckBody.addEventListener("change", e => {
   if (!t) return;
   t.done = cb.checked;
   t.doneAt = cb.checked ? Date.now() : 0;
-  if (cb.checked) (t.subs || []).forEach(x => { x.done = true; });
+  if (cb.checked) setSubsDone(t.subs, true);
   ckRefresh();
 });
 
@@ -5410,6 +5667,14 @@ ckBody.addEventListener("keydown", e => {
   if (e.key === "Enter" && e.target.classList.contains("ck-add")) {
     e.preventDefault();
     addTaskTo(e.target.dataset.g);
+    return;
+  }
+  if (e.key === "Enter" && (e.target.classList.contains("ck-subin") || e.target.classList.contains("ck-kidin"))) {
+    e.preventDefault();
+    const item = e.target.closest(".ck-item"), t = item && findTask(item.dataset.t);
+    if (!t) return;
+    if (e.target.classList.contains("ck-subin")) ckInlineAddSub(item, t);
+    else { const sub = t.subs.find(x => x.id === e.target.dataset.s); if (sub) ckInlineAddKid(item, t, sub); }
   }
 });
 
@@ -5521,19 +5786,32 @@ function ckGroup(items) {
       if (!t.notes && it.notes) t.notes = it.notes;
     }
     (it.subs || []).forEach(x => {
-      if (x.title && !t.subs.some(y => y.title.toLowerCase() === x.title.toLowerCase())) t.subs.push({ title: x.title, done: !!x.done });
+      if (x.title && !t.subs.some(y => y.title.toLowerCase() === x.title.toLowerCase())) t.subs.push({ title: x.title, done: !!x.done, ...(x.subs && x.subs.length ? { subs: x.subs } : {}) });
     });
   });
   return out;
 }
 
+/* add a subtask (and its sub-subtasks) to a list, merging by title */
+function mergeSubInto(list, x) {
+  const key = v => v.trim().toLowerCase();
+  const kids = (x.subs || []).map(c => ({ id: uid(), title: c.title, done: !!c.done }));
+  let ex = list.find(y => key(y.title) === key(x.title));
+  if (!ex) { ex = { id: uid(), title: x.title, done: !!x.done }; if (kids.length) ex.subs = kids; list.push(ex); }
+  else kids.forEach(c => {
+    ex.subs = ex.subs || [];
+    if (!ex.subs.some(y => key(y.title) === key(c.title))) ex.subs.push(c);
+  });
+  subSync(ex);
+}
 function ckTaskFromJson(x) {
   if (typeof x === "string") return { section: "", title: x.trim(), done: false, due: "" };
   if (x && typeof x === "object") {
-    const subs = (Array.isArray(x.subtasks) ? x.subtasks : (Array.isArray(x.subs) ? x.subs : (Array.isArray(x.steps) ? x.steps : [])))
-      .map(y => typeof y === "string" ? { title: y.trim(), done: false }
-        : (y && typeof y === "object" ? { title: String(y.title ?? y.task ?? y.name ?? "").trim(), done: ckParseDone(y.done ?? y.completed) } : null))
-      .filter(y => y && y.title);
+    const kidsOf = o => (Array.isArray(o.subtasks) ? o.subtasks : (Array.isArray(o.subs) ? o.subs : (Array.isArray(o.steps) ? o.steps : [])));
+    const toSub = (y, deep) => typeof y === "string" ? { title: y.trim(), done: false }
+      : (y && typeof y === "object" ? { title: String(y.title ?? y.task ?? y.name ?? "").trim(), done: ckParseDone(y.done ?? y.completed),
+          ...(deep ? {} : (() => { const k = kidsOf(y).map(c => toSub(c, true)).filter(c => c && c.title); return k.length ? { subs: k } : {}; })()) } : null);
+    const subs = kidsOf(x).map(y => toSub(y, false)).filter(y => y && y.title);
     return { title: String(x.title ?? x.task ?? x.name ?? x.text ?? "").trim(),
              done: ckParseDone(x.done ?? x.completed), due: ckParseDue(x.due ?? x.deadline ?? x.date ?? ""),
              notes: typeof (x.notes ?? x.note) === "string" ? (x.notes ?? x.note) : "", subs };
@@ -5643,15 +5921,14 @@ function applyChecklistImport(sections, replace) {
       const ex = g.tasks.find(x => x.title.trim().toLowerCase() === k);
       if (ex) {                         /* task already there: only add the subtasks / notes it is missing */
         if (!Array.isArray(ex.subs)) ex.subs = [];
-        (t.subs || []).forEach(x => {
-          if (!ex.subs.some(y => y.title.trim().toLowerCase() === x.title.toLowerCase())) ex.subs.push({ id: uid(), title: x.title, done: !!x.done });
-        });
+        (t.subs || []).forEach(x => mergeSubInto(ex.subs, x));
         if (!(ex.notes || "").trim() && t.notes) ex.notes = t.notes;
         syncParentDone(ex, true);
         return;
       }
       const nt = { id: uid(), title: t.title, done: !!t.done, due: t.due || "", created: Date.now(), notes: t.notes || "",
-        subs: (t.subs || []).map(x => ({ id: uid(), title: x.title, done: !!x.done })), ...(t.done ? { doneAt: Date.now() } : {}) };
+        subs: [], ...(t.done ? { doneAt: Date.now() } : {}) };
+      (t.subs || []).forEach(x => mergeSubInto(nt.subs, x));
       syncParentDone(nt, true);
       g.tasks.push(nt);
     });
@@ -5662,7 +5939,7 @@ function ckExportRows() {
   return state.checklist.flatMap(g => g.tasks.length
     ? g.tasks.flatMap(t => {
         const base = { section: g.name, title: t.title, done: t.done, due: t.due || "" };
-        const subs = t.subs || [];
+        const subs = (t.subs || []).flatMap(x => [x, ...(x.subs || []).map(c => ({ title: x.title + " › " + c.title, done: c.done }))]);
         if (!subs.length) return [{ ...base, notes: t.notes || "", sub: "", subDone: false }];
         return subs.map((x, i) => ({ ...base, notes: i === 0 ? (t.notes || "") : "", sub: x.title, subDone: !!x.done }));
       })
@@ -5676,7 +5953,8 @@ function ckExportCsv() {
 function ckExportJson() {
   return JSON.stringify({ sections: state.checklist.map(g => ({ name: g.name,
     tasks: g.tasks.map(t => ({ title: t.title, done: t.done, ...(t.due ? { due: t.due } : {}),
-      ...((t.subs || []).length ? { subtasks: t.subs.map(x => ({ title: x.title, done: x.done })) } : {}),
+      ...((t.subs || []).length ? { subtasks: t.subs.map(x => ({ title: x.title, done: x.done,
+        ...((x.subs || []).length ? { subtasks: x.subs.map(c => ({ title: c.title, done: c.done })) } : {}) })) } : {}),
       ...((t.notes || "").trim() ? { notes: t.notes } : {}) })) })) }, null, 2);
 }
 
@@ -5910,7 +6188,7 @@ function openChecklistIOModal() {
    week holds main tasks with subtasks. Stored in state.targetPlan.
    ===================================================================== */
 const TW_MAX_WEEKS = 53;
-const TW_DEMO = {"name": "Q4 Target Plan (demo)", "start": "2026-10-10", "end": "2026-12-31", "weeks": [{"week": 1, "theme": "Set up your system", "tasks": [{"title": "Get organised", "subtasks": ["Choose study resources", "Block weekly study hours in the calendar", {"title": "Take a baseline practice test", "done": true}]}, {"title": "Map the syllabus", "subtasks": ["List every topic", "Rate confidence 1–5 per topic"]}]}, {"week": 2, "theme": "Foundations I", "tasks": [{"title": "Topic 1", "subtasks": ["Read the chapter", "Write summary notes", "Do 20 practice questions"]}, {"title": "Topic 2", "subtasks": ["Read the chapter", "Write summary notes", "Do 20 practice questions"]}]}, {"week": 3, "theme": "Foundations II", "tasks": [{"title": "Topic 3", "subtasks": ["Read the chapter", "Make flashcards", "Do 20 practice questions"]}, {"title": "Topic 4", "subtasks": ["Read the chapter", "Make flashcards", "Do 20 practice questions"]}]}, {"week": 4, "theme": "Checkpoint 1", "tasks": [{"title": "Review topics 1–4", "subtasks": ["Redo missed questions", "Re-read weak notes"]}, {"title": "Checkpoint quiz", "subtasks": ["Take the quiz", "Log mistakes"]}]}, {"week": 5, "theme": "Core content I", "tasks": [{"title": "Topic 5", "subtasks": ["Read the chapter", "Write summary notes", "Do 20 practice questions"]}, {"title": "Topic 6", "subtasks": ["Read the chapter", "Write summary notes", "Do 20 practice questions"]}]}, {"week": 6, "theme": "Core content II", "tasks": [{"title": "Topic 7", "subtasks": ["Read the chapter", "Make flashcards", "Do 20 practice questions"]}, {"title": "Topic 8", "subtasks": ["Read the chapter", "Make flashcards", "Do 20 practice questions"]}]}, {"week": 7, "theme": "Mid-point mock", "tasks": [{"title": "Full mock exam 1", "subtasks": ["Sit it under timed conditions", "Mark it", "Analyse every mistake"]}, {"title": "Adjust the plan", "subtasks": ["Re-rate confidence per topic", "Reschedule weak topics"]}]}, {"week": 8, "theme": "Advanced I", "tasks": [{"title": "Topic 9", "subtasks": ["Read the chapter", "Write summary notes", "Do 25 practice questions"]}, {"title": "Topic 10", "subtasks": ["Read the chapter", "Write summary notes", "Do 25 practice questions"]}]}, {"week": 9, "theme": "Advanced II", "tasks": [{"title": "Topic 11", "subtasks": ["Read the chapter", "Make flashcards", "Do 25 practice questions"]}, {"title": "Topic 12", "subtasks": ["Read the chapter", "Make flashcards", "Do 25 practice questions"]}]}, {"week": 10, "theme": "Weak-area repair", "tasks": [{"title": "Fix the 3 weakest topics", "subtasks": ["Re-study from scratch", "Do 40 targeted questions"]}, {"title": "Spaced-repetition pass", "subtasks": ["Review all flashcards", "Redo old mistakes"]}]}, {"week": 11, "theme": "Full mocks", "tasks": [{"title": "Full mock exam 2", "subtasks": ["Sit it under timed conditions", "Mark and analyse"]}, {"title": "Full mock exam 3", "subtasks": ["Sit it under timed conditions", "Mark and analyse"]}]}, {"week": 12, "theme": "Final review & rest", "tasks": [{"title": "Final review", "subtasks": ["One-page summary per topic", "Light review only — no new material"]}, {"title": "Prepare for the day", "subtasks": ["Check logistics", "Sleep and rest"]}]}]};
+const TW_DEMO = {"name": "Q4 Target Plan (demo)", "start": "2026-10-10", "end": "2026-12-31", "weeks": [{"week": 1, "theme": "Set up your system", "tasks": [{"title": "Get organised", "subtasks": ["Choose study resources", "Block weekly study hours in the calendar", {"title": "Take a baseline practice test", "done": true}]}, {"title": "Map the syllabus", "subtasks": [{"title": "List every topic", "subtasks": ["Core topics", "Optional topics"]}, "Rate confidence 1–5 per topic"]}]}, {"week": 2, "theme": "Foundations I", "tasks": [{"title": "Topic 1", "subtasks": ["Read the chapter", "Write summary notes", "Do 20 practice questions"]}, {"title": "Topic 2", "subtasks": ["Read the chapter", "Write summary notes", "Do 20 practice questions"]}]}, {"week": 3, "theme": "Foundations II", "tasks": [{"title": "Topic 3", "subtasks": ["Read the chapter", "Make flashcards", "Do 20 practice questions"]}, {"title": "Topic 4", "subtasks": ["Read the chapter", "Make flashcards", "Do 20 practice questions"]}]}, {"week": 4, "theme": "Checkpoint 1", "tasks": [{"title": "Review topics 1–4", "subtasks": ["Redo missed questions", "Re-read weak notes"]}, {"title": "Checkpoint quiz", "subtasks": ["Take the quiz", "Log mistakes"]}]}, {"week": 5, "theme": "Core content I", "tasks": [{"title": "Topic 5", "subtasks": ["Read the chapter", "Write summary notes", "Do 20 practice questions"]}, {"title": "Topic 6", "subtasks": ["Read the chapter", "Write summary notes", "Do 20 practice questions"]}]}, {"week": 6, "theme": "Core content II", "tasks": [{"title": "Topic 7", "subtasks": ["Read the chapter", "Make flashcards", "Do 20 practice questions"]}, {"title": "Topic 8", "subtasks": ["Read the chapter", "Make flashcards", "Do 20 practice questions"]}]}, {"week": 7, "theme": "Mid-point mock", "tasks": [{"title": "Full mock exam 1", "subtasks": ["Sit it under timed conditions", "Mark it", "Analyse every mistake"]}, {"title": "Adjust the plan", "subtasks": ["Re-rate confidence per topic", "Reschedule weak topics"]}]}, {"week": 8, "theme": "Advanced I", "tasks": [{"title": "Topic 9", "subtasks": ["Read the chapter", "Write summary notes", "Do 25 practice questions"]}, {"title": "Topic 10", "subtasks": ["Read the chapter", "Write summary notes", "Do 25 practice questions"]}]}, {"week": 9, "theme": "Advanced II", "tasks": [{"title": "Topic 11", "subtasks": ["Read the chapter", "Make flashcards", "Do 25 practice questions"]}, {"title": "Topic 12", "subtasks": ["Read the chapter", "Make flashcards", "Do 25 practice questions"]}]}, {"week": 10, "theme": "Weak-area repair", "tasks": [{"title": "Fix the 3 weakest topics", "subtasks": ["Re-study from scratch", "Do 40 targeted questions"]}, {"title": "Spaced-repetition pass", "subtasks": ["Review all flashcards", "Redo old mistakes"]}]}, {"week": 11, "theme": "Full mocks", "tasks": [{"title": "Full mock exam 2", "subtasks": ["Sit it under timed conditions", "Mark and analyse"]}, {"title": "Full mock exam 3", "subtasks": ["Sit it under timed conditions", "Mark and analyse"]}]}, {"week": 12, "theme": "Final review & rest", "tasks": [{"title": "Final review", "subtasks": ["One-page summary per topic", "Light review only — no new material"]}, {"title": "Prepare for the day", "subtasks": ["Check logistics", "Sleep and rest"]}]}]};
 const TW_JSON_TEMPLATE = JSON.stringify(TW_DEMO, null, 2);
 
 function twParse(k) {
@@ -5945,7 +6223,7 @@ function twWeekLabel(ws, we) {
 /* progress counts main tasks AND subtasks */
 function twProg(tasks) {
   let d = 0, n = 0;
-  tasks.forEach(t => { n++; if (t.done) d++; t.subs.forEach(x => { n++; if (x.done) d++; }); });
+  tasks.forEach(t => { n++; if (t.done) d++; const c = subCounts(t.subs); n += c.n; d += c.d; });
   return { d, n, pct: n ? Math.round(d / n * 100) : 0 };
 }
 function twSyncDone(t) { if (t.subs.length) t.done = t.subs.every(x => x.done); }
@@ -5962,8 +6240,7 @@ function twNormalize(tp) {
       .filter(t => t && typeof t.title === "string" && t.title.trim())
       .map(t => {
         const nt = { id: t.id || uid(), title: t.title.trim(), done: !!t.done, collapsed: !!t.collapsed, src: typeof t.src === "string" ? t.src : "",
-          subs: (Array.isArray(t.subs) ? t.subs : []).filter(x => x && typeof x.title === "string" && x.title.trim())
-                  .map(x => ({ id: x.id || uid(), title: x.title.trim(), done: !!x.done })) };
+          subs: normSubs(t.subs) };
         twSyncDone(nt);
         return nt;
       });
@@ -6048,7 +6325,8 @@ function twSaveRange(v) {
 /* ----- rendering ----- */
 let twWeekIdx = null;                       // week shown in the pop-up
 let twModalBound = false;
-let twPickOpen = false;                     // checklist picker shown inside the week pop-up
+let twPickOpen = false;
+const twKidOpen = new Set();                // subtasks whose "add sub-subtask" box is shown                     // checklist picker shown inside the week pop-up
 const twModalOpen = () => twWeekIdx !== null && !!modalBody.querySelector(".tw-wm");
 const twRoot = () => twModalOpen() ? modalBody : twBody;
 
@@ -6112,20 +6390,39 @@ function twWeekModalHtml(wi) {
         <input type="checkbox" data-act="tw-toggle" ${t.done ? "checked" : ""} aria-label="Done">
         <input type="text" data-act="tw-title" value="${esc(t.title)}" aria-label="Task name">
         <div style="display:flex;align-items:center;gap:6px">
-          ${t.collapsed && t.subs.length ? `<span class="ck-chip sub ${t.subs.every(x => x.done) ? "all" : ""}">☰ ${t.subs.filter(x => x.done).length}/${t.subs.length}</span>` : ""}
+          ${t.collapsed && t.subs.length ? (() => { const c = subCounts(t.subs); return `<span class="ck-chip sub ${c.d === c.n ? "all" : ""}">☰ ${c.d}/${c.n}</span>`; })() : ""}
           <button class="icon-btn sm" data-act="tw-del" title="Delete task" aria-label="Delete task">✕</button>
         </div>
       </div>
       ${t.collapsed ? "" : `<div class="tw-subs">
         ${t.subs.map(x => `
-          <div class="td-sub ${x.done ? "done" : ""}" data-s="${esc(x.id)}">
-            <input type="checkbox" data-act="tw-subtoggle" ${x.done ? "checked" : ""} aria-label="Subtask done">
-            <input type="text" data-act="tw-subtext" value="${esc(x.title)}" aria-label="Subtask">
-            <button class="icon-btn sm" data-act="tw-subdel" title="Delete subtask" aria-label="Delete subtask">✕</button>
+          <div class="tw-grp" data-s="${esc(x.id)}">
+            <div class="td-sub ${x.done ? "done" : ""}" data-s="${esc(x.id)}">
+              <input type="checkbox" data-act="tw-subtoggle" ${x.done ? "checked" : ""} aria-label="Subtask done">
+              <input type="text" data-act="tw-subtext" value="${esc(x.title)}" aria-label="Subtask">
+              <span class="td-kids">
+                <button class="icon-btn sm" data-act="tw-kid" title="Add a sub-subtask" aria-label="Add a sub-subtask">+</button>
+                <button class="icon-btn sm" data-act="tw-subdel" title="Delete subtask" aria-label="Delete subtask">✕</button>
+              </span>
+            </div>
+            ${(x.subs || []).map(c => `
+            <div class="td-sub td-child ${c.done ? "done" : ""}" data-c="${esc(c.id)}">
+              <input type="checkbox" data-act="tw-ctoggle" ${c.done ? "checked" : ""} aria-label="Done">
+              <input type="text" data-act="tw-ctext" value="${esc(c.title)}" aria-label="Sub-subtask">
+              <button class="icon-btn sm" data-act="tw-cdel" title="Delete" aria-label="Delete sub-subtask">✕</button>
+            </div>`).join("")}
+            ${twKidOpen.has(x.id) || (x.subs || []).length ? `
+            <div class="ck-addrow td-kidadd">
+              <input class="tw-kidin" data-s="${esc(x.id)}" placeholder="Add a sub-subtask, press Enter" autocomplete="off">
+              <button class="btn sm" data-act="tw-kidgo">Add</button>
+            </div>` : ""}
           </div>`).join("")}
-        <div class="ck-addrow">
-          <input class="tw-subadd" data-t="${esc(t.id)}" placeholder="Add a subtask, press Enter" autocomplete="off">
-          <button class="btn sm" data-act="tw-subadd" data-t="${esc(t.id)}">Add</button>
+        <div data-bulkroot>
+          <div class="ck-addrow">
+            <input class="tw-subadd" data-t="${esc(t.id)}" placeholder="Add a subtask, press Enter" autocomplete="off">
+            <button class="btn sm" data-act="tw-subadd" data-t="${esc(t.id)}">Add</button>
+          </div>
+          ${bulkHtml("tw-bulk")}
         </div>
       </div>`}
     </div>`).join("");
@@ -6155,18 +6452,36 @@ function twPickerHtml(wi) {
   return `<div class="tw-pick">
     <div class="ck-pick">${groups.map(({ g, tasks }) => `<div class="ck-sech">${esc(g.name)}</div>` + tasks.map(t => `
       <label class="ck-pk"><input type="checkbox" data-pk="t" data-t="${esc(t.id)}"><span>${esc(t.title)}</span>${have.has(t.id) ? `<em class="ck-chip">in this week</em>` : ""}</label>
-      ${(t.subs || []).map(x => `<label class="ck-pk tw-pk-sub"><input type="checkbox" data-pk="s" data-t="${esc(t.id)}" data-s="${esc(x.id)}"><span>${esc(x.title)}</span></label>`).join("")}`).join("")).join("")}
+      ${(t.subs || []).map(x => `<label class="ck-pk tw-pk-sub"><input type="checkbox" data-pk="s" data-t="${esc(t.id)}" data-s="${esc(x.id)}"><span>${esc(x.title)}</span></label>${(x.subs || []).map(c => `<label class="ck-pk tw-pk-kid"><input type="checkbox" data-pk="c" data-t="${esc(t.id)}" data-s="${esc(x.id)}" data-c="${esc(c.id)}"><span>${esc(c.title)}</span></label>`).join("")}`).join("")}`).join("")).join("")}
     </div>
     <button class="btn primary sm" type="button" data-act="tw-pickgo">Add selected to this week</button>
   </div>`;
 }
 
-/* copy checklist tasks (and chosen subtasks) into a week. picks: [{ tid, sids: [ids] | null = all subtasks }] */
+/* picker ticks: ticking a child ticks its parents; unticking a parent clears its children; never auto-ticks downwards */
+function twPickLink(el, root) {
+  const pk = el.dataset.pk, tid = el.dataset.t, sid = el.dataset.s;
+  const all = sel => [...root.querySelectorAll(sel)];
+  const tcb = root.querySelector(`[data-pk="t"][data-t="${tid}"]`);
+  const scb = sid ? root.querySelector(`[data-pk="s"][data-s="${sid}"]`) : null;
+  if (pk === "t" && !el.checked) all(`[data-t="${tid}"][data-pk="s"],[data-t="${tid}"][data-pk="c"]`).forEach(c => { c.checked = false; });
+  else if (pk === "s") {
+    if (el.checked) { if (tcb) tcb.checked = true; }
+    else all(`[data-pk="c"][data-s="${sid}"]`).forEach(c => { c.checked = false; });
+  } else if (pk === "c" && el.checked) { if (scb) scb.checked = true; if (tcb) tcb.checked = true; }
+}
+/* { subId: [childIds] } for the ticked sub-subtasks of a task */
+function twKidPicks(root, tid) {
+  const m = {};
+  [...root.querySelectorAll(`[data-pk="c"][data-t="${tid}"]:checked`)].forEach(c => { (m[c.dataset.s] = m[c.dataset.s] || []).push(c.dataset.c); });
+  return m;
+}
+/* copy checklist tasks (and chosen subtasks) into a week. picks: [{ tid, sids: [ids] | null = all subtasks, cids: { subId: [childIds] } }] */
 function twImportTasks(wi, picks) {
   const wk = state.targetPlan.weeks[wi];
   const key = x => x.trim().toLowerCase();
   let nt = 0, ns = 0;
-  picks.forEach(({ tid, sids }) => {
+  picks.forEach(({ tid, sids, cids }) => {
     const src = findTask(tid);
     if (!src) return;
     const subs = (src.subs || []).filter(x => !sids || sids.includes(x.id));
@@ -6174,7 +6489,13 @@ function twImportTasks(wi, picks) {
     if (!ex) { ex = { id: uid(), title: src.title, done: false, subs: [], src: tid }; wk.tasks.push(ex); nt++; }
     else if (!ex.src) ex.src = tid;
     subs.forEach(x => {
-      if (!ex.subs.some(y => key(y.title) === key(x.title))) { ex.subs.push({ id: uid(), title: x.title, done: !!x.done }); ns++; }
+      let es = ex.subs.find(y => key(y.title) === key(x.title));
+      if (!es) { es = { id: uid(), title: x.title, done: !!x.done }; ex.subs.push(es); ns++; }
+      (x.subs || []).filter(c => cids && (cids[x.id] || []).includes(c.id)).forEach(c => {
+        es.subs = es.subs || [];
+        if (!es.subs.some(y => key(y.title) === key(c.title))) { es.subs.push({ id: uid(), title: c.title, done: !!c.done }); ns++; }
+      });
+      subSync(es);
     });
     twSyncDone(ex);
   });
@@ -6204,12 +6525,14 @@ function openTaskToWeekModal(tid) {
         return `<option value="${i}" ${i === cur ? "selected" : ""}>Week ${i + 1} · ${esc(twWeekLabel(a, b))}</option>`; }).join("")}</select>
     </label>
     ${n ? `<div class="fld" style="margin-bottom:6px">Subtasks to bring along <span class="opt">(none ticked = the task only)</span></div>
-      <div class="ck-pick">${t.subs.map(x => `<label class="ck-pk"><input type="checkbox" data-s="${esc(x.id)}"><span>${esc(x.title)}</span></label>`).join("")}</div>` : ""}
+      <div class="ck-pick">${t.subs.map(x => `<label class="ck-pk"><input type="checkbox" data-pk="s" data-t="${esc(tid)}" data-s="${esc(x.id)}"><span>${esc(x.title)}</span></label>${(x.subs || []).map(c => `<label class="ck-pk tw-pk-kid"><input type="checkbox" data-pk="c" data-t="${esc(tid)}" data-s="${esc(x.id)}" data-c="${esc(c.id)}"><span>${esc(c.title)}</span></label>`).join("")}`).join("")}</div>` : ""}
     <button class="btn primary wide" id="twwOk">Add to week</button>`);
+  const pickBox = modalBody.querySelector(".ck-pick");
+  if (pickBox) pickBox.addEventListener("change", e => { if (e.target.dataset.pk) twPickLink(e.target, pickBox); });
   document.getElementById("twwOk").addEventListener("click", () => {
     const wi = +document.getElementById("twwSel").value;
-    const sids = [...modalBody.querySelectorAll(".ck-pick [data-s]:checked")].map(x => x.dataset.s);
-    const r = twImportTasks(wi, [{ tid, sids }]);
+    const sids = [...modalBody.querySelectorAll('.ck-pick [data-pk="s"]:checked')].map(x => x.dataset.s);
+    const r = twImportTasks(wi, [{ tid, sids, cids: twKidPicks(modalBody, tid) }]);
     save(); closeModal(); renderPlan();
     toast(twAddedMsg(r, `week ${wi + 1}`));
   });
@@ -6251,6 +6574,18 @@ function twAddTask(wi) {
   if (!title) { input.focus(); return; }
   w.tasks.push({ id: uid(), title, done: false, subs: [] });
   twRefresh(`.tw-add[data-w="${wi}"]`);
+}
+function twAddKid(tid, sid) {
+  const f = twFind(tid), sub = f && f.t.subs.find(x => x.id === sid);
+  const input = twRoot().querySelector(`.tw-kidin[data-s="${sid}"]`);
+  if (!sub || !input) return;
+  const title = input.value.trim();
+  if (!title) { input.focus(); return; }
+  (sub.subs = sub.subs || []).push({ id: uid(), title, done: false });
+  subSync(sub);
+  twSyncDone(f.t);
+  twKidOpen.add(sid);
+  twRefresh(`.tw-kidin[data-s="${sid}"]`);
 }
 function twAddSub(tid) {
   const f = twFind(tid);
@@ -6300,7 +6635,8 @@ function twOnClick(e) {
     const root = el.closest(".tw-pick");
     const picks = [...root.querySelectorAll('[data-pk="t"]:checked')].map(c => ({
       tid: c.dataset.t,
-      sids: [...root.querySelectorAll(`[data-pk="s"][data-t="${c.dataset.t}"]:checked`)].map(x => x.dataset.s) }));
+      sids: [...root.querySelectorAll(`[data-pk="s"][data-t="${c.dataset.t}"]:checked`)].map(x => x.dataset.s),
+      cids: twKidPicks(root, c.dataset.t) }));
     if (!picks.length) { toast("Tick at least one task"); return; }
     const r = twImportTasks(twWeekIdx, picks);
     twPickOpen = false;
@@ -6312,6 +6648,32 @@ function twOnClick(e) {
   const f = twFind(tid);
   if (!f) return;
   if (act === "tw-fold") { f.t.collapsed = !f.t.collapsed; twRefresh(); return; }
+  if (act === "tw-bulktog") { bulkToggle(el); return; }
+  if (act === "tw-bulkgo") {
+    const ta = el.parentNode.querySelector("textarea"), lines = splitLines(ta.value);
+    if (!lines.length) { ta.focus(); return; }
+    lines.forEach(title => f.t.subs.push({ id: uid(), title, done: false }));
+    twSyncDone(f.t);
+    twRefresh();
+    toast(subsAdded(lines.length));
+    return;
+  }
+  if (act === "tw-kid") {
+    const sid = el.closest(".tw-grp").dataset.s;
+    twKidOpen.add(sid); twRefresh(`.tw-kidin[data-s="${sid}"]`);
+    return;
+  }
+  if (act === "tw-kidgo") { twAddKid(tid, el.closest(".tw-grp").dataset.s); return; }
+  if (act === "tw-cdel") {
+    const grp = el.closest(".tw-grp"), sub = f.t.subs.find(x => x.id === grp.dataset.s);
+    if (!sub) return;
+    const cid = el.closest(".td-sub").dataset.c;
+    sub.subs = (sub.subs || []).filter(c => c.id !== cid);
+    if (!sub.subs.length) delete sub.subs;
+    subSync(sub); twSyncDone(f.t);
+    twRefresh();
+    return;
+  }
   if (act === "tw-del") {
     if (f.t.subs.length && !confirm(`Delete "${f.t.title}" and its ${f.t.subs.length} subtask${f.t.subs.length !== 1 ? "s" : ""}?`)) return;
     f.w.tasks = f.w.tasks.filter(x => x.id !== tid);
@@ -6329,13 +6691,7 @@ function twOnClick(e) {
 function twOnChange(e) {
   if (e.currentTarget === modalBody && !twModalOpen()) return;
   const pk = e.target.dataset && e.target.dataset.pk;
-  if (pk) {                                   // checklist picker: task <-> subtasks stay in step
-    const root = e.target.closest(".tw-pick"), tid = e.target.dataset.t;
-    const subs = [...root.querySelectorAll(`[data-pk="s"][data-t="${tid}"]`)];
-    if (pk === "t") { if (!e.target.checked) subs.forEach(c => { c.checked = false; }); }   // never auto-tick subtasks
-    else if (e.target.checked) root.querySelector(`[data-pk="t"][data-t="${tid}"]`).checked = true;
-    return;
-  }
+  if (pk) { twPickLink(e.target, e.target.closest(".tw-pick")); return; }
   const el = e.target.closest("[data-act]");
   if (!el) return;
   const taskEl = el.closest(".tw-task");
@@ -6344,14 +6700,21 @@ function twOnChange(e) {
   const act = el.dataset.act;
   if (act === "tw-toggle") {
     f.t.done = el.checked;
-    f.t.subs.forEach(x => { x.done = el.checked; });
+    setSubsDone(f.t.subs, el.checked);
     twRefresh();
   } else if (act === "tw-subtoggle") {
     const s = f.t.subs.find(x => x.id === el.closest(".td-sub").dataset.s);
     if (!s) return;
     s.done = el.checked;
+    (s.subs || []).forEach(c => { c.done = s.done; });
     twSyncDone(f.t);
     twRefresh();
+  } else if (act === "tw-ctoggle" || act === "tw-ctext") {
+    const sub = f.t.subs.find(x => x.id === el.closest(".tw-grp").dataset.s);
+    const c = sub && (sub.subs || []).find(x => x.id === el.closest(".td-sub").dataset.c);
+    if (!c) return;
+    if (act === "tw-ctoggle") { c.done = el.checked; subSync(sub); twSyncDone(f.t); twRefresh(); }
+    else { const v = el.value.trim(); if (v) { c.title = v; save(); } else el.value = c.title; }
   } else if (act === "tw-subtext" || act === "tw-title") {
     const s = act === "tw-title" ? f.t : f.t.subs.find(x => x.id === el.closest(".td-sub").dataset.s);
     if (!s) return;
@@ -6366,6 +6729,7 @@ function twOnKey(e) {
   const t = e.target;
   if (e.key === "Enter" && t.classList.contains("tw-add")) { e.preventDefault(); twAddTask(+t.dataset.w); }
   else if (e.key === "Enter" && t.classList.contains("tw-subadd")) { e.preventDefault(); twAddSub(t.dataset.t); }
+  else if (e.key === "Enter" && t.classList.contains("tw-kidin")) { e.preventDefault(); twAddKid(t.closest(".tw-task").dataset.t, t.dataset.s); }
   else if (t.dataset && t.dataset.act === "tw-week") { e.preventDefault(); twOpenWeek(+t.dataset.w); }
 }
 
@@ -6374,10 +6738,11 @@ twBody.addEventListener("change", twOnChange);
 twBody.addEventListener("keydown", twOnKey);
 
 /* ----- JSON import / export ----- */
-function twToSubs(v) {
+function twToSubs(v, deep) {
   return (Array.isArray(v) ? v : []).map(x => typeof x === "string"
-      ? { title: x.trim(), done: false }
-      : (x && typeof x === "object" ? { title: String(x.title ?? x.task ?? x.name ?? x.text ?? "").trim(), done: !!(x.done ?? x.completed) } : null))
+      ? { title: x.trim(), done: false, subs: [] }
+      : (x && typeof x === "object" ? { title: String(x.title ?? x.task ?? x.name ?? x.text ?? "").trim(), done: !!(x.done ?? x.completed),
+          subs: deep ? [] : twToSubs(x.subtasks ?? x.subs ?? x.steps, true) } : null))
     .filter(x => x && x.title);
 }
 function twToTasks(v) {
@@ -6449,7 +6814,13 @@ function twBuild(p, merge) {
       if (ex) st.dupes++;
       else { ex = { id: uid(), title: t.title, done: t.done, subs: [] }; wk.tasks.push(ex); st.newTasks++; }
       t.subs.forEach(s => {
-        if (!ex.subs.some(x => key(x.title) === key(s.title))) { ex.subs.push({ id: uid(), title: s.title, done: s.done }); st.newSubs++; }
+        let es = ex.subs.find(x => key(x.title) === key(s.title));
+        if (!es) { es = { id: uid(), title: s.title, done: s.done }; ex.subs.push(es); st.newSubs++; }
+        (s.subs || []).forEach(c => {
+          es.subs = es.subs || [];
+          if (!es.subs.some(y => key(y.title) === key(c.title))) { es.subs.push({ id: uid(), title: c.title, done: c.done }); st.newSubs++; }
+        });
+        subSync(es);
       });
       twSyncDone(ex);
     });
@@ -6462,7 +6833,8 @@ function twExportJson() {
     name: tp.name, start: tp.start, end: tp.end,
     weeks: tp.weeks.map((w, i) => ({ week: i + 1, tasks: w.tasks.map(t => ({
       title: t.title, done: t.done,
-      ...(t.subs.length ? { subtasks: t.subs.map(x => ({ title: x.title, done: x.done })) } : {}) })) }))
+      ...(t.subs.length ? { subtasks: t.subs.map(x => ({ title: x.title, done: x.done,
+        ...((x.subs || []).length ? { subtasks: x.subs.map(c => ({ title: c.title, done: c.done })) } : {}) })) } : {}) })) }))
   }, null, 2);
 }
 
@@ -6498,7 +6870,7 @@ function openTargetIOModal() {
         <button class="btn sm" type="button" data-tpl="dl">Download .json</button>
         <button class="btn sm" type="button" data-tpl="use">Edit here</button>
       </div>
-      <p class="hint" style="margin:8px 0 0"><code>start</code> / <code>end</code> (YYYY-MM-DD) set the range; week 1 begins on the start date. Each entry in <code>weeks</code> has a <code>week</code> number and <code>tasks</code>. A task is plain text or <code>{ "title", "done", "subtasks" }</code>, where <code>subtasks</code> is a list of text or <code>{ "title", "done" }</code>. <code>theme</code> is optional and ignored.</p>
+      <p class="hint" style="margin:8px 0 0"><code>start</code> / <code>end</code> (YYYY-MM-DD) set the range; week 1 begins on the start date. Each entry in <code>weeks</code> has a <code>week</code> number and <code>tasks</code>. A task is plain text or <code>{ "title", "done", "subtasks" }</code>, where <code>subtasks</code> is a list of text or <code>{ "title", "done", "subtasks" }</code> — a subtask can have its own <code>subtasks</code> (one more level). <code>theme</code> is optional and ignored.</p>
     </div>`);
 
   const $text = document.getElementById("twText"), $prev = document.getElementById("twPrev"),
@@ -6514,7 +6886,7 @@ function openTargetIOModal() {
     const { plan, st } = twBuild(parsed, merge);
     if (!plan) { $prev.innerHTML = `<div class="prev-empty">${esc(st.error)}</div>`; return; }
     const lines = plan.weeks.slice(0, 12).map((w, i) => {
-      const subs = w.tasks.reduce((a, t) => a + t.subs.length, 0);
+      const subs = w.tasks.reduce((a, t) => a + subCounts(t.subs).n, 0);
       return `<div class="prev-item"><b>Week ${i + 1}</b><span>${w.tasks.length} task${w.tasks.length !== 1 ? "s" : ""}${subs ? ` · ${subs} subtask${subs !== 1 ? "s" : ""}` : ""}</span></div>`;
     }).join("");
     $prev.innerHTML =
