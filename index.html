@@ -392,6 +392,11 @@
   .td-kidadd{margin:2px 0 6px 28px}
   .td-kidadd input{font-size:12.5px;padding:6px 8px}
   .tw-pk-kid{padding-left:54px;font-size:12px;color:var(--muted)}
+  .bulk-box{display:flex;flex-direction:column;gap:6px;align-items:flex-start;margin:6px 0 2px}
+  .bulk-box[hidden]{display:none}
+  .bulk-box textarea{width:100%;font-size:13px;margin:0}
+  [data-bulkroot] > .bt-unlink{margin-top:6px;font-size:12.5px}
+  .bgrp{font-size:11.5px;color:var(--accent)}
   .td-empty{font-size:12.5px;color:var(--muted);padding:4px 0 8px}
   .td-imp{margin-top:8px;padding:10px 12px;border:1px solid var(--border);border-radius:10px}
   .td-imp textarea{margin-top:8px}
@@ -2986,7 +2991,7 @@ function openWindowModal(editId) {
           const keep = match && match.chosen;
           return { topic: keep ? match.topic : choiceLabel(b.options), minutes: b.minutes,
                    taskId: keep ? match.taskId : undefined, options: b.options.map(o => ({ ...o })),
-                   chosen: !!keep, gap: b.gap, match };
+                   chosen: !!keep, gap: b.gap, group: b.group, match };
         }
         const topic = b.topic || t.title;
         const match = old.find(o => !used.has(o) && o.topic === topic && o.minutes === b.minutes);
@@ -3002,7 +3007,7 @@ function openWindowModal(editId) {
           minutes: f.minutes,
           ...(f.taskId ? { taskId: f.taskId } : {}),
           ...(typeof f.gap === "number" ? { gap: f.gap } : {}),
-          ...(f.options ? { options: f.options, chosen: f.chosen } : {}),
+          ...(f.options ? { options: f.options, chosen: f.chosen, ...(f.group ? { group: f.group } : {}) } : {}),
           done: f.match ? !!f.match.done : false,
           tpl: t.id,
           tplTitle: t.title
@@ -4273,7 +4278,7 @@ function openEditTemplateModal(tplId, groupId) {
   if (!tpl) return;
 
   const blockRowsHtml = tpl.blocks.map(b => `
-    <div class="block-row${isChoice(b) ? " is-choice" : ""}" ${b.taskId && !isChoice(b) ? `data-task-id="${esc(b.taskId)}"` : ""} ${typeof b.gap === "number" ? `data-gap="${b.gap}"` : ""}>
+    <div class="block-row${isChoice(b) ? " is-choice" : ""}" ${b.taskId && !isChoice(b) ? `data-task-id="${esc(b.taskId)}"` : ""} ${typeof b.gap === "number" ? `data-gap="${b.gap}"` : ""} ${isChoice(b) && b.group ? `data-group="${esc(b.group)}"` : ""}>
       <input class="be-topic" placeholder="Topic" value="${esc(isChoice(b) ? choiceLabel(b.options) : (b.topic || ""))}" ${isChoice(b) ? "readonly" : ""} autocomplete="off">
       <input class="be-mins" type="number" min="1" max="300" value="${b.minutes}">
       <div class="b-ctl">
@@ -4286,12 +4291,13 @@ function openEditTemplateModal(tplId, groupId) {
         ${blockLinkMarkup(isChoice(b) ? null : b.taskId)}
         <div class="bc">${bcInner(isChoice(b) ? b.options : null)}</div>
         <button class="btn sm" type="button" data-act="bs-open" title="Split this block into equal parts, with an optional interval">✂ Split</button>
-        <span class="bgap">${gapStateHtml(b.gap)}</span>
+        <span class="bgap">${gapStateHtml(b.gap)}</span><span class="bgrp"></span>
         <div class="bsplit" hidden>
           <label>Parts<input class="bs-n" type="number" min="1" max="20" value="2"></label>
           <label>Interval (min)<input class="bs-gap" type="number" min="0" max="120" placeholder="default"></label>
           <button class="btn primary sm" type="button" data-act="bs-apply">Apply</button>
           <button class="btn sm" type="button" data-act="bs-cancel">Cancel</button>
+          <button class="btn sm bs-sep" type="button" data-act="bs-sep" hidden title="Turn each choice into its own block, sharing the minutes">⇥ One block per choice</button>
           <div class="bs-prev"></div>
         </div>
       </div>
@@ -4344,7 +4350,7 @@ function openEditTemplateModal(tplId, groupId) {
   const $title  = document.getElementById("eTitle");
   $title.focus();
 
-  const addBlockRow = () => {
+  const buildBlockRow = () => {
     const row = document.createElement("div");
     row.className = "block-row";
     row.innerHTML = `
@@ -4360,15 +4366,20 @@ function openEditTemplateModal(tplId, groupId) {
         ${blockLinkMarkup(null)}
         <div class="bc">${bcInner(null)}</div>
         <button class="btn sm" type="button" data-act="bs-open" title="Split this block into equal parts, with an optional interval">✂ Split</button>
-        <span class="bgap">${gapStateHtml(undefined)}</span>
+        <span class="bgap">${gapStateHtml(undefined)}</span><span class="bgrp"></span>
         <div class="bsplit" hidden>
           <label>Parts<input class="bs-n" type="number" min="1" max="20" value="2"></label>
           <label>Interval (min)<input class="bs-gap" type="number" min="0" max="120" placeholder="default"></label>
           <button class="btn primary sm" type="button" data-act="bs-apply">Apply</button>
           <button class="btn sm" type="button" data-act="bs-cancel">Cancel</button>
+          <button class="btn sm bs-sep" type="button" data-act="bs-sep" hidden title="Turn each choice into its own block, sharing the minutes">⇥ One block per choice</button>
           <div class="bs-prev"></div>
         </div>
       </div>`;
+    return row;
+  };
+  const addBlockRow = () => {
+    const row = buildBlockRow();
     $blocks.appendChild(row);
     $blocks.scrollTop = $blocks.scrollHeight;
     syncMove();
@@ -4407,7 +4418,8 @@ function openEditTemplateModal(tplId, groupId) {
   const splitPrev = row => {
     const total = Math.max(1, Math.min(300, +row.querySelector(".be-mins").value || 25));
     const n = Math.max(1, Math.min(20, Math.floor(+row.querySelector(".bs-n").value) || 1));
-    row.querySelector(".bs-prev").innerHTML = splitPreviewHtml(total, n, row.querySelector(".bs-gap").value.trim());
+    row.querySelector(".bs-prev").innerHTML = splitPreviewHtml(total, n, row.querySelector(".bs-gap").value.trim())
+      + (row.classList.contains("is-choice") && n > 1 ? ` The parts stay linked: you pick a task once, when the first part starts, and it applies to all of them.` : "");
   };
   $blocks.addEventListener("input", e => {
     if (e.target.closest(".bsplit")) splitPrev(e.target.closest(".block-row"));
@@ -4424,6 +4436,7 @@ function openEditTemplateModal(tplId, groupId) {
       const row = so.closest(".block-row"), panel = row.querySelector(".bsplit");
       panel.hidden = !panel.hidden;
       if (!panel.hidden) {
+        row.querySelector(".bs-sep").hidden = !row.classList.contains("is-choice");
         if (row.dataset.gap !== undefined) row.querySelector(".bs-gap").value = row.dataset.gap;
         splitPrev(row);
         row.querySelector(".bs-n").focus();
@@ -4440,6 +4453,32 @@ function openEditTemplateModal(tplId, groupId) {
       row.querySelector(".bgap").innerHTML = "";
       return;
     }
+    const sp = e.target.closest("[data-act='bs-sep']");
+    if (sp) {
+      const row = sp.closest(".block-row");
+      const opts = bcRead(row), n = opts.length;
+      const total = Math.max(1, Math.min(300, +row.querySelector(".be-mins").value || 25));
+      if (n < 2) { toast("Add at least two choices first"); return; }
+      if (n > total) { toast(`${n} blocks need at least ${n} minutes`); return; }
+      const gRaw = row.querySelector(".bs-gap").value.trim();
+      const gap = gRaw === "" ? null : Math.max(0, Math.min(120, Math.round(+gRaw) || 0));
+      const mins = splitMinutes(total, n), days = readBlockDays(row), lastGap = row.dataset.gap;
+      const rows = opts.map((o, k) => {
+        const r = buildBlockRow();
+        r.querySelector(".be-topic").value = o.topic;
+        r.querySelector(".be-mins").value = mins[k];
+        r.querySelectorAll(".be-day").forEach(i => { i.checked = days.includes(+i.value); });
+        if (o.taskId) { r.dataset.taskId = o.taskId; refreshRowLink(r); }
+        const g = k === n - 1 ? lastGap : (gap === null ? undefined : String(gap));
+        if (g !== undefined) { r.dataset.gap = g; r.querySelector(".bgap").innerHTML = gapStateHtml(+g); }
+        return r;
+      });
+      row.replaceWith(...rows);
+      syncMove();
+      rows.forEach(r => { r.classList.add("moved"); setTimeout(() => r.classList.remove("moved"), 900); });
+      toast(`Split into ${n} separate blocks`);
+      return;
+    }
     const sa = e.target.closest("[data-act='bs-apply']");
     if (sa) {
       const row = sa.closest(".block-row");
@@ -4448,7 +4487,6 @@ function openEditTemplateModal(tplId, groupId) {
       const gRaw = row.querySelector(".bs-gap").value.trim();
       const gap = gRaw === "" ? null : Math.max(0, Math.min(120, Math.round(+gRaw) || 0));
       if (n > total) { toast("Each part needs at least 1 minute"); return; }
-      if (row.classList.contains("is-choice") && n > 1) { toast("Split a single task — not a “choose between” block"); return; }
 
       /* n = 1 just sets the interval after this block */
       if (n === 1) {
@@ -4463,6 +4501,9 @@ function openEditTemplateModal(tplId, groupId) {
       const days = readBlockDays(row);
       const taskId = row.dataset.taskId;
       const lastGap = row.dataset.gap;           /* the original break after the whole task */
+      const isCh = row.classList.contains("is-choice");
+      const rawOpts = isCh ? bcReadRaw(row) : null;
+      const grp = isCh ? (row.dataset.group || "g" + uid()) : null;
       const rows = [row];
       for (let k = 1; k < n; k++) {
         const r = document.createElement("div");
@@ -4474,6 +4515,7 @@ function openEditTemplateModal(tplId, groupId) {
       rows.slice(1).forEach(r => { ref.after(r); ref = r; });
       rows.forEach((r, k) => {
         const last = k === n - 1;
+        if (isCh) { r.className = "block-row is-choice"; bcRender(r, rawOpts, false); r.dataset.group = grp; setGroupTag(r); }   /* parts share one pick */
         r.querySelector(".be-topic").value = topic;
         r.querySelector(".be-mins").value = mins[k];
         r.querySelectorAll(".be-day").forEach(i => { i.checked = days.includes(+i.value); });
@@ -4490,7 +4532,7 @@ function openEditTemplateModal(tplId, groupId) {
       });
       syncMove();
       rows.forEach(r => { r.classList.add("moved"); setTimeout(() => r.classList.remove("moved"), 900); });
-      toast(`Split into ${n} parts`);
+      toast(isCh ? `Split into ${n} parts — you pick once for all of them` : `Split into ${n} parts`);
       return;
     }
   });
@@ -4544,6 +4586,12 @@ function openEditTemplateModal(tplId, groupId) {
   }
   syncMove();
 
+  const setGroupTag = r => {
+    const g = r.querySelector(".bgrp");
+    if (g) g.textContent = r.dataset.group && r.classList.contains("is-choice") ? "🔗 Split — you pick once for all parts" : "";
+  };
+  $blocks.querySelectorAll(".block-row").forEach(setGroupTag);
+
   document.getElementById("eAddBlock").addEventListener("click", addBlockRow);
 
   document.getElementById("eSave").addEventListener("click", () => {
@@ -4556,7 +4604,7 @@ function openEditTemplateModal(tplId, groupId) {
       const days = readBlockDays(r);
       const gapX = r.dataset.gap !== undefined && r.dataset.gap !== "" ? { gap: Math.max(0, Math.min(120, +r.dataset.gap || 0)) } : {};
       const opts = r.classList.contains("is-choice") ? bcRead(r) : [];
-      if (opts.length > 1) return { topic: choiceLabel(opts), minutes, days, ...gapX, options: opts };
+      if (opts.length > 1) return { topic: choiceLabel(opts), minutes, days, ...gapX, options: opts, ...(r.dataset.group ? { group: r.dataset.group } : {}) };
       if (opts.length === 1) return { topic: opts[0].topic, minutes, days, ...gapX, ...(opts[0].taskId ? { taskId: opts[0].taskId } : {}) };
       return {
         topic: r.classList.contains("is-choice") ? "" : r.querySelector(".be-topic").value.trim(),
@@ -4859,7 +4907,7 @@ dashSeg.addEventListener("click", e => {
    never checks the task off — that is always done by hand. */
 /* A copy always starts "undecided": a choice block keeps its alternatives but not the pick. */
 const cpBlock = b => isChoice(b)
-  ? { topic: choiceLabel(b.options), minutes: b.minutes, options: b.options.map(o => ({ ...o })),
+  ? { topic: choiceLabel(b.options), minutes: b.minutes, options: b.options.map(o => ({ ...o })), ...(b.group ? { group: b.group } : {}),
       ...(typeof b.gap === "number" && b.gap >= 0 ? { gap: b.gap } : {}) }
   : { topic: b.topic, minutes: b.minutes, ...(b.taskId ? { taskId: b.taskId } : {}),
       ...(typeof b.gap === "number" && b.gap >= 0 ? { gap: b.gap } : {}) };
@@ -4878,8 +4926,10 @@ function normBlockOptions(b) {
   if (typeof b.gap === "number" && isFinite(b.gap) && b.gap >= 0) b.gap = Math.min(120, Math.round(b.gap));
   else delete b.gap;
   const o = cleanOptions(b.options);
-  if (o.length > 1) { b.options = o; b.chosen = !!b.chosen; }
-  else { delete b.options; delete b.chosen; }
+  if (o.length > 1) {
+    b.options = o; b.chosen = !!b.chosen;
+    if (typeof b.group === "string" && b.group) b.group = b.group.slice(0, 40); else delete b.group;   /* split parts share one pick */
+  } else { delete b.options; delete b.chosen; delete b.group; }
 }
 function isChoice(b) { return !!b && Array.isArray(b.options) && b.options.length > 1; }
 function needsChoice(b) { return isChoice(b) && !b.chosen; }
@@ -4896,11 +4946,26 @@ function applyChoice(b, o) {
   if (o.taskId) b.taskId = o.taskId; else delete b.taskId;
   b.chosen = true;
 }
+/* Parts of a split "choose between" block share b.group: one pick covers all of them */
+function applyChoiceGroup(s, b, o) {
+  applyChoice(b, o);
+  if (!b.group) return;
+  s.blocks.forEach(x => {
+    if (x === b || x.group !== b.group || !isChoice(x) || x.done) return;
+    const m = x.options.find(y => y.topic === o.topic);
+    if (m) applyChoice(x, m);
+  });
+}
+function resetChoiceGroup(s, b) {
+  const one = x => { x.chosen = false; x.topic = choiceLabel(x.options); delete x.taskId; };
+  one(b);
+  if (b.group) s.blocks.forEach(x => { if (x !== b && x.group === b.group && isChoice(x) && !x.done) one(x); });
+}
 function openChoiceModal(sid, i, fromTimer) {
   const s = getSession(sid), b = s && s.blocks[i];
   if (!isChoice(b)) return;
   openModal("Choose what to study", `
-    <p class="hint">Block ${i + 1} · ${b.minutes} min — pick one.${fromTimer ? " The timer is paused until you choose." : ""}</p>
+    <p class="hint">Block ${i + 1} · ${b.minutes} min — pick one.${b.group && s.blocks.filter(x => x.group === b.group).length > 1 ? ` Your pick covers all ${s.blocks.filter(x => x.group === b.group).length} parts of this split block.` : ""}${fromTimer ? " The timer is paused until you choose." : ""}</p>
     <div class="choice-list">
       ${b.options.map((o, k) => `
         <button class="choice-opt${b.chosen && b.topic === o.topic ? " on" : ""}" type="button" data-k="${k}">
@@ -4918,11 +4983,11 @@ function openChoiceModal(sid, i, fromTimer) {
     if (pickBtn) opt = b.options[+pickBtn.dataset.k];
     else if (rand) opt = b.options[Math.floor(Math.random() * b.options.length)];
     else if (reset) {
-      b.chosen = false; b.topic = choiceLabel(b.options); delete b.taskId;
+      resetChoiceGroup(s, b);
       save(); closeModal(); renderSessions(); updateTimerUI(); return;
     }
     if (!opt) return;
-    applyChoice(b, opt);
+    applyChoiceGroup(s, b, opt);
     save(); closeModal(); renderSessions();
     if (fromTimer && timer.sessionId === sid && timer.blockIndex === i) {
       timer.running = true; timer.lastTick = Date.now(); saveTimer();
@@ -4942,6 +5007,42 @@ function promptChoiceIfNeeded() {
   openChoiceModal(s.id, timer.blockIndex, true);
   return true;
 }
+
+/* adding several subtasks at once: one per line (bullets, numbers and [ ] markers are ignored) */
+function splitLines(text) {
+  return String(text || "").split(/\r?\n/)
+    .map(l => l.replace(/^\s*(?:[-*\u2022]|\d+[.)]|\[[ xX]?\])\s+/, "").trim())
+    .filter(Boolean);
+}
+const bulkHtml = act => `
+  <button class="bt-unlink" type="button" data-act="${act}tog" aria-expanded="false">+ Add several at once</button>
+  <div class="bulk-box" hidden>
+    <textarea class="bulk-ta" rows="4" spellcheck="false" placeholder="One subtask per line — you can also paste a list"></textarea>
+    <button class="btn primary sm" type="button" data-act="${act}go">Add all</button>
+  </div>`;
+function bulkToggle(btn) {
+  const box = btn.nextElementSibling;
+  if (!box) return;
+  box.hidden = !box.hidden;
+  btn.setAttribute("aria-expanded", String(!box.hidden));
+  if (!box.hidden) box.querySelector("textarea").focus();
+}
+/* pasting a multi-line list into an "add subtask" box moves it into the multi-add box */
+document.addEventListener("paste", e => {
+  const t = e.target;
+  if (!t || !t.matches || !t.matches(".ck-subin, .tw-subadd, #tdAdd")) return;
+  const lines = splitLines(((e.clipboardData || window.clipboardData) || { getData: () => "" }).getData("text"));
+  if (lines.length < 2) return;
+  const root = t.closest("[data-bulkroot]"), box = root && root.querySelector(".bulk-box");
+  if (!box) return;
+  e.preventDefault();
+  box.hidden = false;
+  const btn = box.previousElementSibling; if (btn) btn.setAttribute("aria-expanded", "true");
+  const ta = box.querySelector("textarea");
+  ta.value = (ta.value.trim() ? ta.value.trim() + "\n" : "") + lines.join("\n");
+  ta.focus();
+});
+const subsAdded = n => `Added ${n} subtask${n !== 1 ? "s" : ""}`;
 
 /* Subtasks can have their own subtasks (one extra level): sub.subs = [{id,title,done}] */
 function subSync(x) { if (x.subs && x.subs.length) x.done = x.subs.every(c => c.done); }
@@ -5065,9 +5166,12 @@ function renderChecklist() {
               </div>` : ""}
             </div>`;
           }).join("")}
-          <div class="ck-addrow">
-            <input class="ck-subin" placeholder="Add a subtask, press Enter" autocomplete="off">
-            <button class="btn sm" type="button" data-act="ck-subgo">Add</button>
+          <div data-bulkroot>
+            <div class="ck-addrow">
+              <input class="ck-subin" placeholder="Add a subtask, press Enter" autocomplete="off">
+              <button class="btn sm" type="button" data-act="ck-subgo">Add</button>
+            </div>
+            ${bulkHtml("ck-bulk")}
           </div>
         </div>` : "";
       return `
@@ -5153,9 +5257,12 @@ function openTaskDetailModal(id) {
     <div class="td-title" style="font-size:16px;font-weight:600;word-break:break-word;margin-bottom:2px">${esc(t.title)}</div>
     <div class="td-prog" id="tdProg"></div>
     <div class="td-subs" id="tdSubs"></div>
-    <div class="ck-addrow" style="margin:0 0 8px">
-      <input id="tdAdd" placeholder="Add a subtask and press Enter" autocomplete="off">
-      <button class="btn sm" type="button" id="tdAddBtn">Add</button>
+    <div data-bulkroot id="tdRoot" style="margin:0 0 8px">
+      <div class="ck-addrow">
+        <input id="tdAdd" placeholder="Add a subtask and press Enter" autocomplete="off">
+        <button class="btn sm" type="button" id="tdAddBtn">Add</button>
+      </div>
+      ${bulkHtml("td-bulk")}
     </div>
     <div style="margin:0 0 14px">
       <button class="bt-unlink" type="button" id="tdImpToggle" aria-expanded="false">⇪ Import subtasks from a CSV / JSON file…</button>
@@ -5230,6 +5337,17 @@ function openTaskDetailModal(id) {
   document.getElementById("tdAddBtn").addEventListener("click", addSub);
   $add.addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); addSub(); } });
 
+  document.getElementById("tdRoot").addEventListener("click", e => {
+    const b = e.target.closest("[data-act]");
+    if (!b) return;
+    if (b.dataset.act === "td-bulktog") bulkToggle(b);
+    else if (b.dataset.act === "td-bulkgo") {
+      const ta = b.parentNode.querySelector("textarea"), lines = splitLines(ta.value);
+      if (!lines.length) { ta.focus(); return; }
+      lines.forEach(title => t.subs.push({ id: uid(), title, done: false }));
+      commit(); toast(subsAdded(lines.length));
+    }
+  });
   const addKid = grp => {
     const sub = t.subs.find(x => x.id === grp.dataset.s), input = grp.querySelector(".td-kidin");
     if (!sub || !input) return;
@@ -5512,6 +5630,14 @@ ckBody.addEventListener("click", e => {
   if (!tid) return;
   const ct = findTask(tid);
   if (act === "ck-tog" && ct) { ct.open = !ct.open; save(); renderChecklist(); return; }
+  if (ct && act === "ck-bulktog") { bulkToggle(el); return; }
+  if (ct && act === "ck-bulkgo") {
+    const lines = splitLines(item.querySelector(".bulk-ta").value);
+    if (!lines.length) { item.querySelector(".bulk-ta").focus(); return; }
+    lines.forEach(title => ct.subs.push({ id: uid(), title, done: false }));
+    syncParentDone(ct); ckRefresh(); toast(subsAdded(lines.length));
+    return;
+  }
   if (ct && (act === "ck-subgo" || act === "ck-kidgo" || act === "ck-skid" || act === "ck-sdel" || act === "ck-cdel")) {
     const sg = el.closest(".ck-sg");
     const sub = sg ? ct.subs.find(x => x.id === sg.dataset.s) : null;
@@ -6352,9 +6478,12 @@ function twWeekModalHtml(wi) {
               <button class="btn sm" data-act="tw-kidgo">Add</button>
             </div>` : ""}
           </div>`).join("")}
-        <div class="ck-addrow">
-          <input class="tw-subadd" data-t="${esc(t.id)}" placeholder="Add a subtask, press Enter" autocomplete="off">
-          <button class="btn sm" data-act="tw-subadd" data-t="${esc(t.id)}">Add</button>
+        <div data-bulkroot>
+          <div class="ck-addrow">
+            <input class="tw-subadd" data-t="${esc(t.id)}" placeholder="Add a subtask, press Enter" autocomplete="off">
+            <button class="btn sm" data-act="tw-subadd" data-t="${esc(t.id)}">Add</button>
+          </div>
+          ${bulkHtml("tw-bulk")}
         </div>
       </div>`}
     </div>`).join("");
@@ -6580,6 +6709,16 @@ function twOnClick(e) {
   const f = twFind(tid);
   if (!f) return;
   if (act === "tw-fold") { f.t.collapsed = !f.t.collapsed; twRefresh(); return; }
+  if (act === "tw-bulktog") { bulkToggle(el); return; }
+  if (act === "tw-bulkgo") {
+    const ta = el.parentNode.querySelector("textarea"), lines = splitLines(ta.value);
+    if (!lines.length) { ta.focus(); return; }
+    lines.forEach(title => f.t.subs.push({ id: uid(), title, done: false }));
+    twSyncDone(f.t);
+    twRefresh();
+    toast(subsAdded(lines.length));
+    return;
+  }
   if (act === "tw-kid") {
     const sid = el.closest(".tw-grp").dataset.s;
     twKidOpen.add(sid); twRefresh(`.tw-kidin[data-s="${sid}"]`);
@@ -6924,6 +7063,8 @@ function bcHandleClick(e, $blocks) {
     return true;
   }
   if (act === "bc-off") {
+    delete row.dataset.group;
+    const tag = row.querySelector(".bgrp"); if (tag) tag.textContent = "";
     const first = bcRead(row)[0];
     row.querySelector(".be-topic").value = first ? first.topic : "";
     if (first && first.taskId) row.dataset.taskId = first.taskId; else delete row.dataset.taskId;
