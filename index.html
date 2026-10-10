@@ -1697,7 +1697,6 @@ function endPhase(opts) {
   if (mode === "freeflow" && timer.phase !== "break") {
     logStudy(timer.elapsed / 60, s, s.blocks[timer.blockIndex]);
     s.blocks[timer.blockIndex].done = true;
-    completeTaskFromBlock(s.blocks[timer.blockIndex]);
     if (timer.blockIndex >= s.blocks.length - 1) {
       finishSession(s, silent);
     } else {
@@ -1723,7 +1722,6 @@ function endPhase(opts) {
   } else if (timer.phase === "work") {
     logStudy((timer.total - timer.remaining) / 60, s, s.blocks[timer.blockIndex]);
     s.blocks[timer.blockIndex].done = true;
-    completeTaskFromBlock(s.blocks[timer.blockIndex]);
     if (timer.blockIndex >= s.blocks.length - 1) {
       finishSession(s, silent);
     } else {
@@ -2734,7 +2732,6 @@ sessionList.addEventListener("click", e => {
   } else if (act === "toggle") {
     const i = +el.dataset.i;
     s.blocks[i].done = !s.blocks[i].done;
-    if (s.blocks[i].done) completeTaskFromBlock(s.blocks[i]);
     save(); renderSessions();
   }
 });
@@ -4844,8 +4841,8 @@ dashSeg.addEventListener("click", e => {
 });
 
 /* ---------- PLAN CHECKLIST ---------- */
-/* sections -> tasks. A task can become a template block (topic) and is checked off
-   automatically when that block is finished in a session. */
+/* sections -> tasks. A task can become a template block (topic); finishing the block
+   never checks the task off — that is always done by hand. */
 /* A copy always starts "undecided": a choice block keeps its alternatives but not the pick. */
 const cpBlock = b => isChoice(b)
   ? { topic: choiceLabel(b.options), minutes: b.minutes, options: b.options.map(o => ({ ...o })),
@@ -4950,17 +4947,6 @@ function findTask(id) {
   return null;
 }
 function taskSection(id) { return state.checklist.find(g => g.tasks.some(t => t.id === id)) || null; }
-
-function completeTaskFromBlock(b) {
-  if (!b || !b.taskId) return;
-  const t = findTask(b.taskId);
-  if (!t || t.done) return;
-  t.done = true; t.doneAt = Date.now();
-  (t.subs || []).forEach(x => { x.done = true; });
-  save();
-  toast(`Task checked off: ${t.title}`);
-  if (state.ui.tab === "plan") renderPlan();
-}
 
 function unlinkTasks(ids) {
   const set = new Set(ids);
@@ -5275,7 +5261,7 @@ function openTaskToTemplateModal(preIds) {
     `<optgroup label="${esc(g.name)}">${g.templates.map(t => `<option value="${esc(t.id)}">${esc(t.title)}</option>`).join("")}</optgroup>`).join("");
 
   openModal("Add tasks to a template", `
-    <p class="hint">Each task becomes a topic (block) in the template. When you finish that block in a session, the task is checked off.</p>
+    <p class="hint">Each task becomes a topic (block) in the template. Finishing a block never checks the task off — you tick it in the checklist yourself.</p>
     <div class="ck-pick" id="ttList">
       ${open.map(({ g, tasks }) => `<div class="ck-sech">${esc(g.name)}</div>${tasks.map(t => `
         <label class="ck-pk"><input type="checkbox" value="${esc(t.id)}" ${pre.has(t.id) ? "checked" : ""}><span>${esc(t.title)}</span></label>`).join("")}`).join("")}
