@@ -312,7 +312,7 @@
   .ck-name{flex:1;min-width:0;font-weight:600;font-size:14px;cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .ck-count{font-size:12px;color:var(--muted);margin-right:4px;white-space:nowrap}
   .ck-body{border-top:1px solid var(--border);padding:2px 10px 10px}
-  .ck-row{display:grid;grid-template-columns:20px minmax(0,1fr) auto auto auto;gap:6px;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)}
+  .ck-row{display:grid;grid-template-columns:20px minmax(0,1fr) auto auto auto auto;gap:6px;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)}
   .ck-row input[type=checkbox]{display:block;width:17px;height:17px;margin:0;padding:0;accent-color:var(--accent);cursor:pointer}
   .ck-title{font-size:14px;word-break:break-word}
   .ck-row.done .ck-title{text-decoration:line-through;color:var(--muted)}
@@ -327,6 +327,47 @@
   .ck-main:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
   .ck-chip.sub{background:var(--surface-2);color:var(--text)}
   .ck-chip.sub.all{background:var(--accent-soft);color:var(--accent)}
+
+  /* target week planner */
+  .tw-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:10px}
+  .tw-title{font-size:16px;font-weight:600;letter-spacing:-.01em;word-break:break-word}
+  .tw-range{font-size:12.5px;color:var(--muted);margin-top:2px}
+  .tw-acts{display:flex;gap:6px;flex-wrap:wrap}
+  .tw-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-top:14px}
+  .tw-week{display:block;width:100%;min-width:0;text-align:left;font:inherit;color:inherit;border:1px solid var(--border);border-radius:12px;background:var(--surface);padding:12px;cursor:pointer;transition:.15s}
+  .tw-week:hover{border-color:var(--muted)}
+  .tw-week:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  .tw-week.now{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset}
+  .tw-week.full{background:var(--accent-soft)}
+  .tw-wh{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:2px}
+  .tw-wh b{font-size:13.5px}
+  .tw-wh .pill{margin-left:6px;vertical-align:1px;font-size:9.5px;padding:2px 7px}
+  .tw-week .d{display:block;font-size:12px;color:var(--muted);margin-bottom:10px}
+  .tw-count{font-size:12px;color:var(--muted);white-space:nowrap}
+  .tw-wm .tw-range{margin:0 0 8px}
+  .tw-task{border-bottom:1px solid var(--border);padding:8px 0}
+  .tw-trow{display:grid;grid-template-columns:20px 20px minmax(0,1fr) auto;gap:8px;align-items:center}
+  .tw-trow input[type=checkbox]{display:block;width:17px;height:17px;margin:0;padding:0;accent-color:var(--accent);cursor:pointer}
+  .tw-trow input[type=text]{margin:0;padding:6px 8px;font-weight:600;border-color:transparent;background:transparent}
+  .tw-trow input[type=text]:hover,.tw-trow input[type=text]:focus{border-color:var(--border);background:var(--surface)}
+  .tw-task.done .tw-trow input[type=text]{text-decoration:line-through;color:var(--muted)}
+  .tw-subs{margin:2px 0 0 48px}
+  .tw-caret{display:flex;align-items:center;justify-content:center;width:20px;height:24px;padding:0;border:0;border-radius:6px;background:transparent;color:var(--muted);cursor:pointer;font-size:12px;transition:transform .15s,background .15s}
+  .tw-caret:hover{background:var(--surface-2);color:var(--text)}
+  .tw-caret.open{transform:rotate(90deg)}
+  .tw-subs .ck-addrow{margin-top:4px}
+  .tw-wm > .ck-addrow{margin-top:14px}
+  .tw-pickbar{display:flex;justify-content:flex-end;margin:10px 0 0}
+  .tw-pick{border:1px solid var(--border);border-radius:10px;padding:8px;margin-top:8px}
+  .tw-pick .ck-pick{margin-bottom:8px}
+  .tw-pk-sub{padding-left:30px;font-size:12.5px;color:var(--muted)}
+  .ck-pk span{min-width:0;word-break:break-word}
+  .tw-none{font-size:12.5px;color:var(--muted);padding:6px 0}
+  .tw-chips{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin:0 0 10px;font-size:12px;color:var(--muted)}
+  .tw-calc{font-size:13px;margin:0 0 12px;color:var(--text)}
+  .tw-calc.bad{color:var(--danger)}
+  .tw-setup{border:1px dashed var(--border);border-radius:12px;padding:16px}
+  @media(max-width:620px){ .plan-view button{font-size:11.5px;padding:7px 3px} }
   /* task detail modal */
   .td-prog{display:flex;align-items:center;gap:10px;font-size:12px;color:var(--muted);margin:2px 0 8px}
   .td-prog .ck-bar{flex:1}
@@ -950,6 +991,7 @@
         <div class="seg plan-view" id="planViewSeg">
           <button data-view="calendar" class="on">Schedule</button>
           <button data-view="checklist">Checklist</button>
+          <button data-view="target">Target Week Planner</button>
         </div>
         <div id="planCal">
           <div class="plan-nav">
@@ -961,6 +1003,7 @@
           <div id="planBody"></div>
         </div>
         <div id="planChecklist" hidden></div>
+        <div id="planTarget" hidden></div>
       </section>
 
       <section class="card tab-panel" data-panel="dashboard" role="tabpanel" hidden>
@@ -1090,6 +1133,7 @@ let state = {
   templates: [],
   templateGroups: [],
   checklist: [],
+  targetPlan: null,
   goals: { daily: 0, weekly: 0, streak: 0, streakMode: "any" },
   plans: [],
   recurLog: {},
@@ -1182,7 +1226,7 @@ function load() {
   if (!["day", "week", "month", "all"].includes(state.ui.dashRange)) state.ui.dashRange = "week";
   if (!["day", "week", "month"].includes(state.ui.planRange)) state.ui.planRange = "week";
   if (!["day", "week", "month", "all"].includes(state.ui.histRange)) state.ui.histRange = "week";
-  if (!["calendar", "checklist"].includes(state.ui.planView)) state.ui.planView = "calendar";
+  if (!["calendar", "checklist", "target"].includes(state.ui.planView)) state.ui.planView = "calendar";
   state.ui.ckHideDone = !!state.ui.ckHideDone;
   if (!["list", "calendar"].includes(state.ui.histView)) state.ui.histView = "list";
   if (!state.ui.planAnchor) state.ui.planAnchor = dateKey(new Date());
@@ -1251,6 +1295,7 @@ function normalise() {
       syncParentDone(t, true);
     });
   });
+  state.targetPlan = twNormalize(state.targetPlan);
   state.templateGroups.forEach(g => g.templates.forEach(t => t.blocks.forEach(b => {
     if (b.taskId && !findTask(b.taskId)) delete b.taskId;
     if (isChoice(b)) b.options.forEach(o => { if (o.taskId && !findTask(o.taskId)) delete o.taskId; });
@@ -2279,6 +2324,7 @@ function backupData() {
     resources: state.resources,
     templateGroups: state.templateGroups,
     checklist: state.checklist,
+    targetPlan: state.targetPlan,
     goals: state.goals,
     plans: state.plans,
     recurLog: state.recurLog,
@@ -2354,6 +2400,7 @@ function sanitizeBackup(data) {
     recurLog:  (data.recurLog && typeof data.recurLog === "object" && !Array.isArray(data.recurLog)) ? data.recurLog : {},
     history:   objs(data.history),
     checklist: Array.isArray(data.checklist) ? objs(data.checklist).map(g => ({ ...g, tasks: objs(g.tasks) })) : null,
+    targetPlan: (data.targetPlan && typeof data.targetPlan === "object" && !Array.isArray(data.targetPlan)) ? data.targetPlan : null,
     goals:     (data.goals && typeof data.goals === "object" && !Array.isArray(data.goals)) ? data.goals : null,
     settings:  (data.settings && typeof data.settings === "object") ? data.settings : null,
     ui:        (data.ui && typeof data.ui === "object") ? data.ui : null
@@ -2368,6 +2415,7 @@ function applyBackupData(c) {
   state.recurLog       = c.recurLog;
   state.history        = c.history;
   if (c.checklist) state.checklist = c.checklist;
+  if (c.targetPlan) state.targetPlan = c.targetPlan;
   if (c.goals) state.goals = c.goals;
   if (c.settings) state.settings = { ...state.settings, ...c.settings };
   if (c.ui) {
@@ -2446,7 +2494,7 @@ function importBackupText(text) {
     }
 
     const hasAny = ["sessions", "plans", "templateGroups", "templates", "resources", "history", "checklist"]
-      .some(k => Array.isArray(data[k]));
+      .some(k => Array.isArray(data[k])) || (data.targetPlan && typeof data.targetPlan === "object");
     if (!hasAny) {
       alert("This file doesn't look like a Study Plan backup.");
       return;
@@ -3423,6 +3471,7 @@ const planBody  = $("#planBody");
 const planCal   = $("#planCal");
 const planViewSeg = $("#planViewSeg");
 const ckBody    = $("#planChecklist");
+const twBody    = $("#planTarget");
 const planPrev  = $("#planPrev");
 const planNext  = $("#planNext");
 const planToday = $("#planToday");
@@ -3743,6 +3792,7 @@ function applyPlanView() {
   planViewSeg.querySelector('[data-view="checklist"]').textContent = open ? `Checklist · ${open}` : "Checklist";
   planCal.hidden = v !== "calendar";
   ckBody.hidden  = v !== "checklist";
+  twBody.hidden  = v !== "target";
   planSeg.hidden = v !== "calendar";
 }
 
@@ -3756,6 +3806,7 @@ planViewSeg.addEventListener("click", e => {
 function renderPlan() {
   applyPlanView();
   if (state.ui.planView === "checklist") { renderChecklist(); return; }
+  if (state.ui.planView === "target") { renderTarget(); return; }
   const range = state.ui.planRange;
   [...planSeg.children].forEach(b => b.classList.toggle("on", b.dataset.range === range));
 
@@ -4950,6 +5001,7 @@ function renderChecklist() {
       <div class="ck-prog">${all.length ? `<b>${done}</b> of <b>${all.length}</b> done · ${pct}%` : "No tasks yet"}
         <div class="ck-bar"><i style="width:${pct}%"></i></div></div>
       <button class="btn sm" data-act="ck-hide">${hide ? "Show completed" : "Hide completed"}</button>
+      <button class="btn sm" data-act="ck-target" title="Plan your tasks week by week over a date range">Target Week Planner</button>
       <button class="btn sm" data-act="ck-io">Import / Export</button>
       <button class="btn primary sm" data-act="ck-newsec">+ Section</button>
     </div>`;
@@ -4976,6 +5028,7 @@ function renderChecklist() {
             <div class="ck-title">${esc(t.title)}</div>
             <div class="ck-meta">${subChip}${notesChip}${dueChip}${tplChip}</div>
           </div>
+          <button class="icon-btn sm" data-act="ck-week" title="Add to a Target Week" aria-label="Add to a target week">📅</button>
           <button class="icon-btn sm" data-act="ck-tpl" title="Add to a template as a topic" aria-label="Add to a template">▦</button>
           <button class="icon-btn sm" data-act="ck-edit" title="Edit task" aria-label="Edit task">✎</button>
           <button class="icon-btn sm" data-act="ck-del" title="Delete task" aria-label="Delete task">✕</button>
@@ -5319,6 +5372,7 @@ ckBody.addEventListener("click", e => {
   }
   if (act === "ck-add") { addTaskTo(el.dataset.g); return; }
   if (act === "ck-io") { openChecklistIOModal(); return; }
+  if (act === "ck-target") { state.ui.planView = "target"; save(); renderPlan(); return; }
   if (!g) return;
   if (act === "ck-fold") { g.collapsed = !g.collapsed; save(); renderChecklist(); return; }
   if (act === "ck-rename") {
@@ -5341,6 +5395,7 @@ ckBody.addEventListener("click", e => {
   if (!tid) return;
   if (act === "ck-open") { openTaskDetailModal(tid); return; }
   if (act === "ck-tpl")  { openTaskToTemplateModal([tid]); return; }
+  if (act === "ck-week") { openTaskToWeekModal(tid); return; }
   if (act === "ck-edit") { openTaskEditModal(tid); return; }
   if (act === "ck-del") {
     const linked = templateLinks().get(tid);
@@ -5865,6 +5920,678 @@ function openChecklistIOModal() {
     toast(downloadText("checklist.csv", "\uFEFF" + ckExportCsv() + "\n", "text/csv") ? "Checklist exported" : "Download blocked — copy from Export JSON/paste box instead"));
   document.getElementById("ckExpJson").addEventListener("click", () =>
     toast(downloadText("checklist.json", ckExportJson() + "\n", "application/json") ? "Checklist exported" : "Download blocked"));
+}
+
+
+/* =====================================================================
+   TARGET WEEK PLANNER
+   A date range split into weeks (week 1 starts on the start date); each
+   week holds main tasks with subtasks. Stored in state.targetPlan.
+   ===================================================================== */
+const TW_MAX_WEEKS = 53;
+const TW_DEMO = {"name": "Q4 Target Plan (demo)", "start": "2026-10-10", "end": "2026-12-31", "weeks": [{"week": 1, "theme": "Set up your system", "tasks": [{"title": "Get organised", "subtasks": ["Choose study resources", "Block weekly study hours in the calendar", {"title": "Take a baseline practice test", "done": true}]}, {"title": "Map the syllabus", "subtasks": ["List every topic", "Rate confidence 1–5 per topic"]}]}, {"week": 2, "theme": "Foundations I", "tasks": [{"title": "Topic 1", "subtasks": ["Read the chapter", "Write summary notes", "Do 20 practice questions"]}, {"title": "Topic 2", "subtasks": ["Read the chapter", "Write summary notes", "Do 20 practice questions"]}]}, {"week": 3, "theme": "Foundations II", "tasks": [{"title": "Topic 3", "subtasks": ["Read the chapter", "Make flashcards", "Do 20 practice questions"]}, {"title": "Topic 4", "subtasks": ["Read the chapter", "Make flashcards", "Do 20 practice questions"]}]}, {"week": 4, "theme": "Checkpoint 1", "tasks": [{"title": "Review topics 1–4", "subtasks": ["Redo missed questions", "Re-read weak notes"]}, {"title": "Checkpoint quiz", "subtasks": ["Take the quiz", "Log mistakes"]}]}, {"week": 5, "theme": "Core content I", "tasks": [{"title": "Topic 5", "subtasks": ["Read the chapter", "Write summary notes", "Do 20 practice questions"]}, {"title": "Topic 6", "subtasks": ["Read the chapter", "Write summary notes", "Do 20 practice questions"]}]}, {"week": 6, "theme": "Core content II", "tasks": [{"title": "Topic 7", "subtasks": ["Read the chapter", "Make flashcards", "Do 20 practice questions"]}, {"title": "Topic 8", "subtasks": ["Read the chapter", "Make flashcards", "Do 20 practice questions"]}]}, {"week": 7, "theme": "Mid-point mock", "tasks": [{"title": "Full mock exam 1", "subtasks": ["Sit it under timed conditions", "Mark it", "Analyse every mistake"]}, {"title": "Adjust the plan", "subtasks": ["Re-rate confidence per topic", "Reschedule weak topics"]}]}, {"week": 8, "theme": "Advanced I", "tasks": [{"title": "Topic 9", "subtasks": ["Read the chapter", "Write summary notes", "Do 25 practice questions"]}, {"title": "Topic 10", "subtasks": ["Read the chapter", "Write summary notes", "Do 25 practice questions"]}]}, {"week": 9, "theme": "Advanced II", "tasks": [{"title": "Topic 11", "subtasks": ["Read the chapter", "Make flashcards", "Do 25 practice questions"]}, {"title": "Topic 12", "subtasks": ["Read the chapter", "Make flashcards", "Do 25 practice questions"]}]}, {"week": 10, "theme": "Weak-area repair", "tasks": [{"title": "Fix the 3 weakest topics", "subtasks": ["Re-study from scratch", "Do 40 targeted questions"]}, {"title": "Spaced-repetition pass", "subtasks": ["Review all flashcards", "Redo old mistakes"]}]}, {"week": 11, "theme": "Full mocks", "tasks": [{"title": "Full mock exam 2", "subtasks": ["Sit it under timed conditions", "Mark and analyse"]}, {"title": "Full mock exam 3", "subtasks": ["Sit it under timed conditions", "Mark and analyse"]}]}, {"week": 12, "theme": "Final review & rest", "tasks": [{"title": "Final review", "subtasks": ["One-page summary per topic", "Light review only — no new material"]}, {"title": "Prepare for the day", "subtasks": ["Check logistics", "Sleep and rest"]}]}]};
+const TW_JSON_TEMPLATE = JSON.stringify(TW_DEMO, null, 2);
+
+function twParse(k) {
+  if (typeof k !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(k)) return null;
+  const d = new Date(k + "T00:00:00");
+  return isNaN(d) ? null : d;
+}
+function twCount(start, end) {
+  const a = twParse(start), b = twParse(end);
+  if (!a || !b || b < a) return 0;
+  return Math.ceil((Math.round((b - a) / DAY) + 1) / 7);
+}
+function twWeekRange(tp, i) {
+  const s = twParse(tp.start), e = twParse(tp.end);
+  const ws = addDays(s, i * 7);
+  let we = addDays(ws, 6);
+  if (we > e) we = e;
+  return [ws, we];
+}
+const twFmt = (d, o) => d.toLocaleDateString(undefined, o);
+function twRangeLabel(start, end) {
+  const a = twParse(start), b = twParse(end);
+  if (!a || !b) return "";
+  const same = a.getFullYear() === b.getFullYear();
+  return `${twFmt(a, { month: "short", day: "numeric", ...(same ? {} : { year: "numeric" }) })} – ${twFmt(b, { month: "short", day: "numeric", year: "numeric" })}`;
+}
+function twWeekLabel(ws, we) {
+  if (dateKey(ws) === dateKey(we)) return twFmt(ws, { month: "short", day: "numeric" });
+  const sameM = ws.getMonth() === we.getMonth() && ws.getFullYear() === we.getFullYear();
+  return `${twFmt(ws, { month: "short", day: "numeric" })} – ${sameM ? we.getDate() : twFmt(we, { month: "short", day: "numeric" })}`;
+}
+/* progress counts main tasks AND subtasks */
+function twProg(tasks) {
+  let d = 0, n = 0;
+  tasks.forEach(t => { n++; if (t.done) d++; t.subs.forEach(x => { n++; if (x.done) d++; }); });
+  return { d, n, pct: n ? Math.round(d / n * 100) : 0 };
+}
+function twSyncDone(t) { if (t.subs.length) t.done = t.subs.every(x => x.done); }
+
+/* validate / repair a plan object; returns a clean plan or null */
+function twNormalize(tp) {
+  if (!tp || typeof tp !== "object") return null;
+  const n = twCount(tp.start, tp.end);
+  if (!n || n > TW_MAX_WEEKS) return null;
+  const old = Array.isArray(tp.weeks) ? tp.weeks : [];
+  const weeks = Array.from({ length: n }, (_, i) => {
+    const w = old[i] && typeof old[i] === "object" ? old[i] : {};
+    const tasks = (Array.isArray(w.tasks) ? w.tasks : [])
+      .filter(t => t && typeof t.title === "string" && t.title.trim())
+      .map(t => {
+        const nt = { id: t.id || uid(), title: t.title.trim(), done: !!t.done, collapsed: !!t.collapsed, src: typeof t.src === "string" ? t.src : "",
+          subs: (Array.isArray(t.subs) ? t.subs : []).filter(x => x && typeof x.title === "string" && x.title.trim())
+                  .map(x => ({ id: x.id || uid(), title: x.title.trim(), done: !!x.done })) };
+        twSyncDone(nt);
+        return nt;
+      });
+    return { id: w.id || uid(), tasks };
+  });
+  return { name: typeof tp.name === "string" ? tp.name : "", start: tp.start, end: tp.end, weeks };
+}
+
+function twFind(id) {
+  const tp = state.targetPlan;
+  if (!tp) return null;
+  for (const w of tp.weeks) {
+    const t = w.tasks.find(x => x.id === id);
+    if (t) return { w, t };
+  }
+  return null;
+}
+
+/* ----- range form (used in the empty state and the "Edit range" pop-up) ----- */
+function twDefaultRange() {
+  const today = startOfDay(new Date());
+  const yearEnd = new Date(today.getFullYear(), 11, 31);
+  const end = (yearEnd - today) / DAY >= 56 ? yearEnd : addDays(today, 7 * 12 - 1);
+  return { start: dateKey(today), end: dateKey(end) };
+}
+function twRangeFormHtml(tp) {
+  const r = tp ? { start: tp.start, end: tp.end } : twDefaultRange();
+  return `
+    <label class="fld">Plan name <span class="opt">(optional)</span>
+      <input id="twName" placeholder="e.g. Exam target plan" value="${esc(tp ? tp.name : "")}" autocomplete="off">
+    </label>
+    <div class="two">
+      <label class="fld">Start date<input id="twStart" type="date" value="${esc(r.start)}"></label>
+      <label class="fld">End date<input id="twEnd" type="date" value="${esc(r.end)}"></label>
+    </div>
+    <div class="tw-chips">Quick length:
+      <button class="btn sm" type="button" data-wk="4">4 weeks</button>
+      <button class="btn sm" type="button" data-wk="8">8 weeks</button>
+      <button class="btn sm" type="button" data-wk="12">12 weeks</button>
+      <button class="btn sm" type="button" data-wk="16">16 weeks</button>
+    </div>
+    <div class="tw-calc" id="twCalc"></div>
+    <button class="btn primary wide" id="twSave" type="button">${tp ? "Save range" : "Create weekly grid"}</button>`;
+}
+function twBindRangeForm(root, onSave) {
+  const $s = root.querySelector("#twStart"), $e = root.querySelector("#twEnd"),
+        $c = root.querySelector("#twCalc"), $ok = root.querySelector("#twSave"),
+        $n = root.querySelector("#twName");
+  const upd = () => {
+    const n = twCount($s.value, $e.value);
+    const bad = !n || n > TW_MAX_WEEKS;
+    $c.classList.toggle("bad", bad);
+    $c.textContent = !twParse($s.value) || !twParse($e.value) ? "Pick a start and an end date"
+      : !n ? "The end date must be on or after the start date"
+      : n > TW_MAX_WEEKS ? `That is ${n} weeks — the maximum is ${TW_MAX_WEEKS}`
+      : `${n} week${n !== 1 ? "s" : ""} · ${twRangeLabel($s.value, $e.value)}`;
+    $ok.disabled = bad;
+  };
+  $s.addEventListener("input", upd); $e.addEventListener("input", upd);
+  root.querySelectorAll("[data-wk]").forEach(b => b.addEventListener("click", () => {
+    const a = twParse($s.value);
+    if (!a) { toast("Pick a start date first"); return; }
+    $e.value = dateKey(addDays(a, 7 * +b.dataset.wk - 1));
+    upd();
+  }));
+  $ok.addEventListener("click", () => onSave({ name: $n.value.trim(), start: $s.value, end: $e.value }));
+  upd();
+}
+function twSaveRange(v) {
+  const cur = state.targetPlan;
+  const n = twCount(v.start, v.end);
+  if (!n || n > TW_MAX_WEEKS) return false;
+  if (cur && n < cur.weeks.length) {
+    const lost = cur.weeks.slice(n).reduce((a, w) => a + w.tasks.length, 0);
+    if (lost && !confirm(`The new range has ${n} weeks. The ${lost} task${lost !== 1 ? "s" : ""} in weeks ${n + 1}–${cur.weeks.length} will be deleted. Continue?`)) return false;
+  }
+  state.targetPlan = twNormalize({ name: v.name, start: v.start, end: v.end, weeks: cur ? cur.weeks : [] });
+  save();
+  return true;
+}
+
+/* ----- rendering ----- */
+let twWeekIdx = null;                       // week shown in the pop-up
+let twModalBound = false;
+let twPickOpen = false;                     // checklist picker shown inside the week pop-up
+const twModalOpen = () => twWeekIdx !== null && !!modalBody.querySelector(".tw-wm");
+const twRoot = () => twModalOpen() ? modalBody : twBody;
+
+function renderTarget() {
+  const tp = state.targetPlan;
+  if (!tp) {
+    twBody.innerHTML = `
+      <div class="tw-setup">
+        <div class="tw-title" style="margin-bottom:4px">Target Week Planner</div>
+        <p class="hint" style="margin:0 0 14px">Select a date range (e.g. 12 weeks). It is split into a grid of weeks, and for each week you add the main tasks you must complete — each with its own subtasks. You can also load a whole plan from a JSON file.</p>
+        ${twRangeFormHtml(null)}
+        <div style="text-align:center;margin-top:10px"><button class="btn sm" type="button" data-act="tw-io">⇪ Import a JSON plan instead</button></div>
+      </div>`;
+    twBindRangeForm(twBody, v => { if (twSaveRange(v)) { renderPlan(); toast("Weekly grid created"); } });
+    return;
+  }
+  const todayK = dateKey(new Date());
+  const P = twProg(tp.weeks.flatMap(w => w.tasks));
+
+  const cards = tp.weeks.map((w, i) => {
+    const [ws, we] = twWeekRange(tp, i);
+    const now = todayK >= dateKey(ws) && todayK <= dateKey(we);
+    const wP = twProg(w.tasks), wp = wP.pct;
+    const full = wP.n > 0 && wP.d === wP.n;
+    return `
+      <div class="tw-week ${now ? "now" : ""} ${full ? "full" : ""}" data-act="tw-week" data-w="${i}" role="button" tabindex="0" title="Open week ${i + 1}">
+        <div class="tw-wh"><b>Week ${i + 1}${now ? ` <span class="pill">Now</span>` : ""}</b><span class="tw-count">${wp}%</span></div>
+        <span class="d">${esc(twWeekLabel(ws, we))}</span>
+        <div class="ck-bar"><i style="width:${wp}%"></i></div>
+      </div>`;
+  }).join("");
+
+  twBody.innerHTML = `
+    <div class="tw-head">
+      <div>
+        <div class="tw-title">${esc(tp.name || "Target Week Planner")}</div>
+        <div class="tw-range">${esc(twRangeLabel(tp.start, tp.end))} · ${tp.weeks.length} week${tp.weeks.length !== 1 ? "s" : ""}</div>
+      </div>
+      <div class="tw-acts">
+        <button class="btn sm" data-act="tw-io">Import / Export</button>
+        <button class="btn sm" data-act="tw-range">Edit range</button>
+        <button class="icon-btn sm" data-act="tw-delplan" title="Delete this plan" aria-label="Delete this plan">✕</button>
+      </div>
+    </div>
+    <div class="ck-prog">${P.n ? `<b>${P.d}</b> of <b>${P.n}</b> tasks &amp; subtasks done · ${P.pct}%` : "No tasks yet — open a week to add them"}
+      <div class="ck-bar"><i style="width:${P.pct}%"></i></div></div>
+    <div class="tw-grid">${cards}</div>`;
+}
+
+/* the pop-up: everything about one week */
+function twWeekModalHtml(wi) {
+  const tp = state.targetPlan, w = tp.weeks[wi];
+  const [ws, we] = twWeekRange(tp, wi);
+  const days = Math.round((we - ws) / DAY) + 1;
+  const P = twProg(w.tasks);
+  const allFolded = w.tasks.length > 0 && w.tasks.every(t => t.collapsed);
+  const rows = w.tasks.map(t => `
+    <div class="tw-task ${t.done ? "done" : ""}" data-t="${esc(t.id)}">
+      <div class="tw-trow">
+        <button class="tw-caret ${t.collapsed ? "" : "open"}" type="button" data-act="tw-fold" aria-expanded="${t.collapsed ? "false" : "true"}" title="${t.collapsed ? "Show" : "Hide"} subtasks" aria-label="Toggle subtasks">▸</button>
+        <input type="checkbox" data-act="tw-toggle" ${t.done ? "checked" : ""} aria-label="Done">
+        <input type="text" data-act="tw-title" value="${esc(t.title)}" aria-label="Task name">
+        <div style="display:flex;align-items:center;gap:6px">
+          ${t.collapsed && t.subs.length ? `<span class="ck-chip sub ${t.subs.every(x => x.done) ? "all" : ""}">☰ ${t.subs.filter(x => x.done).length}/${t.subs.length}</span>` : ""}
+          <button class="icon-btn sm" data-act="tw-del" title="Delete task" aria-label="Delete task">✕</button>
+        </div>
+      </div>
+      ${t.collapsed ? "" : `<div class="tw-subs">
+        ${t.subs.map(x => `
+          <div class="td-sub ${x.done ? "done" : ""}" data-s="${esc(x.id)}">
+            <input type="checkbox" data-act="tw-subtoggle" ${x.done ? "checked" : ""} aria-label="Subtask done">
+            <input type="text" data-act="tw-subtext" value="${esc(x.title)}" aria-label="Subtask">
+            <button class="icon-btn sm" data-act="tw-subdel" title="Delete subtask" aria-label="Delete subtask">✕</button>
+          </div>`).join("")}
+        <div class="ck-addrow">
+          <input class="tw-subadd" data-t="${esc(t.id)}" placeholder="Add a subtask, press Enter" autocomplete="off">
+          <button class="btn sm" data-act="tw-subadd" data-t="${esc(t.id)}">Add</button>
+        </div>
+      </div>`}
+    </div>`).join("");
+  return `
+    <div class="tw-wm" data-w="${wi}">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:8px">
+        <div class="tw-range" style="margin:0">${esc(twFmt(ws, { weekday: "short", month: "short", day: "numeric" }))} – ${esc(twFmt(we, { weekday: "short", month: "short", day: "numeric", year: "numeric" }))} · ${days} day${days !== 1 ? "s" : ""}</div>
+        ${w.tasks.length ? `<button class="btn sm" type="button" data-act="tw-foldall">${allFolded ? "Expand all" : "Collapse all"}</button>` : ""}
+      </div>
+      <div class="ck-prog">${P.n ? `<b>${P.d}</b> of <b>${P.n}</b> tasks &amp; subtasks done · ${P.pct}%` : "No tasks yet"}
+        <div class="ck-bar"><i style="width:${P.pct}%"></i></div></div>
+      <div style="margin-top:6px">${rows || `<div class="tw-none">No tasks yet — add the first one below.</div>`}</div>
+      <div class="ck-addrow">
+        <input class="tw-add" data-w="${wi}" placeholder="Add a main task, press Enter" autocomplete="off">
+        <button class="btn primary sm" data-act="tw-add" data-w="${wi}">Add task</button>
+      </div>
+      <div class="tw-pickbar"><button class="btn sm" type="button" data-act="tw-pick">${twPickOpen ? "Hide checklist" : "☑ Add from checklist"}</button></div>
+      ${twPickOpen ? twPickerHtml(wi) : ""}
+    </div>`;
+}
+
+function twPickerHtml(wi) {
+  const wk = state.targetPlan.weeks[wi];
+  const have = new Set(wk.tasks.map(t => t.src).filter(Boolean));
+  const groups = state.checklist.map(g => ({ g, tasks: g.tasks.filter(t => !t.done) })).filter(x => x.tasks.length);
+  if (!groups.length) return `<div class="tw-pick"><div class="tw-none">No open tasks in your checklist.</div></div>`;
+  return `<div class="tw-pick">
+    <div class="ck-pick">${groups.map(({ g, tasks }) => `<div class="ck-sech">${esc(g.name)}</div>` + tasks.map(t => `
+      <label class="ck-pk"><input type="checkbox" data-pk="t" data-t="${esc(t.id)}"><span>${esc(t.title)}</span>${have.has(t.id) ? `<em class="ck-chip">in this week</em>` : ""}</label>
+      ${(t.subs || []).map(x => `<label class="ck-pk tw-pk-sub"><input type="checkbox" data-pk="s" data-t="${esc(t.id)}" data-s="${esc(x.id)}"><span>${esc(x.title)}</span></label>`).join("")}`).join("")).join("")}
+    </div>
+    <button class="btn primary sm" type="button" data-act="tw-pickgo">Add selected to this week</button>
+  </div>`;
+}
+
+/* copy checklist tasks (and chosen subtasks) into a week. picks: [{ tid, sids: [ids] | null = all subtasks }] */
+function twImportTasks(wi, picks) {
+  const wk = state.targetPlan.weeks[wi];
+  const key = x => x.trim().toLowerCase();
+  let nt = 0, ns = 0;
+  picks.forEach(({ tid, sids }) => {
+    const src = findTask(tid);
+    if (!src) return;
+    const subs = (src.subs || []).filter(x => !sids || sids.includes(x.id));
+    let ex = wk.tasks.find(x => x.src === tid) || wk.tasks.find(x => key(x.title) === key(src.title));
+    if (!ex) { ex = { id: uid(), title: src.title, done: false, subs: [], src: tid }; wk.tasks.push(ex); nt++; }
+    else if (!ex.src) ex.src = tid;
+    subs.forEach(x => {
+      if (!ex.subs.some(y => key(y.title) === key(x.title))) { ex.subs.push({ id: uid(), title: x.title, done: !!x.done }); ns++; }
+    });
+    twSyncDone(ex);
+  });
+  return { nt, ns };
+}
+const twAddedMsg = (r, label) => r.nt || r.ns
+  ? `Added ${r.nt} task${r.nt !== 1 ? "s" : ""}${r.ns ? ` and ${r.ns} subtask${r.ns !== 1 ? "s" : ""}` : ""} to ${label}`
+  : "Already in that week";
+
+/* from a checklist row: choose which week gets the task */
+function openTaskToWeekModal(tid) {
+  const t = findTask(tid), tp = state.targetPlan;
+  if (!t) return;
+  if (!tp) {
+    toast("Create a plan in Target Week Planner first");
+    state.ui.planView = "target"; save(); renderPlan();
+    return;
+  }
+  const todayK = dateKey(new Date());
+  let cur = tp.weeks.findIndex((_, i) => { const [a, b] = twWeekRange(tp, i); return todayK >= dateKey(a) && todayK <= dateKey(b); });
+  if (cur < 0) cur = 0;
+  const n = (t.subs || []).length;
+  openModal("Add to a target week", `
+    <div style="font-size:15px;font-weight:600;word-break:break-word;margin-bottom:2px">${esc(t.title)}</div>
+    <label class="fld">Week
+      <select id="twwSel">${tp.weeks.map((w, i) => { const [a, b] = twWeekRange(tp, i);
+        return `<option value="${i}" ${i === cur ? "selected" : ""}>Week ${i + 1} · ${esc(twWeekLabel(a, b))}</option>`; }).join("")}</select>
+    </label>
+    ${n ? `<div class="fld" style="margin-bottom:6px">Subtasks to bring along <span class="opt">(none ticked = the task only)</span></div>
+      <div class="ck-pick">${t.subs.map(x => `<label class="ck-pk"><input type="checkbox" data-s="${esc(x.id)}"><span>${esc(x.title)}</span></label>`).join("")}</div>` : ""}
+    <button class="btn primary wide" id="twwOk">Add to week</button>`);
+  document.getElementById("twwOk").addEventListener("click", () => {
+    const wi = +document.getElementById("twwSel").value;
+    const sids = [...modalBody.querySelectorAll(".ck-pick [data-s]:checked")].map(x => x.dataset.s);
+    const r = twImportTasks(wi, [{ tid, sids }]);
+    save(); closeModal(); renderPlan();
+    toast(twAddedMsg(r, `week ${wi + 1}`));
+  });
+}
+
+function twOpenWeek(wi) {
+  const tp = state.targetPlan;
+  if (!tp || !tp.weeks[wi]) return;
+  const [ws, we] = twWeekRange(tp, wi);
+  twWeekIdx = wi;
+  twPickOpen = false;
+  openModal(`Week ${wi + 1} · ${twWeekLabel(ws, we)}`, twWeekModalHtml(wi));
+  const m = overlay.querySelector(".modal");
+  if (m) m.classList.add("wide");
+  if (!twModalBound) {                      // modalBody is shared, so bind once and only act on the week pop-up
+    twModalBound = true;
+    modalBody.addEventListener("click", twOnClick);
+    modalBody.addEventListener("change", twOnChange);
+    modalBody.addEventListener("keydown", twOnKey);
+  }
+}
+
+function twRefresh(focusSel) {
+  save();
+  renderTarget();
+  if (twModalOpen()) {
+    const m = overlay.querySelector(".modal"), top = m ? m.scrollTop : 0;
+    modalBody.innerHTML = twWeekModalHtml(twWeekIdx);
+    if (m) m.scrollTop = top;
+  }
+  if (focusSel) { const i = twRoot().querySelector(focusSel); if (i) i.focus(); }
+}
+
+function twAddTask(wi) {
+  const tp = state.targetPlan, w = tp && tp.weeks[wi];
+  const input = twRoot().querySelector(`.tw-add[data-w="${wi}"]`);
+  if (!w || !input) return;
+  const title = input.value.trim();
+  if (!title) { input.focus(); return; }
+  w.tasks.push({ id: uid(), title, done: false, subs: [] });
+  twRefresh(`.tw-add[data-w="${wi}"]`);
+}
+function twAddSub(tid) {
+  const f = twFind(tid);
+  const input = twRoot().querySelector(`.tw-subadd[data-t="${tid}"]`);
+  if (!f || !input) return;
+  const title = input.value.trim();
+  if (!title) { input.focus(); return; }
+  f.t.subs.push({ id: uid(), title, done: false });
+  twSyncDone(f.t);
+  twRefresh(`.tw-subadd[data-t="${tid}"]`);
+}
+
+function twOnClick(e) {
+  if (e.currentTarget === modalBody && !twModalOpen()) return;
+  const el = e.target.closest("[data-act]");
+  if (!el) return;
+  const act = el.dataset.act;
+  const tp = state.targetPlan;
+  const taskEl = el.closest(".tw-task");
+  const tid = taskEl ? taskEl.dataset.t : el.dataset.t;
+
+  if (act === "tw-io") { openTargetIOModal(); return; }
+  if (!tp) return;
+  if (act === "tw-week") { twOpenWeek(+el.dataset.w); return; }
+  if (act === "tw-range") {
+    twWeekIdx = null;
+    openModal("Date range", twRangeFormHtml(tp));
+    twBindRangeForm(modalBody, v => { if (twSaveRange(v)) { closeModal(); renderPlan(); toast("Range updated"); } });
+    return;
+  }
+  if (act === "tw-delplan") {
+    const n = tp.weeks.reduce((a, w) => a + w.tasks.length, 0);
+    if (!confirm(`Delete this plan${n ? ` and its ${n} task${n !== 1 ? "s" : ""}` : ""}?`)) return;
+    state.targetPlan = null; save(); renderPlan(); toast("Plan deleted");
+    return;
+  }
+  if (act === "tw-add") { twAddTask(+el.dataset.w); return; }
+  if (act === "tw-subadd") { twAddSub(tid); return; }
+  if (act === "tw-foldall") {
+    const ts = tp.weeks[twWeekIdx].tasks, fold = !ts.every(t => t.collapsed);
+    ts.forEach(t => { t.collapsed = fold; });
+    twRefresh();
+    return;
+  }
+  if (act === "tw-pick") { twPickOpen = !twPickOpen; twRefresh(); return; }
+  if (act === "tw-pickgo") {
+    const root = el.closest(".tw-pick");
+    const picks = [...root.querySelectorAll('[data-pk="t"]:checked')].map(c => ({
+      tid: c.dataset.t,
+      sids: [...root.querySelectorAll(`[data-pk="s"][data-t="${c.dataset.t}"]:checked`)].map(x => x.dataset.s) }));
+    if (!picks.length) { toast("Tick at least one task"); return; }
+    const r = twImportTasks(twWeekIdx, picks);
+    twPickOpen = false;
+    twRefresh();
+    toast(twAddedMsg(r, `week ${twWeekIdx + 1}`));
+    return;
+  }
+  if (!taskEl) return;
+  const f = twFind(tid);
+  if (!f) return;
+  if (act === "tw-fold") { f.t.collapsed = !f.t.collapsed; twRefresh(); return; }
+  if (act === "tw-del") {
+    if (f.t.subs.length && !confirm(`Delete "${f.t.title}" and its ${f.t.subs.length} subtask${f.t.subs.length !== 1 ? "s" : ""}?`)) return;
+    f.w.tasks = f.w.tasks.filter(x => x.id !== tid);
+    twRefresh();
+    return;
+  }
+  if (act === "tw-subdel") {
+    const sid = el.closest(".td-sub").dataset.s;
+    f.t.subs = f.t.subs.filter(x => x.id !== sid);
+    twSyncDone(f.t);
+    twRefresh();
+  }
+}
+
+function twOnChange(e) {
+  if (e.currentTarget === modalBody && !twModalOpen()) return;
+  const pk = e.target.dataset && e.target.dataset.pk;
+  if (pk) {                                   // checklist picker: task <-> subtasks stay in step
+    const root = e.target.closest(".tw-pick"), tid = e.target.dataset.t;
+    const subs = [...root.querySelectorAll(`[data-pk="s"][data-t="${tid}"]`)];
+    if (pk === "t") { if (!e.target.checked) subs.forEach(c => { c.checked = false; }); }   // never auto-tick subtasks
+    else if (e.target.checked) root.querySelector(`[data-pk="t"][data-t="${tid}"]`).checked = true;
+    return;
+  }
+  const el = e.target.closest("[data-act]");
+  if (!el) return;
+  const taskEl = el.closest(".tw-task");
+  const f = taskEl ? twFind(taskEl.dataset.t) : null;
+  if (!f) return;
+  const act = el.dataset.act;
+  if (act === "tw-toggle") {
+    f.t.done = el.checked;
+    f.t.subs.forEach(x => { x.done = el.checked; });
+    twRefresh();
+  } else if (act === "tw-subtoggle") {
+    const s = f.t.subs.find(x => x.id === el.closest(".td-sub").dataset.s);
+    if (!s) return;
+    s.done = el.checked;
+    twSyncDone(f.t);
+    twRefresh();
+  } else if (act === "tw-subtext" || act === "tw-title") {
+    const s = act === "tw-title" ? f.t : f.t.subs.find(x => x.id === el.closest(".td-sub").dataset.s);
+    if (!s) return;
+    const v = el.value.trim();
+    if (v) { s.title = v; save(); } else el.value = s.title;
+  }
+}
+
+function twOnKey(e) {
+  if (e.currentTarget === modalBody && !twModalOpen()) return;
+  if (e.key !== "Enter" && e.key !== " ") return;
+  const t = e.target;
+  if (e.key === "Enter" && t.classList.contains("tw-add")) { e.preventDefault(); twAddTask(+t.dataset.w); }
+  else if (e.key === "Enter" && t.classList.contains("tw-subadd")) { e.preventDefault(); twAddSub(t.dataset.t); }
+  else if (t.dataset && t.dataset.act === "tw-week") { e.preventDefault(); twOpenWeek(+t.dataset.w); }
+}
+
+twBody.addEventListener("click", twOnClick);
+twBody.addEventListener("change", twOnChange);
+twBody.addEventListener("keydown", twOnKey);
+
+/* ----- JSON import / export ----- */
+function twToSubs(v) {
+  return (Array.isArray(v) ? v : []).map(x => typeof x === "string"
+      ? { title: x.trim(), done: false }
+      : (x && typeof x === "object" ? { title: String(x.title ?? x.task ?? x.name ?? x.text ?? "").trim(), done: !!(x.done ?? x.completed) } : null))
+    .filter(x => x && x.title);
+}
+function twToTasks(v) {
+  return (Array.isArray(v) ? v : []).map(x => {
+    if (typeof x === "string") return { title: x.trim(), done: false, subs: [] };
+    if (!x || typeof x !== "object") return null;
+    return { title: String(x.title ?? x.task ?? x.name ?? x.text ?? "").trim(), done: !!(x.done ?? x.completed),
+             subs: twToSubs(x.subtasks ?? x.subs ?? x.steps) };
+  }).filter(t => t && t.title);
+}
+/* text -> { name, start, end, weeks:[{week, tasks}], maxWeek } | { error } */
+function twParseText(text) {
+  const raw = String(text || "").replace(/^\uFEFF/, "").trim();
+  if (!raw) return { empty: true };
+  let v;
+  try { v = JSON.parse(raw); } catch (e) { return { error: "That isn’t valid JSON — " + String(e.message).split("\n")[0] }; }
+  if (v && !Array.isArray(v) && typeof v === "object") {
+    if (v.targetPlan && typeof v.targetPlan === "object") v = v.targetPlan;
+    else if (v.data && v.data.targetPlan && typeof v.data.targetPlan === "object") v = v.data.targetPlan;
+  }
+  const meta = (v && !Array.isArray(v) && typeof v === "object") ? v : {};
+  let wk = Array.isArray(v) ? v : (meta.weeks ?? meta.plan);
+  if (wk && !Array.isArray(wk) && typeof wk === "object") {                // { "1": [...], "week 2": {...} }
+    wk = Object.keys(wk).map(k => {
+      const val = wk[k];
+      return Array.isArray(val) ? { week: parseInt(k.replace(/\D/g, ""), 10), tasks: val } : { ...val, week: val.week ?? parseInt(k.replace(/\D/g, ""), 10) };
+    });
+  }
+  if (!Array.isArray(wk)) return { error: "No “weeks” list found — check the format with “Show template”." };
+  const weeks = wk.map((w, i) => {
+    if (Array.isArray(w)) return { week: i + 1, tasks: twToTasks(w) };
+    if (!w || typeof w !== "object") return null;
+    const num = parseInt(w.week ?? w.number ?? w.n ?? (i + 1), 10);
+    return { week: isFinite(num) ? num : i + 1, tasks: twToTasks(w.tasks ?? w.items ?? w.goals) };
+  }).filter(Boolean);
+  if (!weeks.length) return { error: "No weeks found in that file." };
+  return {
+    name: typeof meta.name === "string" ? meta.name.trim() : (typeof meta.title === "string" ? meta.title.trim() : ""),
+    start: ckParseDue(meta.start ?? meta.startDate ?? ""),
+    end: ckParseDue(meta.end ?? meta.endDate ?? ""),
+    weeks, maxWeek: Math.max(1, ...weeks.map(w => w.week))
+  };
+}
+function twEffectiveRange(p, merge) {
+  const cur = state.targetPlan;
+  if (merge && cur) return { start: cur.start, end: cur.end };
+  if (p.start && p.end) return { start: p.start, end: p.end };
+  if (cur && !p.start && !p.end) return { start: cur.start, end: cur.end };
+  const start = p.start || dateKey(new Date());
+  const end = p.end || dateKey(addDays(twParse(start) || new Date(), 7 * p.maxWeek - 1));
+  return { start, end };
+}
+/* dry run: returns the resulting plan plus stats, without touching state */
+function twBuild(p, merge) {
+  const cur = state.targetPlan;
+  const m = !!(merge && cur);
+  const r = twEffectiveRange(p, m);
+  const base = m ? JSON.parse(JSON.stringify(cur))
+                 : { name: p.name || (cur ? cur.name : ""), start: r.start, end: r.end, weeks: [] };
+  const plan = twNormalize(base);
+  const st = { newTasks: 0, newSubs: 0, dupes: 0, skipped: 0, error: "" };
+  if (!plan) { st.error = "The dates give an invalid range (end before start, or more than " + TW_MAX_WEEKS + " weeks)."; return { plan: null, st }; }
+  const key = s => s.trim().toLowerCase();
+  p.weeks.forEach(w => {
+    const wk = plan.weeks[w.week - 1];
+    if (!wk) { st.skipped++; return; }
+    w.tasks.forEach(t => {
+      let ex = wk.tasks.find(x => key(x.title) === key(t.title));
+      if (ex) st.dupes++;
+      else { ex = { id: uid(), title: t.title, done: t.done, subs: [] }; wk.tasks.push(ex); st.newTasks++; }
+      t.subs.forEach(s => {
+        if (!ex.subs.some(x => key(x.title) === key(s.title))) { ex.subs.push({ id: uid(), title: s.title, done: s.done }); st.newSubs++; }
+      });
+      twSyncDone(ex);
+    });
+  });
+  return { plan, st };
+}
+function twExportJson() {
+  const tp = state.targetPlan;
+  return JSON.stringify({
+    name: tp.name, start: tp.start, end: tp.end,
+    weeks: tp.weeks.map((w, i) => ({ week: i + 1, tasks: w.tasks.map(t => ({
+      title: t.title, done: t.done,
+      ...(t.subs.length ? { subtasks: t.subs.map(x => ({ title: x.title, done: x.done })) } : {}) })) }))
+  }, null, 2);
+}
+
+function openTargetIOModal() {
+  const has = !!state.targetPlan;
+  openModal("Import / Export target plan", `
+    <p class="hint">Upload a <b>JSON</b> file (or paste it below) with the date range and, for each week, the main tasks and their <b>subtasks</b>. Use “Show template” for a ready-made example.</p>
+    <div class="bk-file">
+      <div class="bk-file-row">
+        <label class="btn bk-browse" for="twFile">Browse…</label>
+        <span class="bk-fname" id="twFileName">No file selected</span>
+      </div>
+      <input type="file" id="twFile" class="bk-file-in" accept=".json,.txt,application/json,text/plain,*/*">
+    </div>
+    <textarea id="twText" rows="5" spellcheck="false" placeholder="…or paste JSON here"></textarea>
+    <div class="preview" id="twPrev"></div>
+    <label class="fld" ${has ? "" : "hidden"}>When importing
+      <select id="twMode">
+        <option value="replace">Replace my plan (use the file’s dates and tasks)</option>
+        <option value="merge">Add to my current plan (keep my dates, skip tasks already there)</option>
+      </select>
+    </label>
+    <button class="btn primary wide" id="twGo" disabled>Import</button>
+    <div class="ck-ioacts">
+      <button class="btn sm" type="button" id="twShowTpl" aria-expanded="false">Show template</button>
+      <button class="btn sm" type="button" id="twExp" ${has ? "" : "disabled"}>Export JSON</button>
+    </div>
+    <div class="ck-tplbox" id="twTpl" hidden>
+      <h4>JSON template (12 weeks · Oct 10 – Dec 31, 2026)</h4>
+      <pre>${esc(TW_JSON_TEMPLATE)}</pre>
+      <div class="ck-tplrow">
+        <button class="btn sm" type="button" data-tpl="copy">Copy</button>
+        <button class="btn sm" type="button" data-tpl="dl">Download .json</button>
+        <button class="btn sm" type="button" data-tpl="use">Edit here</button>
+      </div>
+      <p class="hint" style="margin:8px 0 0"><code>start</code> / <code>end</code> (YYYY-MM-DD) set the range; week 1 begins on the start date. Each entry in <code>weeks</code> has a <code>week</code> number and <code>tasks</code>. A task is plain text or <code>{ "title", "done", "subtasks" }</code>, where <code>subtasks</code> is a list of text or <code>{ "title", "done" }</code>. <code>theme</code> is optional and ignored.</p>
+    </div>`);
+
+  const $text = document.getElementById("twText"), $prev = document.getElementById("twPrev"),
+        $go = document.getElementById("twGo"), $mode = document.getElementById("twMode");
+  let parsed = null;
+
+  function refresh() {
+    parsed = twParseText($text.value);
+    $go.disabled = true;
+    if (parsed.empty) { $prev.innerHTML = `<div class="prev-empty">Nothing to import yet</div>`; return; }
+    if (parsed.error) { $prev.innerHTML = `<div class="prev-empty">${esc(parsed.error)}</div>`; return; }
+    const merge = has && $mode.value === "merge";
+    const { plan, st } = twBuild(parsed, merge);
+    if (!plan) { $prev.innerHTML = `<div class="prev-empty">${esc(st.error)}</div>`; return; }
+    const lines = plan.weeks.slice(0, 12).map((w, i) => {
+      const subs = w.tasks.reduce((a, t) => a + t.subs.length, 0);
+      return `<div class="prev-item"><b>Week ${i + 1}</b><span>${w.tasks.length} task${w.tasks.length !== 1 ? "s" : ""}${subs ? ` · ${subs} subtask${subs !== 1 ? "s" : ""}` : ""}</span></div>`;
+    }).join("");
+    $prev.innerHTML =
+      `<div class="prev-item"><b>${esc(twRangeLabel(plan.start, plan.end))} · ${plan.weeks.length} weeks</b>
+         <span>${[`${st.newTasks} new task${st.newTasks !== 1 ? "s" : ""}`, st.newSubs ? `${st.newSubs} new subtask${st.newSubs !== 1 ? "s" : ""}` : "",
+           st.dupes ? `${st.dupes} already there` : "", st.skipped ? `${st.skipped} week${st.skipped !== 1 ? "s" : ""} outside the range skipped` : ""].filter(Boolean).join(" · ")}</span></div>` +
+      lines + (plan.weeks.length > 12 ? `<div class="prev-more">… and ${plan.weeks.length - 12} more weeks</div>` : "");
+    $go.disabled = !(st.newTasks || st.newSubs || (!merge));
+    $go.textContent = merge ? "Add to plan" : (has ? "Replace plan" : "Import");
+  }
+
+  let timer = null;
+  $text.addEventListener("input", () => { clearTimeout(timer); timer = setTimeout(refresh, 100); });
+  if ($mode) $mode.addEventListener("change", refresh);
+
+  document.getElementById("twFile").addEventListener("change", async e => {
+    const f = e.target.files && e.target.files[0];
+    if (!f) return;
+    document.getElementById("twFileName").textContent = f.name;
+    try { $text.value = await readFileText(f); }
+    catch (err) { toast("Could not read that file — try pasting its contents"); }
+    e.target.value = "";
+    refresh();
+  });
+
+  $go.addEventListener("click", () => {
+    if (!parsed || parsed.error || parsed.empty) return;
+    const merge = has && $mode.value === "merge";
+    if (!merge && has && !confirm("Replace your current target plan with this file?")) return;
+    const { plan, st } = twBuild(parsed, merge);
+    if (!plan) return;
+    state.targetPlan = plan;
+    save();
+    closeModal();
+    state.ui.planView = "target"; save();
+    renderPlan();
+    toast(`Imported ${st.newTasks} task${st.newTasks !== 1 ? "s" : ""}${st.newSubs ? ` and ${st.newSubs} subtask${st.newSubs !== 1 ? "s" : ""}` : ""} into ${plan.weeks.length} weeks`);
+  });
+
+  document.getElementById("twShowTpl").addEventListener("click", e => {
+    const box = document.getElementById("twTpl");
+    box.hidden = !box.hidden;
+    e.target.textContent = box.hidden ? "Show template" : "Hide template";
+    e.target.setAttribute("aria-expanded", String(!box.hidden));
+    if (!box.hidden && box.scrollIntoView) box.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  });
+  document.getElementById("twTpl").addEventListener("click", async e => {
+    const b = e.target.closest("[data-tpl]");
+    if (!b) return;
+    if (b.dataset.tpl === "copy") toast(await copyText(TW_JSON_TEMPLATE) ? "Template copied" : "Select the text and copy it manually");
+    if (b.dataset.tpl === "use") { $text.value = TW_JSON_TEMPLATE; refresh(); $text.focus(); }
+    if (b.dataset.tpl === "dl") toast(downloadText("target-week-plan-demo.json", TW_JSON_TEMPLATE + "\n", "application/json") ? "Template downloaded" : "Download blocked — use Copy instead");
+  });
+  document.getElementById("twExp").addEventListener("click", () => {
+    if (!state.targetPlan) return;
+    toast(downloadText("target-week-plan.json", twExportJson() + "\n", "application/json") ? "Plan exported" : "Download blocked");
+  });
+  refresh();
 }
 
 /* ----- template editor helpers: choice block (several tasks, pick one) ----- */
