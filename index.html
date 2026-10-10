@@ -938,19 +938,6 @@
           <button data-mode="freeflow">Free flow</button>
         </div>
 
-        <details class="settings">
-          <summary>Timer settings</summary>
-          <div class="inner">
-            <div class="two">
-              <label class="fld">Focus (min)<input id="setFocus" type="number" min="1" max="180"></label>
-              <label class="fld">Short break<input id="setShort" type="number" min="1" max="60"></label>
-            </div>
-            <div class="two">
-              <label class="fld">Long break<input id="setLong" type="number" min="1" max="60"></label>
-              <label class="fld">Long every<input id="setEvery" type="number" min="2" max="12"></label>
-            </div>
-          </div>
-        </details>
       </div>
     </aside>
 
@@ -1414,11 +1401,12 @@ function catchUp(dt) {
   const s = getSession(timer.sessionId);
   if (!s) { timer.running = false; return; }
 
-  if (state.settings.mode === "freeflow") { timer.elapsed += dt; return; }
+  if (state.settings.mode === "freeflow" && timer.phase !== "break") { timer.elapsed += dt; return; }
 
   let guard = 0;
   while (dt > 0.001 && guard++ < 200) {
     if (timer.finished) { timer.running = false; break; }
+    if (state.settings.mode === "freeflow" && timer.phase !== "break") { timer.elapsed += dt; break; }
     if (dt < timer.remaining) { timer.remaining -= dt; dt = 0; break; }
     dt -= timer.remaining;
     timer.remaining = 0;
@@ -1571,7 +1559,7 @@ function fmtTime(sec) {
 
 /* Effective time including breaks, using the session's own break override. */
 function effectiveMinutes(workMinutes, blockCount, mode, s, explicitOverride) {
-  if (mode !== "pomodoro" || blockCount <= 1) return workMinutes;
+  if (blockCount <= 1) return workMinutes;
   const every = state.settings.longEvery;
   let total = workMinutes;
   for (let i = 1; i <= blockCount - 1; i++) {
@@ -1586,7 +1574,6 @@ function remainingEffective(s, mode) {
   if (firstUndone === -1) return 0;
 
   const remainWork = s.blocks.slice(firstUndone).reduce((a, b) => a + b.minutes, 0);
-  if (mode !== "pomodoro") return remainWork;
 
   const n = s.blocks.length;
   const every = state.settings.longEvery;
@@ -1608,7 +1595,7 @@ function loadPhase() {
   timer.notified = false;
   timer.elapsed = 0;
 
-  if (state.settings.mode === "freeflow") {
+  if (state.settings.mode === "freeflow" && timer.phase !== "break") {
     timer.total = b.minutes * 60;
     timer.remaining = 0;
   } else {
@@ -1673,7 +1660,6 @@ function finishSession(s, silent) {
 /* Should we skip the upcoming break because it doesn't fit in the window? */
 function shouldSkipBreak(s, nextBlockIndex) {
   if (!s.window) return false;
-  if (state.settings.mode !== "pomodoro") return false;
 
   const wb = windowBounds(s.window);
   if (!wb) return false;
@@ -1708,17 +1694,31 @@ function endPhase(opts) {
   const wasRunning = timer.running;
   const mode = state.settings.mode;
 
-  if (mode === "freeflow") {
+  if (mode === "freeflow" && timer.phase !== "break") {
     logStudy(timer.elapsed / 60, s, s.blocks[timer.blockIndex]);
     s.blocks[timer.blockIndex].done = true;
     completeTaskFromBlock(s.blocks[timer.blockIndex]);
-    if (timer.blockIndex < s.blocks.length - 1) {
-      timer.blockIndex++;
+    if (timer.blockIndex >= s.blocks.length - 1) {
+      finishSession(s, silent);
+    } else {
+      const nextIdx = timer.blockIndex + 1;
+      const isLong = (nextIdx % state.settings.longEvery === 0);
+      if (gapAfter(s, nextIdx - 1, isLong) === 0 || shouldSkipBreak(s, nextIdx)) {
+        if (gapAfter(s, nextIdx - 1, isLong) > 0) {
+          timer.skippedBreaks = (timer.skippedBreaks || 0) + 1;
+          if (!silent) toast("Break skipped — no time to spare");
+        }
+        timer.blockIndex = nextIdx;
+        timer.phase = "work";
+        timer.longBreak = false;
+      } else {
+        timer.longBreak = isLong;
+        timer.phase = "break";               // count the break down, then carry on
+        if (!silent) beep(520, 0.4);
+      }
       loadPhase();
       timer.running  = wasRunning;
       timer.lastTick = Date.now();
-    } else {
-      finishSession(s, silent);
     }
   } else if (timer.phase === "work") {
     logStudy((timer.total - timer.remaining) / 60, s, s.blocks[timer.blockIndex]);
@@ -1782,7 +1782,7 @@ setInterval(() => {
   if (!s) { timer.running = false; return; }
   if (promptChoiceIfNeeded()) return;
 
-  if (state.settings.mode === "freeflow") {
+  if (state.settings.mode === "freeflow" && timer.phase !== "break") {
     timer.elapsed += dt;
     const b = s.blocks[timer.blockIndex];
     if (b && !timer.notified && timer.elapsed >= b.minutes * 60) {
@@ -1833,7 +1833,7 @@ function updateTimerUI() {
   } else {
     const b = s.blocks[timer.blockIndex] || { minutes: 25, topic: "" };
 
-    if (mode === "freeflow") {
+    if (mode === "freeflow" && timer.phase !== "break") {
       secs     = timer.elapsed;
       progress = Math.min(timer.elapsed / (b.minutes * 60), 1);
       over     = timer.elapsed >= b.minutes * 60;
@@ -1860,16 +1860,16 @@ function updateTimerUI() {
   const p = Math.max(0, Math.min(1, progress));
   ringFg.style.strokeDashoffset = String(RING_C * (1 - p));
   ringFg.style.stroke =
-    (s && !timer.finished && mode === "pomodoro" && timer.phase === "break")
+    (s && !timer.finished && timer.phase === "break")
       ? "var(--break)" : "var(--accent)";
 
   startBtn.disabled = !timer.sessionId;
   skipBtn.disabled  = !timer.sessionId || timer.finished;
   resetBtn.disabled = !timer.sessionId;
   const active = !!timer.sessionId && !timer.finished;
-  const isWork = mode === "freeflow" || timer.phase === "work";
+  const isWork = timer.phase === "work";
   plusBtn.disabled  = !active;
-  minusBtn.disabled = !active || (mode === "freeflow"
+  minusBtn.disabled = !active || (mode === "freeflow" && timer.phase !== "break"
       ? ((s && s.blocks[timer.blockIndex] ? s.blocks[timer.blockIndex].minutes : 1) <= 1)
       : timer.remaining <= 60);
   completeBtn.disabled = !active || !isWork;
@@ -1908,7 +1908,7 @@ function adjustTime(deltaMin) {
   const b = s.blocks[timer.blockIndex];
   const d = deltaMin * 60;
 
-  if (state.settings.mode === "freeflow") {
+  if (state.settings.mode === "freeflow" && timer.phase !== "break") {
     // free flow counts up toward the block's target, so move the target
     if (!b) return;
     b.minutes = Math.max(1, b.minutes + deltaMin);
@@ -1938,7 +1938,7 @@ completeBtn.addEventListener("click", () => {
   if (!timer.sessionId || timer.finished) return;
   const s = getSession(timer.sessionId);
   if (!s) return;
-  const isWork = state.settings.mode === "freeflow" || timer.phase === "work";
+  const isWork = timer.phase === "work";
   if (!isWork) return;
   const name = (s.blocks[timer.blockIndex] || {}).topic || `Block ${timer.blockIndex + 1}`;
   endPhase();               // logs time studied so far, marks block done, moves on
@@ -2435,11 +2435,6 @@ function applyBackupData(c) {
   clearSavedTimer();
 
   save();
-
-  $("#setFocus").value = state.settings.focus;
-  $("#setShort").value = state.settings.short;
-  $("#setLong").value  = state.settings.long;
-  $("#setEvery").value = state.settings.longEvery;
 
   setTab(state.ui.tab);
   applyResFormToggle();
@@ -3091,7 +3086,7 @@ function blockGroups(s) {
 function buildSchedule(s) {
   const wb = windowBounds(s.window);
   if (!wb) return null;
-  const pomodoro = state.settings.mode === "pomodoro";
+  const pomodoro = true;                       // breaks are planned in every mode
   const every = state.settings.longEvery;
   const n = s.blocks.length;
   let t = wb[0];
@@ -7431,19 +7426,6 @@ $("#importBtn").addEventListener("click", () => openImportModal("session"));
 $("#importTplBtn").addEventListener("click", () => openImportModal("template"));
 
 /* ---------- SETTINGS ---------- */
-function bindSetting(id, key, min, max) {
-  const el = $(id);
-  el.value = state.settings[key];
-  el.addEventListener("change", () => {
-    let v = +el.value || min;
-    v = Math.max(min, Math.min(max, v));
-    el.value = v;
-    state.settings[key] = v;
-    save();
-    if (!timer.running && !timer.finished && !timer.sessionId) updateTimerUI();
-    renderSessions();
-  });
-}
 
 /* ---------- RESOURCES PANEL ---------- */
 const resList = $("#resList");
@@ -7506,10 +7488,6 @@ resList.addEventListener("click", e => {
 load();
 restoreTimer();
 
-bindSetting("#setFocus", "focus", 1, 180);
-bindSetting("#setShort", "short", 1, 60);
-bindSetting("#setLong",  "long",  1, 60);
-bindSetting("#setEvery", "longEvery", 2, 12);
 
 setTab(state.ui.tab);
 applyResFormToggle();
