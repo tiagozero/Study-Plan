@@ -392,10 +392,6 @@
   .td-kidadd{margin:2px 0 6px 28px}
   .td-kidadd input{font-size:12.5px;padding:6px 8px}
   .tw-pk-kid{padding-left:54px;font-size:12px;color:var(--muted)}
-  .bulk-box{display:flex;flex-direction:column;gap:6px;align-items:flex-start;margin:6px 0 2px}
-  .bulk-box[hidden]{display:none}
-  .bulk-box textarea{width:100%;font-size:13px;margin:0}
-  [data-bulkroot] > .bt-unlink{margin-top:6px;font-size:12.5px}
   .td-empty{font-size:12.5px;color:var(--muted);padding:4px 0 8px}
   .td-imp{margin-top:8px;padding:10px 12px;border:1px solid var(--border);border-radius:10px}
   .td-imp textarea{margin-top:8px}
@@ -4947,42 +4943,6 @@ function promptChoiceIfNeeded() {
   return true;
 }
 
-/* adding several subtasks at once: one per line (bullets, numbers and [ ] markers are ignored) */
-function splitLines(text) {
-  return String(text || "").split(/\r?\n/)
-    .map(l => l.replace(/^\s*(?:[-*\u2022]|\d+[.)]|\[[ xX]?\])\s+/, "").trim())
-    .filter(Boolean);
-}
-const bulkHtml = act => `
-  <button class="bt-unlink" type="button" data-act="${act}tog" aria-expanded="false">+ Add several at once</button>
-  <div class="bulk-box" hidden>
-    <textarea class="bulk-ta" rows="4" spellcheck="false" placeholder="One subtask per line — you can also paste a list"></textarea>
-    <button class="btn primary sm" type="button" data-act="${act}go">Add all</button>
-  </div>`;
-function bulkToggle(btn) {
-  const box = btn.nextElementSibling;
-  if (!box) return;
-  box.hidden = !box.hidden;
-  btn.setAttribute("aria-expanded", String(!box.hidden));
-  if (!box.hidden) box.querySelector("textarea").focus();
-}
-/* pasting a multi-line list into an "add subtask" box moves it into the multi-add box */
-document.addEventListener("paste", e => {
-  const t = e.target;
-  if (!t || !t.matches || !t.matches(".ck-subin, .tw-subadd, #tdAdd")) return;
-  const lines = splitLines(((e.clipboardData || window.clipboardData) || { getData: () => "" }).getData("text"));
-  if (lines.length < 2) return;
-  const root = t.closest("[data-bulkroot]"), box = root && root.querySelector(".bulk-box");
-  if (!box) return;
-  e.preventDefault();
-  box.hidden = false;
-  const btn = box.previousElementSibling; if (btn) btn.setAttribute("aria-expanded", "true");
-  const ta = box.querySelector("textarea");
-  ta.value = (ta.value.trim() ? ta.value.trim() + "\n" : "") + lines.join("\n");
-  ta.focus();
-});
-const subsAdded = n => `Added ${n} subtask${n !== 1 ? "s" : ""}`;
-
 /* Subtasks can have their own subtasks (one extra level): sub.subs = [{id,title,done}] */
 function subSync(x) { if (x.subs && x.subs.length) x.done = x.subs.every(c => c.done); }
 function setSubsDone(list, v) { (list || []).forEach(x => { x.done = v; (x.subs || []).forEach(c => { c.done = v; }); }); }
@@ -5105,12 +5065,9 @@ function renderChecklist() {
               </div>` : ""}
             </div>`;
           }).join("")}
-          <div data-bulkroot>
-            <div class="ck-addrow">
-              <input class="ck-subin" placeholder="Add a subtask, press Enter" autocomplete="off">
-              <button class="btn sm" type="button" data-act="ck-subgo">Add</button>
-            </div>
-            ${bulkHtml("ck-bulk")}
+          <div class="ck-addrow">
+            <input class="ck-subin" placeholder="Add a subtask, press Enter" autocomplete="off">
+            <button class="btn sm" type="button" data-act="ck-subgo">Add</button>
           </div>
         </div>` : "";
       return `
@@ -5196,12 +5153,9 @@ function openTaskDetailModal(id) {
     <div class="td-title" style="font-size:16px;font-weight:600;word-break:break-word;margin-bottom:2px">${esc(t.title)}</div>
     <div class="td-prog" id="tdProg"></div>
     <div class="td-subs" id="tdSubs"></div>
-    <div data-bulkroot id="tdRoot" style="margin:0 0 8px">
-      <div class="ck-addrow">
-        <input id="tdAdd" placeholder="Add a subtask and press Enter" autocomplete="off">
-        <button class="btn sm" type="button" id="tdAddBtn">Add</button>
-      </div>
-      ${bulkHtml("td-bulk")}
+    <div class="ck-addrow" style="margin:0 0 8px">
+      <input id="tdAdd" placeholder="Add a subtask and press Enter" autocomplete="off">
+      <button class="btn sm" type="button" id="tdAddBtn">Add</button>
     </div>
     <div style="margin:0 0 14px">
       <button class="bt-unlink" type="button" id="tdImpToggle" aria-expanded="false">⇪ Import subtasks from a CSV / JSON file…</button>
@@ -5276,17 +5230,6 @@ function openTaskDetailModal(id) {
   document.getElementById("tdAddBtn").addEventListener("click", addSub);
   $add.addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); addSub(); } });
 
-  document.getElementById("tdRoot").addEventListener("click", e => {
-    const b = e.target.closest("[data-act]");
-    if (!b) return;
-    if (b.dataset.act === "td-bulktog") bulkToggle(b);
-    else if (b.dataset.act === "td-bulkgo") {
-      const ta = b.parentNode.querySelector("textarea"), lines = splitLines(ta.value);
-      if (!lines.length) { ta.focus(); return; }
-      lines.forEach(title => t.subs.push({ id: uid(), title, done: false }));
-      commit(); toast(subsAdded(lines.length));
-    }
-  });
   const addKid = grp => {
     const sub = t.subs.find(x => x.id === grp.dataset.s), input = grp.querySelector(".td-kidin");
     if (!sub || !input) return;
@@ -5569,14 +5512,6 @@ ckBody.addEventListener("click", e => {
   if (!tid) return;
   const ct = findTask(tid);
   if (act === "ck-tog" && ct) { ct.open = !ct.open; save(); renderChecklist(); return; }
-  if (ct && act === "ck-bulktog") { bulkToggle(el); return; }
-  if (ct && act === "ck-bulkgo") {
-    const lines = splitLines(item.querySelector(".bulk-ta").value);
-    if (!lines.length) { item.querySelector(".bulk-ta").focus(); return; }
-    lines.forEach(title => ct.subs.push({ id: uid(), title, done: false }));
-    syncParentDone(ct); ckRefresh(); toast(subsAdded(lines.length));
-    return;
-  }
   if (ct && (act === "ck-subgo" || act === "ck-kidgo" || act === "ck-skid" || act === "ck-sdel" || act === "ck-cdel")) {
     const sg = el.closest(".ck-sg");
     const sub = sg ? ct.subs.find(x => x.id === sg.dataset.s) : null;
@@ -6417,12 +6352,9 @@ function twWeekModalHtml(wi) {
               <button class="btn sm" data-act="tw-kidgo">Add</button>
             </div>` : ""}
           </div>`).join("")}
-        <div data-bulkroot>
-          <div class="ck-addrow">
-            <input class="tw-subadd" data-t="${esc(t.id)}" placeholder="Add a subtask, press Enter" autocomplete="off">
-            <button class="btn sm" data-act="tw-subadd" data-t="${esc(t.id)}">Add</button>
-          </div>
-          ${bulkHtml("tw-bulk")}
+        <div class="ck-addrow">
+          <input class="tw-subadd" data-t="${esc(t.id)}" placeholder="Add a subtask, press Enter" autocomplete="off">
+          <button class="btn sm" data-act="tw-subadd" data-t="${esc(t.id)}">Add</button>
         </div>
       </div>`}
     </div>`).join("");
@@ -6648,16 +6580,6 @@ function twOnClick(e) {
   const f = twFind(tid);
   if (!f) return;
   if (act === "tw-fold") { f.t.collapsed = !f.t.collapsed; twRefresh(); return; }
-  if (act === "tw-bulktog") { bulkToggle(el); return; }
-  if (act === "tw-bulkgo") {
-    const ta = el.parentNode.querySelector("textarea"), lines = splitLines(ta.value);
-    if (!lines.length) { ta.focus(); return; }
-    lines.forEach(title => f.t.subs.push({ id: uid(), title, done: false }));
-    twSyncDone(f.t);
-    twRefresh();
-    toast(subsAdded(lines.length));
-    return;
-  }
   if (act === "tw-kid") {
     const sid = el.closest(".tw-grp").dataset.s;
     twKidOpen.add(sid); twRefresh(`.tw-kidin[data-s="${sid}"]`);
