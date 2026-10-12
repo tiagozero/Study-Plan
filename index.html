@@ -900,6 +900,67 @@
     contain: layout paint;
   }
   .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+  /* ===== study session from tasks (free flow) ===== */
+  .seg button:disabled{opacity:.4;cursor:not-allowed}
+  .session.tasks{border-left:3px solid var(--break)}
+  .ts-tag{margin-left:8px;vertical-align:1px;font-weight:600;letter-spacing:.02em;font-size:10.5px}
+  .modal.form-wide:has(.ts-root){max-width:min(940px,96vw);padding:22px 26px}
+  .modal.form-wide:has(.ts-root) .form-grid{grid-template-columns:minmax(0,1fr) minmax(0,1.05fr)}
+  .modal.form-wide:has(.ts-root) .fg-col + .fg-col{padding-left:24px;margin-left:24px}
+  @media(max-width:700px){
+    .modal.form-wide:has(.ts-root){padding:18px}
+    .modal.form-wide:has(.ts-root) .form-grid{grid-template-columns:1fr}
+    .modal.form-wide:has(.ts-root) .fg-col + .fg-col{padding-left:0;margin-left:0;border-left:0;border-top:1px solid var(--border);padding-top:14px;margin-top:10px}
+  }
+    .modal.form-wide:has(.ts-root) .ts-root .fld .opt{display:inline;margin:0}
+  .ts-root .two{align-items:end}
+  .ts-root .two .fld{margin-bottom:12px}
+  .ts-root .two .fld input,.ts-root .two .fld select{height:38px;margin-top:5px}
+  .ts-prog{display:flex;align-items:center;gap:10px;margin:11px 0 10px;font-size:12px;color:var(--muted)}
+  .ts-prog .bar{width:180px;max-width:55%;margin:0;flex:none}
+  .ts-tasks{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:6px}
+  .ts-task{display:flex;align-items:center;gap:9px;min-width:0;padding:7px 10px;border:1px solid var(--border);
+    border-radius:10px;background:var(--surface-2);font-size:13px;cursor:pointer;user-select:none;transition:.15s}
+  .ts-task:hover{border-color:var(--muted)}
+  .ts-task.now{border-color:var(--accent);background:var(--accent-soft)}
+  .ts-dot{flex:none;width:15px;height:15px;border-radius:50%;border:1.5px solid var(--muted);display:grid;place-items:center;font-size:9px;line-height:1}
+  .ts-task.done .ts-dot{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+  .ts-task.done .ts-ttl{color:var(--muted);text-decoration:line-through}
+  .ts-ttl{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .ts-time{flex:none;display:flex;align-items:center;gap:7px;font-size:11.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+  .ts-mbar{display:block;width:40px;height:3px;border-radius:99px;background:var(--border);overflow:hidden}
+  .ts-mbar b{display:block;height:100%;background:var(--accent)}
+  .ts-mbar.over b{background:var(--break)}
+  .ts-quick{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 8px}
+  .ts-quick .btn{border-radius:99px}
+  .ts-quick .btn b{color:var(--accent);margin-left:2px}
+  .ts-root input.ts-search{margin:0 0 8px}
+  .ts-root .ck-pick{max-height:320px}
+  .ts-pk[hidden],.ts-sec[hidden]{display:none}
+  .ts-pk > span:first-of-type{flex:1 1 auto}
+  .ts-pk em{font-style:normal;flex:0 0 auto}
+  .ts-list{display:flex;flex-direction:column;gap:6px;max-height:300px;overflow:auto;padding:2px;margin:0 0 10px;overscroll-behavior:contain}
+  .ts-item{display:grid;grid-template-columns:20px minmax(0,1fr) 58px auto auto;gap:8px;align-items:center;
+    padding:7px 8px;border:1px solid var(--border);border-radius:10px;background:var(--surface-2)}
+  .ts-n{font-size:11.5px;color:var(--muted);font-variant-numeric:tabular-nums;text-align:center}
+  .ts-name{font-size:13.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .ts-item input.ts-min{margin:0;padding:5px 4px;font-size:13px;text-align:center;width:58px}
+  .ts-m{font-size:11px;color:var(--muted)}
+  .ts-btns{display:flex}
+  .ts-btns .icon-btn.sm{width:24px;height:26px}
+  .ts-btns .icon-btn:disabled{opacity:.3;cursor:default}
+  .ts-sum{font-size:13px;margin:0 0 14px}
+  .ts-sum small{color:var(--muted);font-size:12px}
+  .ts-chk{display:flex;gap:8px;align-items:flex-start;font-size:12.5px;line-height:1.4;margin:0 0 12px;cursor:pointer}
+  .ts-chk input{display:block;width:15px;height:15px;margin:2px 0 0;padding:0;flex:0 0 auto;accent-color:var(--accent)}
+  .ts-chk small{color:var(--muted)}
+  .ts-foot{display:flex;gap:8px;flex-wrap:wrap;position:sticky;bottom:0;z-index:3;background:var(--surface);
+    border-top:1px solid var(--border);margin:14px -26px -22px;padding:12px 26px 22px}
+  @media(max-width:700px){ .ts-foot{margin:14px -18px -18px;padding:12px 18px 18px} }
+  .ts-root .ts-list{max-height:min(300px,32vh)}
+  .ts-root .ck-pick{max-height:min(320px,38vh)}
+  .ts-foot .btn{flex:1 1 140px;padding:10px;margin-top:0}
 </style>
 </head>
 <body>
@@ -980,6 +1041,7 @@
             <button class="btn" id="overviewBtn" hidden>Overview</button>
             <button class="btn" id="logBtnSessions">Log activity</button>
             <button class="btn" id="addWindowBtn">Time window</button>
+            <button class="btn" id="taskSessBtn" title="Turn checklist tasks into a free-flow study session">From tasks</button>
             <button class="btn primary" id="addBtn">+ New</button>
           </div>
         </div>
@@ -1248,6 +1310,9 @@ function normalise() {
     if (!Array.isArray(s.blocks)) s.blocks = [];
     if (!Array.isArray(s.resources)) s.resources = [];
     s.blocks.forEach(b => { if (typeof b.done !== "boolean") b.done = false; });
+    s.blocks.forEach(b => { if (typeof b.spent !== "number" || !(b.spent > 0)) delete b.spent; });
+    if (s.fromTasks) { s.fromTasks = true; s.autoCheck = !!s.autoCheck; }
+    else { delete s.fromTasks; delete s.autoCheck; }
     if (s.window) {
       if (typeof s.window.start !== "string" || typeof s.window.end !== "string") {
         s.window = null;
@@ -1306,6 +1371,7 @@ function normalise() {
     if (b.taskId && !findTask(b.taskId)) delete b.taskId;
     if (isChoice(b)) b.options.forEach(o => { if (o.taskId && !findTask(o.taskId)) delete o.taskId; });
   })));
+  state.sessions.forEach(s => s.blocks.forEach(b => { if (b.taskId && !findTask(b.taskId)) delete b.taskId; }));
   state.history = state.history.filter(h => h && typeof h.ts === "number" && isFinite(h.ts) && typeof h.minutes === "number" && h.minutes > 0);
   state.history.forEach(h => {
     if (!h.id) h.id = uid();
@@ -1631,9 +1697,15 @@ function startSession(id) {
   const s = getSession(id);
   if (!s || !s.blocks.length) return;
 
+  if (s.fromTasks && state.settings.mode !== "freeflow") {
+    state.settings.mode = "freeflow";
+    save();
+    toast("Task sessions run in Free flow");
+  }
+
   let idx = s.blocks.findIndex(b => !b.done);
   if (idx === -1) {
-    s.blocks.forEach(b => (b.done = false));
+    s.blocks.forEach(b => { b.done = false; delete b.spent; });
     idx = 0;
     save();
   }
@@ -1715,6 +1787,8 @@ function endPhase(opts) {
 
   if (mode === "freeflow" && timer.phase !== "break") {
     logStudy(timer.elapsed / 60, s, s.blocks[timer.blockIndex]);
+    { const bk = s.blocks[timer.blockIndex];
+      if (bk && timer.elapsed > 1) bk.spent = Math.round(((bk.spent || 0) + timer.elapsed / 60) * 100) / 100; }
     s.blocks[timer.blockIndex].done = true;
     if (timer.blockIndex >= s.blocks.length - 1) {
       finishSession(s, silent);
@@ -1865,7 +1939,7 @@ function updateTimerUI() {
       phase    = timer.longBreak ? "Long break" : "Break";
     }
 
-    sub = `Block ${timer.blockIndex + 1}/${s.blocks.length} · ${b.topic || "Untitled"}`;
+    sub = `${s.fromTasks ? "Task" : "Block"} ${timer.blockIndex + 1}/${s.blocks.length} · ${b.topic || "Untitled"}`;
     sessionEl.textContent = s.title;
   }
 
@@ -1890,13 +1964,22 @@ function updateTimerUI() {
       ? ((s && s.blocks[timer.blockIndex] ? s.blocks[timer.blockIndex].minutes : 1) <= 1)
       : timer.remaining <= 60);
   completeBtn.disabled = !active || !isWork;
+  completeBtn.textContent = (s && s.fromTasks) ? "✓ Task done" : "✓ Complete block";
+  completeBtn.title = (s && s.fromTasks && s.autoCheck)
+    ? "Finish this task, tick it off in your checklist and move on"
+    : "Mark this block as done now and move on";
 
   startBtn.textContent = timer.finished ? "Restart"
                        : timer.running  ? "Pause"
                        : (timer.sessionId ? "Resume" : "Start");
 
-  [...modeSeg.children].forEach(b =>
-    b.classList.toggle("on", b.dataset.mode === mode));
+  const lockFlow = !!(s && s.fromTasks && !timer.finished);
+  [...modeSeg.children].forEach(b => {
+    b.classList.toggle("on", b.dataset.mode === mode);
+    const locked = lockFlow && b.dataset.mode !== "freeflow";
+    b.disabled = locked;
+    b.title = locked ? "Task sessions run in Free flow" : "";
+  });
 
   updateTitle(secs);
 }
@@ -1957,9 +2040,11 @@ completeBtn.addEventListener("click", () => {
   if (!s) return;
   const isWork = timer.phase === "work";
   if (!isWork) return;
-  const name = (s.blocks[timer.blockIndex] || {}).topic || `Block ${timer.blockIndex + 1}`;
+  const blk = s.blocks[timer.blockIndex] || {};
+  const name = blk.topic || `Block ${timer.blockIndex + 1}`;
   endPhase();               // logs time studied so far, marks block done, moves on
-  toast(`Completed "${name}"`);
+  const ticked = (s.fromTasks && s.autoCheck && blk.taskId) ? tickTask(blk.taskId) : false;
+  toast(ticked ? `Done: "${name}" — ticked off in your checklist` : `Completed "${name}"`);
 });
 
 resetBtn.addEventListener("click", resetPhase);
@@ -1971,6 +2056,11 @@ skipBtn.addEventListener("click", () => {
 modeSeg.addEventListener("click", e => {
   const b = e.target.closest("button");
   if (!b) return;
+  { const cur = getSession(timer.sessionId);
+    if (cur && cur.fromTasks && !timer.finished && b.dataset.mode !== "freeflow") {
+      toast("Task sessions run in Free flow");
+      return;
+    } }
   if (state.settings.mode === b.dataset.mode) return;
   state.settings.mode = b.dataset.mode;
   save();
@@ -2656,7 +2746,7 @@ function renderSessions() {
   overviewBtn.hidden = !state.sessions.some(s => s.window && windowBounds(s.window));
   if (!state.sessions.length) {
     sessionList.innerHTML =
-      `<div class="empty">No sessions yet.<br>Create one, import one, start from a <b>template</b>, or use <b>Time window</b>.</div>`;
+      `<div class="empty">No sessions yet.<br>Create one, import one, start from a <b>template</b>, turn your <b>tasks</b> into a free-flow session, or use <b>Time window</b>.</div>`;
     return;
   }
 
@@ -2667,31 +2757,34 @@ function renderSessions() {
     const pct   = total ? (done / total) * 100 : 0;
     const active = timer.sessionId === s.id;
     const isWindow = !!s.window;
+    const isTask = !!s.fromTasks;
+    const spent = isTask ? s.blocks.reduce((a, b) => a + (b.spent || 0), 0) : 0;
 
     return `
-      <div class="session${active ? " active" : ""}${isWindow ? " windowed" : ""}" data-id="${s.id}">
+      <div class="session${active ? " active" : ""}${isWindow ? " windowed" : ""}${isTask ? " tasks" : ""}" data-id="${s.id}">
         <div class="session-head">
           <div>
-            <div class="session-title">${esc(s.title)}</div>
-            <div class="session-meta">${total} block${total !== 1 ? "s" : ""} · ${mins} min · ${done}/${total} done</div>
+            <div class="session-title">${esc(s.title)}${isTask ? `<span class="ck-chip tpl ts-tag" title="This session runs in Free flow only">Free flow</span>` : ""}</div>
+            <div class="session-meta">${total} ${isTask ? "task" : "block"}${total !== 1 ? "s" : ""} · ${isTask ? "est. " : ""}${mins} min · ${done}/${total} done${spent >= 0.5 ? ` · ${fmtDur(spent)} focused` : ""}</div>
           </div>
           <div class="session-actions">
             <button class="btn" data-act="start">${active ? "Restart" : "Start"}</button>
             ${isWindow ? `<button class="icon-btn sm" data-act="overview" title="Overview &amp; study order">${ICON_TIMELINE}</button>` : ""}
             ${isWindow ? `<button class="icon-btn sm" data-act="editWin" title="Edit window">✎</button>` : ""}
+            ${isTask ? `<button class="icon-btn sm" data-act="addTasks" title="Add more tasks to this session">＋</button>` : ""}
             <button class="icon-btn sm" data-act="res" title="Resources">${ICON_LINK}</button>
             <button class="icon-btn sm" data-act="tmpl" title="Save as template">★</button>
             <button class="icon-btn sm" data-act="del" title="Delete">✕</button>
           </div>
         </div>
         ${isWindow ? renderWindowBar(s) : ""}
-        <div class="bar"><i style="width:${pct}%"></i></div>
+        ${isTask ? taskRowsMarkup(s, active, done, total, pct) : `<div class="bar"><i style="width:${pct}%"></i></div>
         <div class="blocks">
           ${s.blocks.map((b, i) => `
             <span class="chip${b.done ? " done" : ""}${isChoice(b) ? " choice" : ""}" data-act="toggle" data-i="${i}"
-                  title="Toggle done">${esc(b.topic || "Block " + (i + 1))} · ${b.minutes}m${isChoice(b) ? `<span class="chip-choose" data-act="choose" data-i="${i}" title="${b.chosen ? "Change choice" : "Choose now"}">⇄</span>` : ""}</span>
+                  title="Toggle done">${isTask && b.taskId && (findTask(b.taskId) || {}).done ? "☑ " : ""}${esc(b.topic || "Block " + (i + 1))} · ${isTask && b.spent >= 0.5 ? Math.round(b.spent) + "m / " : ""}${b.minutes}m${isChoice(b) ? `<span class="chip-choose" data-act="choose" data-i="${i}" title="${b.chosen ? "Change choice" : "Choose now"}">⇄</span>` : ""}</span>
           `).join("")}
-        </div>
+        </div>`}
         ${resChipsMarkup(s.resources)}
       </div>`;
   }).join("");
@@ -2746,6 +2839,8 @@ sessionList.addEventListener("click", e => {
     el.textContent = "✓";
     setTimeout(() => { el.textContent = prev; }, 900);
     toast(`Saved to "${targetGroup.name}"`);
+  } else if (act === "addTasks") {
+    openTaskSessionModal({ addTo: id });
   } else if (act === "choose") {
     openChoiceModal(id, +el.dataset.i, false);
   } else if (act === "toggle") {
@@ -5118,6 +5213,7 @@ function renderChecklist() {
         <div class="ck-bar"><i style="width:${pct}%"></i></div></div>
       <button class="btn sm" data-act="ck-hide">${hide ? "Show completed" : "Hide completed"}</button>
       <button class="btn sm" data-act="ck-foldall" title="Open or close every task's subtasks">${all.some(t => t.open) ? "Collapse all" : "Expand all"}</button>
+      <button class="btn sm" data-act="ck-sess" title="Turn tasks into a free-flow study session">Study session</button>
       <button class="btn sm" data-act="ck-target" title="Plan your tasks week by week over a date range">Target Week Planner</button>
       <button class="btn sm" data-act="ck-io">Import / Export</button>
       <button class="btn primary sm" data-act="ck-newsec">+ Section</button>
@@ -5204,6 +5300,7 @@ function renderChecklist() {
           <button class="ck-fold" data-act="ck-fold" aria-label="Collapse or expand">${g.collapsed ? "▸" : "▾"}</button>
           <span class="ck-name" data-act="ck-fold">${esc(g.name)}</span>
           <span class="ck-count">${d}/${g.tasks.length}</span>
+          <button class="icon-btn sm" data-act="ck-secsess" title="Study session from this section's open tasks" aria-label="Study session from open tasks">▶</button>
           <button class="icon-btn sm" data-act="ck-sectpl" title="Add this section's open tasks to a template" aria-label="Add open tasks to a template">▦</button>
           <button class="icon-btn sm" data-act="ck-rename" title="Rename section" aria-label="Rename section">✎</button>
           <button class="icon-btn sm" data-act="ck-delsec" title="Delete section" aria-label="Delete section">✕</button>
@@ -5598,6 +5695,8 @@ ckBody.addEventListener("click", e => {
     save(); renderChecklist(); return;
   }
   if (act === "ck-hide") { state.ui.ckHideDone = !state.ui.ckHideDone; save(); renderChecklist(); return; }
+  if (act === "ck-sess") { openTaskSessionModal({}); return; }
+  if (act === "ck-secsess") { openTaskSessionModal({ pre: g ? g.tasks.filter(t => !t.done).map(t => t.id) : [] }); return; }
   if (act === "ck-newsec") {
     openNameModal("New section", "Section name", "e.g. Exam prep", "", "Create section", name => {
       state.checklist.push({ id: uid(), name, collapsed: false, tasks: [] });
@@ -7750,7 +7849,295 @@ function openCreateModal(kind, groupId) {
 }
 
 $("#addBtn").addEventListener("click", () => openCreateModal("session"));
+$("#taskSessBtn").addEventListener("click", () => openTaskSessionModal({}));
 $("#addTplBtn").addEventListener("click", () => openCreateModal("template"));
+
+
+/* ---------- STUDY SESSION FROM TASKS (free flow only) ----------
+   Pick open checklist tasks -> each becomes a block (linked by taskId) in a session that
+   always runs in Free flow. The estimate is only a guide: the clock counts up and never
+   cuts you off. Optionally, "Task done" ticks the task off in the checklist. */
+
+/* Compact view of a task session: short overall bar + one row per task. */
+function taskRowsMarkup(s, active, done, total, pct) {
+  const rows = s.blocks.map((b, i) => {
+    const live = b.taskId && findTask(b.taskId);
+    const spent = b.spent || 0;
+    const now = active && !timer.finished && timer.blockIndex === i;
+    const ratio = b.minutes ? Math.min(1, spent / b.minutes) : 0;
+    return `<div class="ts-task${b.done ? " done" : ""}${now ? " now" : ""}" data-act="toggle" data-i="${i}" title="Click to mark done / not done">
+      <span class="ts-dot">${b.done ? "✓" : ""}</span>
+      <span class="ts-ttl">${live && live.done ? "☑ " : ""}${esc(b.topic || "Task " + (i + 1))}</span>
+      ${now ? `<span class="ck-chip tpl">now</span>` : ""}
+      <span class="ts-time"><i class="ts-mbar${spent > b.minutes ? " over" : ""}"><b style="width:${Math.round(ratio * 100)}%"></b></i>${spent >= 0.5 ? Math.round(spent) + "m / " : ""}${b.minutes}m</span>
+    </div>`;
+  }).join("");
+  return `<div class="ts-prog"><div class="bar"><i style="width:${pct}%"></i></div><span>${done}/${total} · ${Math.round(pct)}%</span></div>
+        <div class="ts-tasks">${rows}</div>`;
+}
+
+function tickTask(id) {
+  const t = findTask(id);
+  if (!t || t.done) return false;
+  t.done = true;
+  t.doneAt = Date.now();
+  setSubsDone(t.subs, true);
+  ckRefresh();
+  return true;
+}
+
+function openTaskSessionModal(opts) {
+  opts = opts || {};
+  const target = opts.addTo ? getSession(opts.addTo) : null;
+  if (opts.addTo && !target) return;
+
+  const used = new Set(target ? target.blocks.map(b => b.taskId).filter(Boolean) : []);
+  const todayK = dateKey(new Date());
+  const weekK = dateKey(addDays(new Date(), 6));
+  const groups = state.checklist
+    .map(g => ({ g, tasks: g.tasks.filter(t => !t.done && !used.has(t.id)) }))
+    .filter(x => x.tasks.length);
+  if (!groups.length) {
+    toast(target ? "Every open task is already in this session" : "No open tasks — add some in Plan → Checklist");
+    return;
+  }
+
+  const flat = groups.flatMap(x => x.tasks);
+  const order = state.checklist.flatMap(g => g.tasks).map(t => t.id);
+  const byId = new Map(flat.map(t => [t.id, t]));
+  const pos = id => order.indexOf(id);
+  let defMin = Math.max(1, Math.min(300, Math.round(+state.settings.focus) || 25));
+  const dueOf = id => byId.get(id).due || "9999";
+  const byDue = (a, b) => (dueOf(a) < dueOf(b) ? -1 : dueOf(a) > dueOf(b) ? 1 : pos(a) - pos(b));
+
+  const cnt = {
+    over:  flat.filter(t => t.due && t.due < todayK).length,
+    today: flat.filter(t => t.due === todayK).length,
+    week:  flat.filter(t => t.due && t.due <= weekK).length
+  };
+
+  const sel = [];                                   // ordered: { id, min, touched }
+  (opts.pre || []).forEach(id => { if (byId.has(id) && !sel.some(x => x.id === id)) sel.push({ id, min: defMin, touched: false }); });
+
+  const dueChip = t => !t.due ? "" :
+    `<em class="ck-chip ${t.due < todayK ? "over" : t.due === todayK ? "today" : ""}">${t.due < todayK ? "Overdue · " : t.due === todayK ? "Today · " : ""}${esc(new Date(t.due + "T00:00:00").toLocaleDateString(undefined, { day: "numeric", month: "short" }))}</em>`;
+
+  const quick = (k, label, n) => n ? `<button type="button" class="btn sm" data-ts="q-${k}">${label} <b>${n}</b></button>` : "";
+
+  const pickHtml = groups.map(({ g, tasks }) => `
+    <div class="ts-sec"><div class="ck-sech">${esc(g.name)}</div>${tasks.map(t => {
+      const sc = subCounts(t.subs);
+      return `<label class="ck-pk ts-pk" data-q="${esc((t.title + " " + g.name).toLowerCase())}">
+        <input type="checkbox" value="${esc(t.id)}"><span>${esc(t.title)}</span>${sc.n ? `<em class="ck-chip sub">☰ ${sc.d}/${sc.n}</em>` : ""}${dueChip(t)}</label>`;
+    }).join("")}</div>`).join("");
+
+  const dayLbl = new Date().toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short" });
+  const same = state.sessions.filter(s => s.title === `Tasks · ${dayLbl}` || s.title.startsWith(`Tasks · ${dayLbl} (`)).length;
+  const defTitle = `Tasks · ${dayLbl}` + (same ? ` (${same + 1})` : "");
+
+  openModal(target ? "Add tasks to session" : "Study session from tasks", `
+    <div class="ts-root" id="tsRoot">
+      <p class="hint">${target
+        ? `Adding to <b>${esc(target.title)}</b>. New tasks go to the end of the session.`
+        : `Choose what you need to get through. Each task becomes a block in <b>Free flow</b> — the clock counts up and never cuts you off; the estimate is just a gentle guide.`}</p>
+      <div class="form-grid">
+        <div class="fg-col">
+          <div class="fg-title">1 · Choose tasks</div>
+          <div class="ts-quick">
+            ${quick("over", "Overdue", cnt.over)}${quick("today", "Due today", cnt.today)}${quick("week", "Due this week", cnt.week)}
+            <button type="button" class="btn sm" data-ts="all">Select shown</button>
+            <button type="button" class="btn sm" data-ts="none">Clear</button>
+          </div>
+          <input class="ts-search" id="tsSearch" type="search" placeholder="Search tasks" autocomplete="off">
+          <div class="ck-pick" id="tsPick">${pickHtml}</div>
+        </div>
+        <div class="fg-col">
+          <div class="fg-title">2 · Your session</div>
+          ${target ? "" : `<label class="fld">Title<input id="tsTitle" value="${esc(defTitle)}" autocomplete="off"></label>`}
+          <div class="two">
+            <label class="fld">Default estimate <span class="opt">(min)</span>
+              <input id="tsDef" type="number" min="1" max="300" value="${defMin}"></label>
+            <label class="fld">Sort by
+              <select id="tsSort">
+                <option value="">Choose…</option>
+                <option value="due">Due date first</option>
+                <option value="list">Checklist order</option>
+                <option value="short">Shortest first</option>
+                <option value="long">Longest first</option>
+              </select></label>
+          </div>
+          <div class="ts-list" id="tsList"></div>
+          <div class="ts-sum" id="tsSum"></div>
+          ${target ? "" : `
+          <div class="two">
+            <label class="fld">Breaks between tasks
+              <select id="tsBreak">
+                <option value="settings">My break settings</option>
+                <option value="none">No breaks</option>
+                <option value="custom">Custom length…</option>
+              </select></label>
+            <label class="fld" id="tsGapWrap" style="display:none">Break length <span class="opt">— min</span>
+              <input id="tsGap" type="number" min="1" max="120" value="${Math.max(1, +state.settings.short || 5)}"></label>
+          </div>
+          <label class="ts-chk"><input type="checkbox" id="tsAuto" checked>
+            <span>Tick a task off in my checklist when I press <b>Task done</b> <small>— skipping a task never ticks it.</small></span></label>`}
+        </div>
+      </div>
+      <div class="ts-foot">
+        ${target
+          ? `<button class="btn primary" type="button" data-ts="add" disabled>Add to session</button>`
+          : `<button class="btn" type="button" data-ts="create" disabled>Create session</button>
+             <button class="btn primary" type="button" data-ts="start" disabled>Create &amp; start</button>`}
+      </div>
+    </div>`, onClick);
+  { const mEl = overlay.querySelector(".modal"); if (mEl) mEl.classList.add("form-wide"); }
+
+  const root = document.getElementById("tsRoot");
+  const list = document.getElementById("tsList");
+  const sumEl = document.getElementById("tsSum");
+
+  function paintSum() {
+    const total = sel.reduce((a, x) => a + x.min, 0);
+    const goal = state.goals.daily;
+    sumEl.innerHTML = sel.length
+      ? `<b>${sel.length}</b> task${sel.length !== 1 ? "s" : ""} · about <b>${fmtDur(total)}</b> of focus${goal > 0 ? ` <small>· ${Math.round(total / goal * 100)}% of your ${fmtDur(goal)} daily goal</small>` : ""}`
+      : `<small>Nothing selected yet</small>`;
+    root.querySelectorAll("[data-ts='create'],[data-ts='start'],[data-ts='add']").forEach(b => { b.disabled = !sel.length; });
+  }
+  function paintSel() {
+    list.innerHTML = sel.length ? sel.map((x, i) => {
+      const t = byId.get(x.id);
+      return `<div class="ts-item">
+        <span class="ts-n">${i + 1}</span>
+        <span class="ts-name" title="${esc(t.title)}">${esc(t.title)}</span>
+        <input class="ts-min" type="number" min="1" max="300" value="${x.min}" aria-label="Estimated minutes">
+        <span class="ts-m">min</span>
+        <span class="ts-btns">
+          <button type="button" class="icon-btn sm" data-ts="up" ${i === 0 ? "disabled" : ""} aria-label="Move up">↑</button>
+          <button type="button" class="icon-btn sm" data-ts="down" ${i === sel.length - 1 ? "disabled" : ""} aria-label="Move down">↓</button>
+          <button type="button" class="icon-btn sm" data-ts="rm" aria-label="Remove">✕</button>
+        </span></div>`;
+    }).join("") : `<div class="empty" style="padding:18px 8px">Tick tasks on the left — they line up here in the order you pick them.</div>`;
+    const have = new Set(sel.map(x => x.id));
+    root.querySelectorAll("#tsPick input").forEach(cb => { cb.checked = have.has(cb.value); });
+    paintSum();
+  }
+  const addMany = ids => {
+    ids.forEach(id => { if (byId.has(id) && !sel.some(x => x.id === id)) sel.push({ id, min: defMin, touched: false }); });
+    paintSel();
+  };
+
+  function onClick(e) {
+    const b = e.target.closest("[data-ts]");
+    if (!b || b.disabled) return;
+    const act = b.dataset.ts;
+    const item = b.closest(".ts-item");
+    const i = item ? [...list.children].indexOf(item) : -1;
+
+    if (act === "q-over")  return addMany(flat.filter(t => t.due && t.due < todayK).map(t => t.id).sort(byDue));
+    if (act === "q-today") return addMany(flat.filter(t => t.due === todayK).map(t => t.id).sort(byDue));
+    if (act === "q-week")  return addMany(flat.filter(t => t.due && t.due <= weekK).map(t => t.id).sort(byDue));
+    if (act === "all")     return addMany([...root.querySelectorAll(".ts-pk:not([hidden]) input")].map(c => c.value));
+    if (act === "none")    { sel.length = 0; return paintSel(); }
+    if (act === "up" && i > 0)               { [sel[i - 1], sel[i]] = [sel[i], sel[i - 1]]; return paintSel(); }
+    if (act === "down" && i > -1 && i < sel.length - 1) { [sel[i + 1], sel[i]] = [sel[i], sel[i + 1]]; return paintSel(); }
+    if (act === "rm" && i > -1)              { sel.splice(i, 1); return paintSel(); }
+
+    if (!sel.length) return;
+    let gap;                                         // undefined = follow my break settings
+    if (target) {
+      const lg = [...target.blocks].reverse().find(x => typeof x.gap === "number");
+      if (lg) gap = lg.gap;
+    } else {
+      const bm = document.getElementById("tsBreak").value;
+      if (bm === "none") gap = 0;
+      else if (bm === "custom") gap = Math.max(1, Math.min(120, Math.round(+document.getElementById("tsGap").value) || 5));
+    }
+    const blocks = sel.map(x => {
+      const t = byId.get(x.id);
+      return { topic: t.title, minutes: x.min, done: false, taskId: t.id, ...(gap !== undefined ? { gap } : {}) };
+    });
+
+    if (act === "add" && target) {
+      target.blocks.push(...blocks);
+      save(); closeModal(); renderSessions(); updateTimerUI();
+      toast(`Added ${blocks.length} task${blocks.length !== 1 ? "s" : ""} to "${target.title}"`);
+      return;
+    }
+    if (act === "create" || act === "start") {
+      const s = {
+        id: uid(),
+        title: (document.getElementById("tsTitle").value || "").trim() || defTitle,
+        blocks, resources: [], created: Date.now(),
+        fromTasks: true, autoCheck: document.getElementById("tsAuto").checked
+      };
+      state.sessions.unshift(s);
+      save(); closeModal(); setTab("sessions"); renderSessions();
+      if (act === "start") startSession(s.id);
+      else toast(`Session created · ${blocks.length} task${blocks.length !== 1 ? "s" : ""}`);
+    }
+  }
+
+  root.addEventListener("change", e => {
+    const t = e.target;
+    if (t.matches("#tsPick input")) {
+      const k = sel.findIndex(x => x.id === t.value);
+      if (t.checked && k < 0) sel.push({ id: t.value, min: defMin, touched: false });
+      if (!t.checked && k > -1) sel.splice(k, 1);
+      paintSel();
+    } else if (t.id === "tsBreak") {
+      document.getElementById("tsGapWrap").style.display = t.value === "custom" ? "" : "none";
+    } else if (t.id === "tsSort") {
+      const sorters = {
+        due:   (a, b) => byDue(a.id, b.id),
+        list:  (a, b) => pos(a.id) - pos(b.id),
+        short: (a, b) => a.min - b.min || pos(a.id) - pos(b.id),
+        long:  (a, b) => b.min - a.min || pos(a.id) - pos(b.id)
+      };
+      if (sorters[t.value]) sel.sort(sorters[t.value]);
+      t.value = "";
+      paintSel();
+    } else if (t.classList.contains("ts-min")) {
+      const i = [...list.children].indexOf(t.closest(".ts-item"));
+      if (i > -1) t.value = sel[i].min;
+    }
+  });
+
+  root.addEventListener("input", e => {
+    const t = e.target;
+    if (t.classList.contains("ts-min")) {
+      const i = [...list.children].indexOf(t.closest(".ts-item"));
+      if (i < 0) return;
+      sel[i].min = Math.max(1, Math.min(300, Math.round(+t.value) || 1));
+      sel[i].touched = true;
+      paintSum();
+    } else if (t.id === "tsDef") {
+      const v = Math.round(+t.value);
+      if (!(v >= 1)) return;
+      defMin = Math.min(300, v);
+      sel.forEach((x, i) => {
+        if (x.touched) return;
+        x.min = defMin;
+        const inp = list.children[i] && list.children[i].querySelector(".ts-min");
+        if (inp) inp.value = defMin;
+      });
+      paintSum();
+    } else if (t.id === "tsSearch") {
+      const q = t.value.trim().toLowerCase();
+      root.querySelectorAll(".ts-sec").forEach(sec => {
+        let any = false;
+        sec.querySelectorAll(".ts-pk").forEach(l => {
+          const show = !q || l.dataset.q.includes(q);
+          l.hidden = !show;
+          if (show) any = true;
+        });
+        sec.hidden = !any;
+      });
+    }
+  });
+
+  paintSel();
+}
 
 /* ---------- IMPORT MODAL ---------- */
 function openImportModal(kind) {
