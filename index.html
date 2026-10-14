@@ -558,6 +558,10 @@
   .block-row.is-choice .bc{flex:1 1 100%;width:100%;gap:10px;padding:14px;background:var(--surface);
     border:1px solid var(--border);border-radius:12px}
   .bc-head{font-size:12px;line-height:1.45}
+  .bgoal{display:inline-flex;align-items:center;gap:4px;font-size:12px;color:var(--muted)}
+  .bgoal input{width:54px;margin:0;padding:5px 7px}
+  .bgoal select{width:auto;margin:0;padding:5px 7px}
+  .bg-prog{color:var(--accent);margin-left:4px}
   /* split a block into equal parts */
   .bsplit{flex:1 1 100%;order:4;display:flex;flex-wrap:wrap;align-items:flex-end;gap:10px 12px;padding:12px;
     background:var(--surface);border:1px solid var(--accent);border-radius:12px}
@@ -1311,7 +1315,7 @@ function normalise() {
     if (!Array.isArray(s.resources)) s.resources = [];
     s.blocks.forEach(b => { if (typeof b.done !== "boolean") b.done = false; });
     s.blocks.forEach(b => { if (typeof b.spent !== "number" || !(b.spent > 0)) delete b.spent; });
-    if (s.fromTasks) { s.fromTasks = true; s.autoCheck = !!s.autoCheck; }
+    if (s.fromTasks) { s.fromTasks = true; s.autoCheck = false; }
     else { delete s.fromTasks; delete s.autoCheck; }
     if (s.window) {
       if (typeof s.window.start !== "string" || typeof s.window.end !== "string") {
@@ -1599,7 +1603,8 @@ function logStudy(minutes, session, block) {
     minutes: Math.round(minutes * 100) / 100,
     sessionId: session.id,
     sessionTitle: session.title,
-    topic: (block && block.topic) || ""
+    topic: (block && block.topic) || "",
+    ...(block && block.bid ? { bid: block.bid } : {})
   });
   if (state.history.length > 8000) state.history = state.history.slice(-8000);
   save();
@@ -1751,6 +1756,9 @@ function finishSession(s, silent) {
 /* Should we skip the upcoming break because it doesn't fit in the window? */
 function shouldSkipBreak(s, nextBlockIndex) {
   if (!s.window) return false;
+  /* an interval you set yourself (e.g. when splitting a block) is always honoured */
+  { const pb = s.blocks[nextBlockIndex - 1];
+    if (pb && typeof pb.gap === "number" && pb.gap > 0) return false; }
 
   const wb = windowBounds(s.window);
   if (!wb) return false;
@@ -1965,9 +1973,7 @@ function updateTimerUI() {
       : timer.remaining <= 60);
   completeBtn.disabled = !active || !isWork;
   completeBtn.textContent = (s && s.fromTasks) ? "✓ Task done" : "✓ Complete block";
-  completeBtn.title = (s && s.fromTasks && s.autoCheck)
-    ? "Finish this task, tick it off in your checklist and move on"
-    : "Mark this block as done now and move on";
+  completeBtn.title = "Mark this block as done now and move on (your checklist is not changed)";
 
   startBtn.textContent = timer.finished ? "Restart"
                        : timer.running  ? "Pause"
@@ -2043,8 +2049,7 @@ completeBtn.addEventListener("click", () => {
   const blk = s.blocks[timer.blockIndex] || {};
   const name = blk.topic || `Block ${timer.blockIndex + 1}`;
   endPhase();               // logs time studied so far, marks block done, moves on
-  const ticked = (s.fromTasks && s.autoCheck && blk.taskId) ? tickTask(blk.taskId) : false;
-  toast(ticked ? `Done: "${name}" — ticked off in your checklist` : `Completed "${name}"`);
+  toast(`Completed "${name}"`);
 });
 
 resetBtn.addEventListener("click", resetPhase);
@@ -2782,7 +2787,7 @@ function renderSessions() {
         <div class="blocks">
           ${s.blocks.map((b, i) => `
             <span class="chip${b.done ? " done" : ""}${isChoice(b) ? " choice" : ""}" data-act="toggle" data-i="${i}"
-                  title="Toggle done">${isTask && b.taskId && (findTask(b.taskId) || {}).done ? "☑ " : ""}${esc(b.topic || "Block " + (i + 1))} · ${isTask && b.spent >= 0.5 ? Math.round(b.spent) + "m / " : ""}${b.minutes}m${isChoice(b) ? `<span class="chip-choose" data-act="choose" data-i="${i}" title="${b.chosen ? "Change choice" : "Choose now"}">⇄</span>` : ""}</span>
+                  title="Toggle done">${isTask && b.taskId && (findTask(b.taskId) || {}).done ? "☑ " : ""}${esc(b.topic || "Block " + (i + 1))} · ${isTask && b.spent >= 0.5 ? Math.round(b.spent) + "m / " : ""}${b.minutes}m${goalLabel(b) ? " · " + goalLabel(b) : ""}${isChoice(b) ? `<span class="chip-choose" data-act="choose" data-i="${i}" title="${b.chosen ? "Change choice" : "Choose now"}">⇄</span>` : ""}</span>
           `).join("")}
         </div>`}
         ${resChipsMarkup(s.resources)}
@@ -3091,7 +3096,7 @@ function openWindowModal(editId) {
         const topic = b.topic || t.title;
         const match = old.find(o => !used.has(o) && o.topic === topic && o.minutes === b.minutes);
         if (match) used.add(match);
-        return { topic, minutes: b.minutes, taskId: b.taskId, gap: b.gap, match };
+        return { topic, minutes: b.minutes, taskId: b.taskId, gap: b.gap, bid: b.bid, goal: b.goal, match };
       });
 
       if (old.length && fresh.every(f => f.match) && old.length === fresh.length) {
@@ -3102,6 +3107,7 @@ function openWindowModal(editId) {
           minutes: f.minutes,
           ...(f.taskId ? { taskId: f.taskId } : {}),
           ...(typeof f.gap === "number" ? { gap: f.gap } : {}),
+          ...goalExtra(f),
           ...(f.options ? { options: f.options, chosen: f.chosen, ...(f.group ? { group: f.group } : {}) } : {}),
           done: f.match ? !!f.match.done : false,
           tpl: t.id,
@@ -4373,7 +4379,7 @@ function openEditTemplateModal(tplId, groupId) {
   if (!tpl) return;
 
   const blockRowsHtml = tpl.blocks.map(b => `
-    <div class="block-row${isChoice(b) ? " is-choice" : ""}" ${b.taskId && !isChoice(b) ? `data-task-id="${esc(b.taskId)}"` : ""} ${typeof b.gap === "number" ? `data-gap="${b.gap}"` : ""} ${isChoice(b) && b.group ? `data-group="${esc(b.group)}"` : ""}>
+    <div class="block-row${isChoice(b) ? " is-choice" : ""}" ${b.bid ? `data-bid="${esc(b.bid)}"` : ""} ${b.taskId && !isChoice(b) ? `data-task-id="${esc(b.taskId)}"` : ""} ${typeof b.gap === "number" ? `data-gap="${b.gap}"` : ""} ${isChoice(b) && b.group ? `data-group="${esc(b.group)}"` : ""}>
       <input class="be-topic" placeholder="Topic" value="${esc(isChoice(b) ? choiceLabel(b.options) : (b.topic || ""))}" ${isChoice(b) ? "readonly" : ""} autocomplete="off">
       <input class="be-mins" type="number" min="1" max="300" value="${b.minutes}">
       <div class="b-ctl">
@@ -4387,6 +4393,7 @@ function openEditTemplateModal(tplId, groupId) {
         <div class="bc">${bcInner(isChoice(b) ? b.options : null)}</div>
         <button class="btn sm" type="button" data-act="bs-open" title="Split this block into equal parts, with an optional interval">✂ Split</button>
         <span class="bgap">${gapStateHtml(b.gap)}</span><span class="bgrp"></span>
+        <span class="bgoal" title="How many times this block should be completed">🎯 <input class="bg-n" type="number" min="1" max="999" placeholder="–" value="${cleanGoal(b.goal) ? cleanGoal(b.goal).n : ""}"> × per <select class="bg-per"><option value="day"${!cleanGoal(b.goal) || cleanGoal(b.goal).per === "day" ? " selected" : ""}>day</option><option value="week"${cleanGoal(b.goal) && cleanGoal(b.goal).per === "week" ? " selected" : ""}>week</option><option value="month"${cleanGoal(b.goal) && cleanGoal(b.goal).per === "month" ? " selected" : ""}>month</option></select><span class="bg-prog">${goalLabel(b)}</span></span>
         <div class="bsplit" hidden>
           <label>Parts<input class="bs-n" type="number" min="1" max="20" value="2"></label>
           <label>Interval (min)<input class="bs-gap" type="number" min="0" max="120" placeholder="default"></label>
@@ -4462,6 +4469,7 @@ function openEditTemplateModal(tplId, groupId) {
         <div class="bc">${bcInner(null)}</div>
         <button class="btn sm" type="button" data-act="bs-open" title="Split this block into equal parts, with an optional interval">✂ Split</button>
         <span class="bgap">${gapStateHtml(undefined)}</span><span class="bgrp"></span>
+        <span class="bgoal" title="How many times this block should be completed">🎯 <input class="bg-n" type="number" min="1" max="999" placeholder="–" value=""> × per <select class="bg-per"><option value="day" selected>day</option><option value="week">week</option><option value="month">month</option></select><span class="bg-prog"></span></span>
         <div class="bsplit" hidden>
           <label>Parts<input class="bs-n" type="number" min="1" max="20" value="2"></label>
           <label>Interval (min)<input class="bs-gap" type="number" min="0" max="120" placeholder="default"></label>
@@ -4624,6 +4632,7 @@ function openEditTemplateModal(tplId, groupId) {
         r.querySelector(".bs-n").value = 2;
         r.querySelector(".bs-gap").value = "";
         r.querySelector(".bt-list").hidden = true;
+        if (k > 0) { delete r.dataset.bid; r.querySelector(".bg-n").value = ""; const pg = r.querySelector(".bg-prog"); if (pg) pg.textContent = ""; }
       });
       syncMove();
       rows.forEach(r => { r.classList.add("moved"); setTimeout(() => r.classList.remove("moved"), 900); });
@@ -4699,6 +4708,10 @@ function openEditTemplateModal(tplId, groupId) {
       const days = readBlockDays(r);
       const gapX = r.dataset.gap !== undefined && r.dataset.gap !== "" ? { gap: Math.max(0, Math.min(120, +r.dataset.gap || 0)) } : {};
       const opts = r.classList.contains("is-choice") ? bcRead(r) : [];
+      const gn = Math.round(+r.querySelector(".bg-n").value);
+      const goalX = gn >= 1 ? { goal: { n: Math.min(999, gn), per: r.querySelector(".bg-per").value } } : {};
+      const bid = r.dataset.bid || ("b" + uid());
+      Object.assign(gapX, goalX, { bid });
       if (opts.length > 1) return { topic: choiceLabel(opts), minutes, days, ...gapX, options: opts, ...(r.dataset.group ? { group: r.dataset.group } : {}) };
       if (opts.length === 1) return { topic: opts[0].topic, minutes, days, ...gapX, ...(opts[0].taskId ? { taskId: opts[0].taskId } : {}) };
       return {
@@ -5001,11 +5014,38 @@ dashSeg.addEventListener("click", e => {
 /* sections -> tasks. A task can become a template block (topic); finishing the block
    never checks the task off — that is always done by hand. */
 /* A copy always starts "undecided": a choice block keeps its alternatives but not the pick. */
+/* ----- completion goals: "do this block N times per day / week / month" ----- */
+const GOAL_PER = { day: "day", week: "week", month: "month" };
+function cleanGoal(g) {
+  if (!g || typeof g !== "object") return null;
+  const n = Math.round(+g.n), per = GOAL_PER[g.per];
+  return n >= 1 && per ? { n: Math.min(999, n), per } : null;
+}
+function goalPeriodStart(per, now) {
+  const d = new Date(now || Date.now());
+  if (per === "week") return startOfWeek(d).getTime();
+  if (per === "month") return new Date(d.getFullYear(), d.getMonth(), 1).getTime();
+  return startOfDay(d).getTime();
+}
+function goalCount(b) {
+  const g = cleanGoal(b && b.goal);
+  if (!g || !b.bid) return 0;
+  const from = goalPeriodStart(g.per);
+  return state.history.filter(h => h.bid === b.bid && h.ts >= from).length;
+}
+function goalLabel(b) {
+  const g = cleanGoal(b && b.goal);
+  if (!g) return "";
+  const c = goalCount(b);
+  return `${c >= g.n ? "✓ " : ""}${c}/${g.n} this ${g.per}`;
+}
+const goalExtra = b => ({ ...(b.bid ? { bid: b.bid } : {}), ...(cleanGoal(b.goal) ? { goal: cleanGoal(b.goal) } : {}) });
+
 const cpBlock = b => isChoice(b)
   ? { topic: choiceLabel(b.options), minutes: b.minutes, options: b.options.map(o => ({ ...o })), ...(b.group ? { group: b.group } : {}),
-      ...(typeof b.gap === "number" && b.gap >= 0 ? { gap: b.gap } : {}) }
+      ...(typeof b.gap === "number" && b.gap >= 0 ? { gap: b.gap } : {}), ...goalExtra(b) }
   : { topic: b.topic, minutes: b.minutes, ...(b.taskId ? { taskId: b.taskId } : {}),
-      ...(typeof b.gap === "number" && b.gap >= 0 ? { gap: b.gap } : {}) };
+      ...(typeof b.gap === "number" && b.gap >= 0 ? { gap: b.gap } : {}), ...goalExtra(b) };
 
 /* ---------- CHOICE BLOCKS ----------
    A block with options[] (2+) is a "pick one" slot: several tasks are added at once and
@@ -5140,7 +5180,7 @@ document.addEventListener("paste", e => {
 const subsAdded = n => `Added ${n} subtask${n !== 1 ? "s" : ""}`;
 
 /* Subtasks can have their own subtasks (one extra level): sub.subs = [{id,title,done}] */
-function subSync(x) { if (x.subs && x.subs.length) x.done = x.subs.every(c => c.done); }
+function subSync(x) { /* manual: a subtask is never auto-ticked from its sub-subtasks */ }
 function setSubsDone(list, v) { (list || []).forEach(x => { x.done = v; (x.subs || []).forEach(c => { c.done = v; }); }); }
 function subCounts(list) {
   let n = 0, d = 0;
@@ -5157,9 +5197,9 @@ function normSubs(list) {
   });
 }
 
-/* A task with subtasks is checked automatically once every subtask is done,
-   and re-opened if one is unchecked or a new one is added. */
+/* (disabled) tasks and subtasks are ticked manually only. */
 function syncParentDone(t, quiet) {
+  return false;   /* manual: ticking subtasks never changes the task itself */
   if (!t.subs || !t.subs.length) return false;
   const all = t.subs.every(x => x.done);
   if (all && !t.done) { t.done = true; t.doneAt = Date.now(); if (!quiet) toast(`Task checked off: ${t.title} — all subtasks done`); return true; }
@@ -7979,8 +8019,7 @@ function openTaskSessionModal(opts) {
             <label class="fld" id="tsGapWrap" style="display:none">Break length <span class="opt">— min</span>
               <input id="tsGap" type="number" min="1" max="120" value="${Math.max(1, +state.settings.short || 5)}"></label>
           </div>
-          <label class="ts-chk"><input type="checkbox" id="tsAuto" checked>
-            <span>Tick a task off in my checklist when I press <b>Task done</b> <small>— skipping a task never ticks it.</small></span></label>`}
+          <p class="hint" style="margin:0 0 12px">Finishing a task here never ticks it in your checklist — you do that yourself.</p>`}
         </div>
       </div>
       <div class="ts-foot">
@@ -8069,7 +8108,7 @@ function openTaskSessionModal(opts) {
         id: uid(),
         title: (document.getElementById("tsTitle").value || "").trim() || defTitle,
         blocks, resources: [], created: Date.now(),
-        fromTasks: true, autoCheck: document.getElementById("tsAuto").checked
+        fromTasks: true, autoCheck: false
       };
       state.sessions.unshift(s);
       save(); closeModal(); setTab("sessions"); renderSessions();
